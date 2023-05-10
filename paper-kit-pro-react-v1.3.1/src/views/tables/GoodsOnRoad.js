@@ -56,7 +56,7 @@ const [editingRow, setEditingRow] = useState(null);
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
 
-      const response = await fetch('https://vividstockfish.com/api/goods_on_road/', {
+      const response = await fetch('http://127.0.0.1:8000/api/goods_on_road/', {
         method: 'GET',
         headers: {
 
@@ -87,7 +87,7 @@ const [editingRow, setEditingRow] = useState(null);
       new_decided_order: updatedOrder,
     };
     const access_token = await localforage.getItem('access_token');
-    const response = await fetch('https://vividstockfish.com/api/edit_goods_on_road/', {
+    const response = await fetch('http://127.0.0.1:8000/api/edit_goods_on_road/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -129,7 +129,7 @@ const [editingRow, setEditingRow] = useState(null);
   // Function to handle form submission
   const handleNewTruckSubmit = async () => {
     const access_token = await localforage.getItem('access_token');
-    const response = await fetch('https://vividstockfish.com/api/add_truck/', {
+    const response = await fetch('http://127.0.0.1:8000/api/add_truck/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ const [editingRow, setEditingRow] = useState(null);
   useEffect(() => {
     const fetchWaitingTrucksData = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch('https://vividstockfish.com/api/waiting_trucks/', {
+      const response = await fetch('http://127.0.0.1:8000/api/waiting_trucks/', {
         method: 'GET',
         headers: {
 
@@ -223,7 +223,7 @@ const [editingRow, setEditingRow] = useState(null);
 
     };
     console.log(updatedData)
-    fetch('https://vividstockfish.com/api/approve_products/', {
+    fetch('http://127.0.0.1:8000/api/approve_products/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -258,7 +258,7 @@ const [editingRow, setEditingRow] = useState(null);
   const handleMoveToGoodsOnRoad = async (truckData) => {
     try {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/approve_waiting/", {
+      const response = await fetch("http://127.0.0.1:8000/api/approve_waiting/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -299,7 +299,7 @@ const [editingRow, setEditingRow] = useState(null);
   useEffect(() => {
     const fetchGoodsOnRoadData = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch('https://vividstockfish.com/api/trucks_on_road/', {
+      const response = await fetch('http://127.0.0.1:8000/api/trucks_on_road/', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -324,7 +324,7 @@ const [editingRow, setEditingRow] = useState(null);
   const approveTruck = async (truckName) => {
     
        const access_token = await localforage.getItem('access_token');
-      const response = await fetch('https://vividstockfish.com/api/approve_arrived_truck/', {
+      const response = await fetch('http://127.0.0.1:8000/api/approve_arrived_truck/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

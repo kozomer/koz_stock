@@ -171,7 +171,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/top_products/", {
+      const response = await fetch("http://127.0.0.1:8000/api/top_products/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -202,7 +202,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchDataCustomers = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/top_customers/", {
+      const response = await fetch("http://127.0.0.1:8000/api/top_customers/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -230,7 +230,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchExchange = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/exchange_rate/", {
+      const response = await fetch("http://127.0.0.1:8000/api/exchange_rate/", {
 
         headers: {
 
@@ -250,7 +250,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchDailyReportSaler = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/daily_report/saler_data/", {
+      const response = await fetch("http://127.0.0.1:8000/api/daily_report/saler_data/", {
 
         headers: {
 
@@ -270,7 +270,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchDailyReportTotal = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/daily_report/total_data/", {
+      const response = await fetch("http://127.0.0.1:8000/api/daily_report/total_data/", {
 
         headers: {
 
@@ -289,7 +289,7 @@ function Dashboard() {
   useEffect(() => {
     const fetchDailyReportMotnhly = async () => {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch("https://vividstockfish.com/api/daily_report/total_data_by_monthly/", {
+      const response = await fetch("http://127.0.0.1:8000/api/daily_report/total_data_by_monthly/", {
 
         headers: {
 
@@ -309,7 +309,7 @@ function Dashboard() {
     const fetchDataArea = async () => {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch("https://vividstockfish.com/api/customer_area/", {
+      const response = await fetch("http://127.0.0.1:8000/api/customer_area/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

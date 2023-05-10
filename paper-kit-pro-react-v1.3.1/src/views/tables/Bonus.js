@@ -70,7 +70,7 @@ function UserProfile() {
     console.log(saler_id)
 
     const access_token = await localforage.getItem('access_token');
-    fetch('https://vividstockfish.com/api/salers_card/', {
+    fetch('http://127.0.0.1:8000/api/salers_card/', {
       method: 'POST',
       body: JSON.stringify(saler_id),
       headers: {
@@ -107,7 +107,7 @@ function UserProfile() {
       saler_type: newSalerType,
     };
     console.log(newSaler)
-    fetch("https://vividstockfish.com/api/add_salers/", {
+    fetch("http://127.0.0.1:8000/api/add_salers/", {
       method: "POST",
       body: JSON.stringify(newSaler),
 
@@ -140,7 +140,7 @@ function UserProfile() {
 
     const access_token = await localforage.getItem('access_token');
     console.log(access_token)
-    fetch('https://vividstockfish.com/api/collapsed_salers/', {
+    fetch('http://127.0.0.1:8000/api/collapsed_salers/', {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer ' + String(access_token)
@@ -166,7 +166,7 @@ function UserProfile() {
   const fetchSalerTableData = async () => {
     const access_token = await localforage.getItem('access_token');
     try {
-      const response = await fetch("https://vividstockfish.com/api/salers_table/", {
+      const response = await fetch("http://127.0.0.1:8000/api/salers_table/", {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer ' + String(access_token)
@@ -257,7 +257,7 @@ function UserProfile() {
         old_data: salersWholeData
       }
       const access_token = await localforage.getItem('access_token');
-      fetch('https://vividstockfish.com/api/edit_salers/', {
+      fetch('http://127.0.0.1:8000/api/edit_salers/', {
         method: "POST",
         body: JSON.stringify(all_data),
 
@@ -329,7 +329,7 @@ function UserProfile() {
       id: id
     }
     const access_token = await localforage.getItem('access_token');
-    fetch("https://vividstockfish.com/api/delete_saler/", {
+    fetch("http://127.0.0.1:8000/api/delete_saler/", {
       method: "POST",
       headers: {
         'Content-Type': 'application/json',

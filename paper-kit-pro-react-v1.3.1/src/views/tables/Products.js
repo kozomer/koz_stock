@@ -20,18 +20,17 @@ const DataTable = () => {
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   //Edit Variables
+  const [productCode, setProductCode] = useState(null);
+  const [barcode, setBarcode] = useState(null);
   const [group, setGroup] = useState(null);
   const [subgroup, setSubgroup] = useState(null);
-  const [feature, setFeature] = useState(null);
-  const [productIR, setProductIR] = useState(null);
-  const [productTR, setProductTR] = useState(null);
-  const [descriptionTR, setDescriptionTR] = useState(null);
-  const [descriptionIR, setDescriptionIR] = useState(null);
+  const [brand, setBrand] = useState(null);
+  const [serialNumber, setSerialNumber] = useState(null);
+  const [model, setModel] = useState(null);
+  const [description, setDescription] = useState(null);
   const [unit, setUnit] = useState(null);
-  const [secondaryUnit, setSecondaryUnit] = useState(null);
-  const [weight, setWeight] = useState(null);
-  const [currency, setCurrency] = useState(null);
-  const [price, setPrice] = useState(null);
+  const [supplier, setSupplier] = useState(null);
+  const [supplierContact, setSupplierContact] = useState(null);
 
   const [oldData, setOldData] = useState(null);
 
@@ -47,7 +46,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch('https://vividstockfish.com/api/products/',{
+      const response = await fetch('http://127.0.0.1:8000/api/products/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -61,11 +60,6 @@ const DataTable = () => {
     fetchData();
   }, [dataChanged,renderEdit]);
 
-  /*
-  useEffect(() => {
-    console.log(dataTable);
-  }, [dataTable]);
-*/
 
   const handleFileInputChange = (e) => {
     setFile(e.target.files[0]);
@@ -81,7 +75,7 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token');
-    fetch('https://vividstockfish.com/api/add_products/', {
+    fetch('http://127.0.0.1:8000/api/add_products/', {
       method: 'POST',
       body: formData,
       
@@ -104,7 +98,7 @@ const DataTable = () => {
       setIsLoading(false);
       successUpload(data.message);
       
-      fetch('https://vividstockfish.com/api/products/',{
+      fetch('http://127.0.0.1:8000/api/products/',{
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         }
@@ -248,7 +242,7 @@ const DataTable = () => {
       if (deleteConfirm) {
        
         const access_token =  await localforage.getItem('access_token'); 
-        fetch(`https://vividstockfish.com/api/delete_products/`, {
+        fetch(`http://127.0.0.1:8000/api/delete_products/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -266,22 +260,19 @@ const DataTable = () => {
 
 
     const handleClick = (row) => {
-     
       setEditData(row);
       setOldData(row);
-      
+      setProductCode(row.product_code);
+      setBarcode(row.barcode);
       setGroup(row.group);
-  setSubgroup(row.subgroup);
-  setFeature(row.feature);
-  setProductIR(row.product_code_ir);
-  setProductTR(row.product_code_tr);
-  setDescriptionTR(row.description_tr);
-  setDescriptionIR(row.description_ir);
-  setUnit(row.unit);
-  setSecondaryUnit(row.unit_secondary);
-  setWeight(row.weight);
-  setCurrency(row.currency);
-  setPrice(row.price);
+      setSubgroup(row.subgroup);
+      setBrand(row.brand);
+      setSerialNumber(row.serial_number);
+      setModel(row.model);
+      setDescription(row.description);
+      setUnit(row.unit);
+      setSupplier(row.supplier);
+      setSupplierContact(row.supplier_contact);
       setShowPopup(!showPopup);
       console.log(row)
     };
@@ -291,34 +282,33 @@ const DataTable = () => {
       const access_token =  await localforage.getItem('access_token'); 
       
       const updatedData = {
-        new_group:group,
-        new_subgroup:subgroup,
-        new_feature:feature,
-        new_product_code_ir:productIR,
-        new_product_code_tr:productTR,
-        new_description_tr:descriptionTR,
-        new_description_ir:descriptionIR,
-        new_unit:unit,
-        new_unit_secondary:secondaryUnit,
-        new_weight:weight,
-        new_currency:currency,
-        new_price:price,
-
-        old_group:oldData[0],
-        old_subgroup:oldData[1],
-        old_feature:oldData[2],
-        old_product_code_ir:oldData[3],
-        old_product_code_tr:oldData[4],
-        old_description_tr:oldData[5],
-        old_description_ir:oldData[6],
-        old_unit:oldData[7],
-        old_unit_secondary:oldData[8],
-        old_weight:oldData[9],
-        old_currency:oldData[10],
-        old_price:oldData[11],
-      };
+        new_product_code: product_code,
+        new_barcode: barcode,
+        new_group: group,
+        new_subgroup: subgroup,
+        new_brand: brand,
+        new_serial_number: serial_number,
+        new_model: model,
+        new_description: description,
+        new_unit: unit,
+        new_supplier: supplier,
+        new_supplier_contact: supplier_contact,
+    
+        old_product_code: oldData[0],
+        old_barcode: oldData[1],
+        old_group: oldData[2],
+        old_subgroup: oldData[3],
+        old_brand: oldData[4],
+        old_serial_number: oldData[5],
+        old_model: oldData[6],
+        old_description: oldData[7],
+        old_unit: oldData[8],
+        old_supplier: oldData[9],
+        old_supplier_contact: oldData[10],
+    };
+    
       console.log(updatedData)
-      fetch('https://vividstockfish.com/api/edit_products/', {
+      fetch('http://127.0.0.1:8000/api/edit_products/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -354,22 +344,21 @@ const DataTable = () => {
 
     useEffect(() => {
       console.log("useEffect called")
-      if(editData){
-        
-          setGroup(editData[0]);
-          setSubgroup(editData[1]);
-          setFeature(editData[2]);
-          setProductIR(editData[3]);
-          setProductTR(editData[4]);
-          setDescriptionTR(editData[5]);
-          setDescriptionIR(editData[6]);
-          setUnit(editData[7]);
-          setSecondaryUnit(editData[8]);
-          setWeight(editData[9]);
-          setCurrency(editData[10]);
-          setPrice(editData[11]);
-          setIsUpdated(true)
-      }
+      if (editData) {
+        setProductCode(editData[0]);
+        setBarcode(editData[1]);
+        setGroup(editData[2]);
+        setSubgroup(editData[3]);
+        setBrand(editData[4]);
+        setSerialNumber(editData[5]);
+        setModel(editData[6]);
+        setDescription(editData[7]);
+        setUnit(editData[8]);
+        setSupplier(editData[9]);
+        setSupplierContact(editData[10]);
+        setIsUpdated(true);
+    }
+    
     }, [editData])
 
 
@@ -378,7 +367,7 @@ const DataTable = () => {
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('https://vividstockfish.com/api/export_products/', {
+      const response = await fetch('http://127.0.0.1:8000/api/export_products/', {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },
@@ -415,137 +404,129 @@ const DataTable = () => {
     {/* Pop Up */}
       {showPopup && isUpdated &&(
        <div className="popup">
-      <Card>
-            <CardHeader>
-              <CardTitle tag="h4">Edit Product</CardTitle>
-            </CardHeader>
-            <CardBody>
-              <Form onSubmit={handleSubmit}>
+              <Card>
+          <CardHeader>
+            <CardTitle tag="h4">Edit Product</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <Form onSubmit={handleSubmit}>
               <div>
-        <div className="form-group-col">
-          <label>Group</label>
-          <FormGroup>
-            <Input
-              name="group"
-              type="text"
-              defaultValue={group}
-              onChange={(e) => setGroup(e.target.value)}
-            />
-          </FormGroup>
+                <div className="form-group-col">
+                  <label>Malzeme Kodu</label>
+                  <FormGroup>
+                    <Input
+                      name="product_code"
+                      type="number"
+                      defaultValue={productCode}
+                      onChange={(e) => setProductCode(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Subgroup</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={subgroup}
-              onChange={(e) => setSubgroup(e.target.value)}
-            />
-          </FormGroup>
+                  <label>Barkod</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={barcode}
+                      onChange={(e) => setBarcode(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Feature</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={feature}
-              onChange={(e) => setFeature(e.target.value)}
-            />
-          </FormGroup>
+                  <label>Grup</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={group}
+                      onChange={(e) => setGroup(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Product Number(IR)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={productIR}
-              onChange={(e) => setProductIR(e.target.value)}
-            />
-          </FormGroup>
+                  <label>Alt Grup</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={subgroup}
+                      onChange={(e) => setSubgroup(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Product Number(TR)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={productTR}
-              onChange={(e) => setProductTR(e.target.value)}
-            />
-          </FormGroup>
+                  <label>Marka</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Currency</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-            />
-          </FormGroup>
-        </div>
+                  <label>Seri Numarası</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={serialNumber}
+                      onChange={(e) => setSerialNumber(e.target.value)}
+                    />
+                  </FormGroup>
+                </div>
 
-        <div className="form-group-col">
-          <label>Description(TR)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={descriptionTR}
-              onChange={(e) => setDescriptionTR(e.target.value)}
-            />
-          </FormGroup>
+                <div className="form-group-col">
+                  <label>Model</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={model}
+                      onChange={(e) => setModel(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Description(IR)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={descriptionIR}
-              onChange={(e) => setDescriptionIR(e.target.value)}
-            />
-          </FormGroup>
+                  <label>Açıklama</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Unit</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={unit}
-              onChange={(e) => setUnit(e.target.value)}
-            />
-          </FormGroup>
+                  <label>Birim</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={unit}
+                      onChange={(e) => setUnit(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Secondary Unit</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={secondaryUnit}
-              onChange={(e) => setSecondaryUnit(e.target.value)}
-            />
-          </FormGroup>
+                  <label>Satıcı</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={supplier}
+                      onChange={(e) => setSupplier(e.target.value)}
+                    />
+                  </FormGroup>
 
-          <label>Weight</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={weight}
-              onChange={(e) => setWeight(e.target.value)}
-            />
-          </FormGroup>
+                  <label>Satıcı İletişim</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={supplierContact}
+                      onChange={(e) => setSupplierContact(e.target.value)}
+                    />
+                  </FormGroup>
+                </div>
+              </div>
+            </Form>
+          </CardBody>
+          <CardFooter>
+            <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
+              Submit
+            </Button>
+            <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
+              Cancel
+            </Button>
+          </CardFooter>
+        </Card>
 
-          <label>Price</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          </FormGroup>
-        </div>
-        </div>
-              </Form>
-            </CardBody>
-              <CardFooter>
-                <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
-                  Submit
-                </Button>
-                <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
-                  Cancel
-                </Button>
-              </CardFooter>
-            </Card>
             </div>
 )}
 <Card>
@@ -603,18 +584,17 @@ const DataTable = () => {
                 <ReactTable
                   data={dataTable.map((row,index) => ({
                     id: row.id,
-                    group: row[0],
-                    subgroup: row[1],
-                    feature: row[2],
-                    product_code_ir: row[3],
-                    product_code_tr: row[4],
-                    description_tr: row[5],
-                    description_ir: row[6],
-                    unit: row[7],
-                    unit_secondary: row[8],
-                    weight: row[9],
-                    currency: row[10],
-                    price:row[11],
+                    product_code: row[0],
+                    barcode: row[1],
+                    group: row[2],
+                    subgroup: row[3],
+                    brand: row[4],
+                    serial_number: row[5],
+                    model: row[6],
+                    description: row[7],
+                    unit: row[8],
+                    supplier: row[9],
+                    supplier_contact: row[10],
 
                     actions: (
                       <div className='actions-left'>
@@ -651,33 +631,7 @@ const DataTable = () => {
                               };
                               setDeleteData(data);
                               console.log(deleteConfirm)
-                              /*
-                              if (deleteConfirm) {
-                                const updatedDataTable = dataTable.find((o) => o.id == row.id);
-                                //console.log(updatedDataTable[0]);
-                                const data = {
-                                  no: updatedDataTable[0],
-                                  good_code: updatedDataTable[10],
-                                  original_output_value: updatedDataTable[14],
-                                };
-                                setDeleteData(data);
-                                //console.log(data);
-                                fetch(`https://vividstockfish.com/api/delete_sales/`, {
-                                  method: "POST",
-                                  body: new URLSearchParams(data),
-                                }).then(() => {
-                                  //  console.log("row id:", row.id);
-                                  //console.log("dataTable:", dataTable);
-                                  const filteredDataTable = dataTable.filter(
-                                    (o) => Number(o.id) !== Number(row.id)
-                                  );
-                                  //  console.log(filteredDataTable);
-                                  setDataTable(filteredDataTable);
-                                  setDataChanged(!dataChanged);
-                                });
 
-                              }
-                              */
 
                             }
                             }
@@ -696,66 +650,57 @@ const DataTable = () => {
                   }))}
                   columns={[
                     {
+                      Header: 'Product Code',
+                      accessor: 'product_code',
+                    },
+                    {
+                      Header: 'Barcode',
+                      accessor: 'barcode',
+                    },
+                    {
                       Header: 'Group',
                       accessor: 'group',
-
-
                     },
                     {
                       Header: 'Subgroup',
-                      accessor:  'subgroup'
+                      accessor: 'subgroup',
                     },
                     {
-                      Header: 'Feature',
-                      accessor: 'feature'
-                    },
-                  
-                    {
-                      Header: 'Product Number(IR)',
-                      accessor: 'product_code_ir'
+                      Header: 'Brand',
+                      accessor: 'brand',
                     },
                     {
-                      Header: 'Product Number(TR)',
-                      accessor: 'product_code_tr'
+                      Header: 'Serial Number',
+                      accessor: 'serial_number',
                     },
                     {
-                      Header: 'Description(TR)',
-                      accessor: 'description_tr'
+                      Header: 'Model',
+                      accessor: 'model',
                     },
                     {
-                      Header: 'Description(IR)',
-                      accessor: 'description_ir'
+                      Header: 'Description',
+                      accessor: 'description',
                     },
                     {
                       Header: 'Unit',
-                      accessor: 'unit'
+                      accessor: 'unit',
                     },
                     {
-                      Header: 'Secondary Unit',
-                      accessor: 'unit_secondary'
+                      Header: 'Supplier',
+                      accessor: 'supplier',
                     },
                     {
-                      Header: 'Weight',
-                      accessor: 'weight'
-                    },
-                    
-                    {
-                      Header: 'Currency',
-                      accessor: 'currency'
-                    },
-                    {
-                      Header: 'Price',
-                      accessor: 'price'
+                      Header: 'Supplier Contact',
+                      accessor: 'supplier_contact',
                     },
                     {
                       Header: 'Actions',
                       accessor: 'actions',
                       sortable: false,
                       filterable: false,
-                     
-                      
-                    }
+                    },
                   ]}
+                  
                   defaultPageSize={10}
                   className='-striped -highlight'
                 />

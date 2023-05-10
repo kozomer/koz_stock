@@ -185,7 +185,7 @@ function Charts() {
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
-      const response = await fetch('https://vividstockfish.com/api/charts/', {
+      const response = await fetch('http://127.0.0.1:8000/api/charts/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -206,7 +206,7 @@ function Charts() {
     async function fetchItems() {
       const access_token = await localforage.getItem('access_token');
      
-      fetch('https://vividstockfish.com/api/item_list/', {
+      fetch('http://127.0.0.1:8000/api/item_list/', {
         headers: {
 
           'Authorization': 'Bearer ' + String(access_token)
@@ -260,7 +260,7 @@ function Charts() {
     
     const selectData = { product_code: selectedItem.value, lead_time: leadTime, service_level:serviceLevel, forecast_period: forecast};
     // post the selected option to Django
-    fetch('https://vividstockfish.com/api/rop/', {
+    fetch('http://127.0.0.1:8000/api/rop/', {
       method: 'POST',
     headers: { "Content-Type": "application/json", 
     'Authorization': 'Bearer '+ String(access_token)},

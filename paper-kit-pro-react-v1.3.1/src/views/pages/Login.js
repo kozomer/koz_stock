@@ -53,7 +53,7 @@ function Login({ history }) {
     event.preventDefault();
     console.log(username)
     try {
-      const response = await fetch("https://vividstockfish.com/api/login/", {
+      const response = await fetch("http://127.0.0.1:8000/api/login/", {
         method: "POST",
       
         body: JSON.stringify({
