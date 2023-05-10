@@ -1,0 +1,166 @@
+.custom-file-upload {
+    border: 1px solid #ccc;
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    color: #333;
+    background-color: #fff;
+    border-radius: 5px;
+  }
+  
+  .custom-file-upload:hover {
+    background-color: #eee;
+  }
+  
+  .btn-upload {
+    margin-left: 50px;
+    background-color: #51cbce !important;
+    visibility: visible !important;
+  }
+ 
+  .file-name {
+    margin: 0 10px;
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 300px;
+    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  }
+  
+.my-button-class {
+  background-color: #51cbce!important;
+ 
+  /* Other styles as needed */
+}
+.my-button-class:hover {
+  background-color: red !important;
+ 
+  /* Other styles as needed */
+}
+.react-select {
+  width:100px !important; /* adjust this value to the desired width */
+  margin-right:30px;
+  margin-left: 30px;
+
+ 
+}
+
+.nav-link {
+  display: none;
+}
+
+
+
+
+
+
+/* PopUp */
+.popup {
+  width:500px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+}
+.form-group-col {
+  display: inline-block;
+  width: 45%; /* adjust as needed */
+  margin-right: 5%; /* adjust as needed */
+  vertical-align: top;
+}
+
+/* Sales */
+.popup-sales {
+  width:1250px;
+  position: fixed;
+  top: 50%;
+  left: 60%;
+  transform: translate(-50%, -50%);
+  z-index: 100;
+}
+.form-group-col-sales{
+  display: inline-block;
+  width: 10%; /* adjust as needed */
+  margin-right: 5%; /* adjust as needed */
+  vertical-align: top;
+}
+.popup-sales .card-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.popup-sales .card-footer button {
+  margin-right: 10px;
+}
+
+.popup-sales .card-footer button:last-child {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+/* */
+
+.popup .card-footer {
+  display: flex;
+  justify-content: space-between;
+}
+
+.popup .card-footer button {
+  margin-right: 10px;
+}
+
+.popup .card-footer button:last-child {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+/*loading spinner */
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+.loading-spinner {
+  width: 30px;
+  height: 30px;
+  border: 10px solid #f3f3f3; /* Light grey */
+  border-top: 10px solid #51cbce; /* Black */
+  border-radius: 50%;
+  animation: spinner 1.5s linear infinite;
+}
+
+
+
+
+
+
+.scrollable-table tbody {
+  display: block;
+  max-height: 1400px; /* Adjust this value to your desired height */
+  overflow-y: auto;
+}
+
+.scrollable-table thead,
+.scrollable-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+.scrollable-table th,
+.scrollable-table td {
+  border-right: 1px solid #dee2e6; /* Adjust the color and thickness of the line as needed */
+}
+
+.scrollable-table th:last-child,
+.scrollable-table td:last-child {
+  border-right: none;
+}
