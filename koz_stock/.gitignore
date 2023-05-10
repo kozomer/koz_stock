@@ -22,6 +22,7 @@ local_settings.py
 *.DS_Store
 *.cache
 *.egg-info/
+*.log
 dist/
 build/
 
