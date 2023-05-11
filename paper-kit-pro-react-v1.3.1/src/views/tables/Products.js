@@ -282,17 +282,17 @@ const DataTable = () => {
       const access_token =  await localforage.getItem('access_token'); 
       
       const updatedData = {
-        new_product_code: product_code,
+        new_product_code: productCode,
         new_barcode: barcode,
         new_group: group,
         new_subgroup: subgroup,
         new_brand: brand,
-        new_serial_number: serial_number,
+        new_serial_number: serialNumber,
         new_model: model,
         new_description: description,
         new_unit: unit,
         new_supplier: supplier,
-        new_supplier_contact: supplier_contact,
+        new_supplier_contact: supplierContact,
     
         old_product_code: oldData[0],
         old_barcode: oldData[1],
@@ -519,10 +519,10 @@ const DataTable = () => {
           </CardBody>
           <CardFooter>
             <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
-              Submit
+              Onayla
             </Button>
             <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
-              Cancel
+              İptal Et
             </Button>
           </CardFooter>
         </Card>
@@ -531,7 +531,7 @@ const DataTable = () => {
 )}
 <Card>
   <CardHeader>
-    <CardTitle tag='h4'>PRODUCTS</CardTitle>
+    <CardTitle tag='h4'>MALZEMELER</CardTitle>
   </CardHeader>
   <CardBody>
     <div className="upload-container">
@@ -539,11 +539,11 @@ const DataTable = () => {
         <div className="d-flex justify-content-between align-items-center">
           <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
             <i className="fa fa-plus-circle mr-1"></i>
-            Add File
+            Yeni Malzeme Ekle
           </Button>
           <Button className="my-button-class" color="primary" onClick={handleExportClick}>
             <i className="fa fa-download mr-1"></i>
-            Export
+            Dışa Aktar
           </Button>
         </div>
       )}
@@ -552,17 +552,17 @@ const DataTable = () => {
           <div className="d-flex justify-content-between align-items-center">
             <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
               <i className="fa fa-plus-circle mr-1"></i>
-              Add File
+              Dosya Yükle
             </Button>
             <Button className="my-button-class" color="primary" onClick={handleExportClick}>
               <i className="fa fa-download mr-1"></i>
-              Export
+              Dışa Aktar
             </Button>
           </div>
           <div className="mt-3">
             <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
             <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Upload
+              Yükle
             </Button>
             <div className="spinner-container">
               {isLoading && <div className="loading-spinner"></div>}
@@ -626,7 +626,7 @@ const DataTable = () => {
                                warningWithConfirmAndCancelMessage() 
                                const rowToDelete = {...row};
                                const data = {
-                                product_code_ir: rowToDelete[3],
+                                product_code: rowToDelete[0],
 
                               };
                               setDeleteData(data);
@@ -650,27 +650,27 @@ const DataTable = () => {
                   }))}
                   columns={[
                     {
-                      Header: 'Product Code',
+                      Header: 'Malzeme Kodu',
                       accessor: 'product_code',
                     },
                     {
-                      Header: 'Barcode',
+                      Header: 'Barkod',
                       accessor: 'barcode',
                     },
                     {
-                      Header: 'Group',
+                      Header: 'Grup',
                       accessor: 'group',
                     },
                     {
-                      Header: 'Subgroup',
+                      Header: 'Alt Grup',
                       accessor: 'subgroup',
                     },
                     {
-                      Header: 'Brand',
+                      Header: 'Marka',
                       accessor: 'brand',
                     },
                     {
-                      Header: 'Serial Number',
+                      Header: 'Seri Numarası',
                       accessor: 'serial_number',
                     },
                     {
@@ -678,23 +678,23 @@ const DataTable = () => {
                       accessor: 'model',
                     },
                     {
-                      Header: 'Description',
+                      Header: 'Açıklama',
                       accessor: 'description',
                     },
                     {
-                      Header: 'Unit',
+                      Header: 'Birim',
                       accessor: 'unit',
                     },
                     {
-                      Header: 'Supplier',
+                      Header: 'Satıcı',
                       accessor: 'supplier',
                     },
                     {
-                      Header: 'Supplier Contact',
+                      Header: 'Satıcı İletişim',
                       accessor: 'supplier_contact',
                     },
                     {
-                      Header: 'Actions',
+                      Header: 'İşlem',
                       accessor: 'actions',
                       sortable: false,
                       filterable: false,

@@ -26,6 +26,7 @@ import base64
 from io import BytesIO
 import numpy as np
 from django.db import transaction
+from .permissions import IsSuperStaff
 
 
 
@@ -83,6 +84,40 @@ class LogoutView(APIView):
 
 #region Products
 
+class AddProductsView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            product_code = data.get('product_code')
+            if not product_code:
+                return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
+            elif Products.objects.filter(product_code=product_code).exists():
+                return JsonResponse({'error': f"The Product Code '{product_code}' already exists in the database."}, status=400)
+
+            # Add new product
+            new_product_data = {}
+            for field in ['barcode', 'group', 'subgroup', 'brand', 'serial_number', 'model', 'description', 'unit', 'supplier', 'supplier_contact']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    new_product_data[field] = value
+                else:
+                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+
+            new_product = Products.objects.create(product_code=product_code, **new_product_data)
+
+            return JsonResponse({'message': f"New product '{new_product.product_code}' has been successfully created."}, status=201)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
 class ProductsView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
@@ -93,6 +128,61 @@ class ProductsView(APIView):
                          p['serial_number'], p['model'], p['description'], p['unit'],
                          p['supplier'], p['supplier_contact']] for p in products]
         return JsonResponse(product_list, safe=False, status=200)
+    
+
+class EditProductsView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            old_product_code = data.get('old_product_code')
+            product = Products.objects.get(product_code=old_product_code)
+
+            # Check if new product_code value is unique
+            new_product_code = data.get('new_product_code')
+            if new_product_code and new_product_code != old_product_code:
+                if Products.objects.filter(product_code=new_product_code).exists():
+                    return JsonResponse({'error': f"The Product Code '{new_product_code}' already exists in the database."}, status=400)
+                if not new_product_code:
+                    return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
+                else:
+                    product.product_code = new_product_code
+
+            # Update other product fields
+            for field in ['new_barcode', 'new_group', 'new_subgroup', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit', 'new_supplier', 'new_supplier_contact']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    updated_field = field[4:]  # Remove the "new_" prefix
+                    setattr(product, updated_field, value)
+                else:
+                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+
+            product.save()
+            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+
+        except Products.DoesNotExist:
+            return JsonResponse({'error': "Product not found."}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        
+
+class DeleteProductsView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    def post(self, request, *args, **kwargs):
+        try:
+            product_code = request.POST.get('product_code')
+            Products.objects.filter(product_code=product_code).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': "Product object has been successfully deleted"}, status=200)
 
 
 # endregion

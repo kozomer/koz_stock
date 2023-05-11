@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from koz_stock_api.views import (LoginView, LogoutView,ProductsView)
+from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProductsView, AddProductsView, DeleteProductsView)
 # from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
 #                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
 #                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
@@ -43,7 +43,11 @@ urlpatterns = [
     path('api/token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
     path('api/login/', LoginView.as_view(), name='login'),
     path('api/logout/', LogoutView.as_view(), name='logout'),
+    
     path('api/products/', ProductsView.as_view(), name='products'),
+    path('api/edit_products/', EditProductsView.as_view(), name='edit_product'),
+    path('api/add_products/',AddProductsView.as_view(), name='add_pricelists'),
+    path('api/delete_products/', DeleteProductsView.as_view(), name='delete_goods'),
 
     # path('api/add_customers/', AddCustomersView.as_view(), name='add_customers'),
     # path('api/add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),

@@ -47,7 +47,7 @@ function AuthNavbar(props) {
           fontSize: '2.2rem', // Adjust the size as desired
          
           paddingBottom: '5px'  }}>
-            VIVID STOCKFISH
+            KOZTECH STOCK
           </NavbarBrand>
         </div>
         <button

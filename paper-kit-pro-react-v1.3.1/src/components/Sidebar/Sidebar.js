@@ -166,7 +166,7 @@ function Sidebar(props) {
       
         const access_token = await localforage.getItem('access_token');
         const refresh_token = await localforage.getItem('refresh_token');
-        const response = await fetch('https://vividstockfish.com/api/logout/', {
+        const response = await fetch('http://127.0.0.1:8000/api/logout/', {
             
             method: 'POST',
             headers: {
@@ -219,7 +219,7 @@ function Sidebar(props) {
       data-active-color={props.activeColor}
     >
       <div className="logo" style={{ textAlign: "center", fontSize: "1.5rem", color: "white",  fontWeight: 'bold', }}>
-        VIVID
+        KOZ
       </div>
   
       <div className="sidebar-wrapper" ref={sidebar}>
@@ -259,7 +259,7 @@ function Sidebar(props) {
                 overflow: "hidden",
               }}
             >
-              <span>Log Out</span>
+              <span>Çıkış</span>
             </Button>
           </>
         )}

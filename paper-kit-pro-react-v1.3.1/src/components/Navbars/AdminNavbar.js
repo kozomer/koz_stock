@@ -185,11 +185,11 @@ function AdminNavbar(props) {
                fontSize: '1.5rem', // Adjust the size as desired
                
                paddingBottom: '5px'  }}>
-                STOCKFISH
+                STOCK
               </span>
               <span className="d-block d-md-none"
                 style={{ color: 'black',
-                fontWeight: 'bold',}}>STFISH</span>
+                fontWeight: 'bold',}}>STCK</span>
             </NavbarBrand>
           </div>
           <button
