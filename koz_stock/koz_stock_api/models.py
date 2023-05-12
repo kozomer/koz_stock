@@ -33,6 +33,7 @@ class ProductFlow(models.Model):
     model = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     unit = models.CharField(max_length=255)
+    amount = models.FloatField(null= True)
 
 class Stock(models.Model):
     product_code = models.IntegerField(unique= True)

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import ( Products)
+from .models import ( Products, ProductFlow, Stock)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -174,7 +174,7 @@ class EditProductsView(APIView):
         
 
 class DeleteProductsView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
     def post(self, request, *args, **kwargs):
         try:
@@ -187,6 +187,107 @@ class DeleteProductsView(APIView):
 
 # endregion
 
+# region ProductFlow
+
+class AddProductFlowView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            product_code = data.get('product_code')
+            if not product_code:
+                return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
+
+            # Add new product flow
+            new_product_flow_data = {}
+            for field in ['date', 'provider_company', 'reciever_company', 'inflow_outflow', 'status', 'place_of_use', 'group', 'subgroup', 'brand', 'serial_number', 'model', 'description', 'unit', 'amount']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    new_product_flow_data[field] = value
+                else:
+                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+
+            new_product_flow = ProductFlow.objects.create(product_code=product_code, **new_product_flow_data)
+
+            return JsonResponse({'message': f"New product flow for product '{new_product_flow.product_code}' has been successfully created."}, status=201)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        
+class ProductFlowView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        product_flows = ProductFlow.objects.values().all()
+        product_flow_list = [
+            [pf['id'], pf['date'], pf['product_code'], pf['provider_company'], pf['reciever_company'],
+             pf['inflow_outflow'], pf['status'], pf['place_of_use'], pf['group'], pf['subgroup'],
+             pf['brand'], pf['serial_number'], pf['model'], pf['description'], pf['unit'], pf['amount']] for pf in product_flows
+        ]
+        return JsonResponse(product_flow_list, safe=False, status=200)
+
+class EditProductFlowView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            old_product_code = data.get('old_product_code')
+            old_id = data.get('old_id')
+            product_flow = ProductFlow.objects.get(id=old_id)
+
+            # Check if new product_code value is unique
+            new_product_code = data.get('new_product_code')
+            if new_product_code and new_product_code != old_product_code:
+                if not Products.objects.filter(product_code=new_product_code).exists():
+                    return JsonResponse({'error': f"The Product Code '{new_product_code}' not exists in the database."}, status=400)
+                if not new_product_code:
+                    return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
+                else:
+                    product_flow.product_code = new_product_code
+
+            # Update other product flow fields
+            for field in ['new_date', 'new_provider_company', 'new_reciever_company', 'new_inflow_outflow', 'new_status', 'new_place_of_use', 'new_group', 'new_subgroup', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit', 'new_amount']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    updated_field = field[4:]  # Remove the "new_" prefix
+                    setattr(product_flow, updated_field, value)
+                else:
+                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+
+            product_flow.save()
+            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+
+        except ProductFlow.DoesNotExist:
+            return JsonResponse({'error': "Product not found."}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class DeleteProductFlowView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            id = request.POST.get('id')
+            ProductFlow.objects.filter(id=id).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': "Product Flow object has been successfully deleted"}, status=200)
+
+# endregion
 
 
 

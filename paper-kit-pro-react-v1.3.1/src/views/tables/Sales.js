@@ -20,52 +20,23 @@ const DataTable = () => {
   const [oldData, setOldData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 //Variable Set
-const [no, setNo] = useState(null);
-const [billNumber, setBillNumber] = useState(null);
+const [id, setId] = useState(null);
 const [date, setDate] = useState(null);
-const [psr, setPsr] = useState(null);
-const [customerCode, setCustomerCode] = useState(null);
-const [name, setName] = useState(null);
-const [city, setCity] = useState(null);
-const [area, setArea] = useState(null);
-const [colorMake, setColorMake] = useState(null);
-const [group, setGroup] = useState(null);
 const [productCode, setProductCode] = useState(null);
-const [productName, setProductName] = useState(null);
+const [providerCompany, setProviderCompany] = useState(null);
+const [recieverCompany, setRecieverCompany] = useState(null);
+const [inflowOutflow, setInflowOutflow] = useState(null);
+const [status, setStatus] = useState(null);
+const [placeOfUse, setPlaceOfUse] = useState(null);
+const [group, setGroup] = useState(null);
+const [subgroup, setSubgroup] = useState(null);
+const [brand, setBrand] = useState(null);
+const [serialNumber, setSerialNumber] = useState(null);
+const [model, setModel] = useState(null);
+const [description, setDescription] = useState(null);
 const [unit, setUnit] = useState(null);
-const [unit2, setUnit2] = useState(null);
-const [kg, setKg] = useState(null);
-const [originalValue, setOriginalValue] = useState(null);
-const [originalOutputValue, setOriginalOutputValue] = useState(null);
-const [secondaryOutputValue, setSecondaryOutputValue] = useState(null);
-const [price, setPrice] = useState(null);
-const [originalPrice, setOriginalPrice] = useState(null);
-const [discountPercentage, setDiscountPercentage] = useState(null);
-const [amountSale, setAmountSale] = useState(null);
-const [discount, setDiscount] = useState(null);
-const [additionalSales, setAdditionalSales] = useState(null);
-const [netSales, setNetSales] = useState(null);
-const [discountPercentage2, setDiscountPercentage2] = useState(null);
-const [realDiscountPercentage, setRealDiscountPercentage] = useState(null);
-const [paymentCash, setPaymentCash] = useState(null);
-const [paymentCheck, setPaymentCheck] = useState(null);
-const [balance, setBalance] = useState(null);
-const [saler, setSaler] = useState(null);
-const [currSepidar, setCurrSepidar] = useState(null);
-const [dollarSepidar, setDollarSepidar] = useState(null);
-const [currency, setCurrency] = useState(null);
-const [dollar, setDollar] = useState(null);
-const [managerRating, setManagerRating] = useState(null);
-const [seniorSaler, setSeniorSaler] = useState(null);
-const [totMonthlySales, setTotMonthlySales] = useState(null);
-const [receipment, setReceipment] = useState(null);
-const [ct, setCt] = useState(null);
-const [paymentType, setPaymentType] = useState(null);
-const [costumerSize, setCostumerSize] = useState(null);
-const [salerFactor, setSalerFactor] = useState(null);
-const [primPercentage, setPrimPercentage] = useState(null);
-const [bonusFactor, setBonusFactor] = useState(null);
-const [bonus, setBonus] = useState(null);
+const [amount, setAmount] = useState(null);
+
 
 
   React.useEffect(() => {
@@ -80,7 +51,7 @@ const [bonus, setBonus] = useState(null);
    
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
-      const response = await fetch('http://127.0.0.1:8000/api/sales/',{
+      const response = await fetch('http://127.0.0.1:8000/api/product_flow/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -115,7 +86,7 @@ const [bonus, setBonus] = useState(null);
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token'); 
-    fetch('http://127.0.0.1:8000/api/add_sales/', {
+    fetch('http://127.0.0.1:8000/api/add_product_flow/', {
       method: 'POST',
       body: formData,
       
@@ -126,7 +97,6 @@ const [bonus, setBonus] = useState(null);
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log(data.error)
           setIsLoading(false);
           errorUpload(data.error);
         });
@@ -135,7 +105,7 @@ const [bonus, setBonus] = useState(null);
         return response.json().then(data => {
           setIsLoading(false);
           successUpload(data.message);
-          fetch('http://127.0.0.1:8000/api/sales/',{
+          fetch('http://127.0.0.1:8000/api/product_flow/',{
             headers: {
               'Authorization': 'Bearer '+ String(access_token)
             }
@@ -143,7 +113,7 @@ const [bonus, setBonus] = useState(null);
           .then((response) => response.json())
           .then((data) =>{
              setDataTable(data)
-             console.log(data.message)});
+             });
           clearTimeout(timeoutId); // Clear any existing timeout
           setTimeoutId(setTimeout(() => setShowUploadDiv(false), 500));
         });
@@ -265,7 +235,7 @@ const [bonus, setBonus] = useState(null);
       if (deleteConfirm) {
        
         const access_token =  await localforage.getItem('access_token');
-        fetch(`http://127.0.0.1:8000/api/delete_sales/`, {
+        fetch(`http://127.0.0.1:8000/api/delete_product_flow/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -287,158 +257,66 @@ const [bonus, setBonus] = useState(null);
       setEditData(row);
       setOldData(row);
 
-      setNo(row.no);
-      setBillNumber(row.bill_number);
+      setId(row.id);
       setDate(row.date);
-      setPsr(row.psr);
-      setCustomerCode(row.customer_code);
-      setName(row.name);
-      setCity(row.city)
-      setArea(row.area);
-      setColorMake(row.color_making_saler)
-      setGroup(row.group);
       setProductCode(row.product_code);
-      setProductName(row.product_name);
+      setProviderCompany(row.provider_company);
+      setRecieverCompany(row.reciever_company);
+      setInflowOutflow(row.inflow_outflow);
+      setStatus(row.status);
+      setPlaceOfUse(row.place_of_use);
+      setGroup(row.group);
+      setSubgroup(row.subgroup);
+      setBrand(row.brand);
+      setSerialNumber(row.serial_number);
+      setModel(row.model);
+      setDescription(row.description);
       setUnit(row.unit);
-      setUnit2(row.unit2);
-      setKg(row.kg)
-      setOriginalValue(row.original_value);
-      setOriginalOutputValue(row.original_output_value);
-      setSecondaryOutputValue(row.secondary_output_value);
-      setPrice(row.price);
-      setOriginalPrice(row.original_price);
-      setDiscountPercentage(row.discount_percentage);
-      setAmountSale(row.amount_sale);
-      setDiscount(row.discount);
-      setAdditionalSales(row.additional_sales);
-      setNetSales(row.net_sales);
-      setDiscountPercentage2(row.discount_percentage_2);
-      setRealDiscountPercentage(row.real_discount_percentage);
-      setPaymentCash(row.payment_cash);
-      setPaymentCheck(row.payment_check);
-      setBalance(row.balance);
-      setSaler(row.saler);
-      setCurrSepidar(row.currency_sepidar);
-      setDollarSepidar(row.dollar_sepidar);
-      setCurrency(row.currency);
-      setDollar(row.dollar);
-      setManagerRating(row.manager_rating);
-      setSeniorSaler(row.senior_saler);
-      setTotMonthlySales(row.tot_monthly_sales);
-      setReceipment(row.receipment);
-      setCt(row.ct);
-      setPaymentType(row.payment_type);
-      setCostumerSize(row.costumer_size);
-      setSalerFactor(row.saler_factor);
-      setPrimPercentage(row.prim_percentage);
-      setBonusFactor(row.bonus_factor);
-      setBonus(row.bonus);
+      setAmount(row.amount);
       setShowPopup(!showPopup);
-      setIsUpdated(true)
-      console.log(row)
+      setIsUpdated(true);
+
     };
 
     const handleSubmit = async (e) => {
-      console.log("e")
-      console.log(oldData)
       const access_token =  await localforage.getItem('access_token');
       const updatedData = {
-        new_no: no,
-        new_bill_number: billNumber,
+        new_id: id,
         new_date: date,
-        new_psr: psr,
-        new_customer_code: customerCode,
-        new_name: name,
-        new_city: city,
-        new_area: area,
-        new_color_making_saler: colorMake,
-        new_group: group,
         new_product_code: productCode,
-        new_product_name: productName,
+        new_provider_company: providerCompany,
+        new_reciever_company: recieverCompany,
+        new_inflow_outflow: inflowOutflow,
+        new_status: status,
+        new_place_of_use: placeOfUse,
+        new_group: group,
+        new_subgroup: subgroup,
+        new_brand: brand,
+        new_serial_number: serialNumber,
+        new_model: model,
+        new_description: description,
         new_unit: unit,
-        new_unit2: unit2,
-        new_kg: kg,
-        new_original_value: originalValue,
-        new_original_output_value: originalOutputValue,
-        new_secondary_output_value: secondaryOutputValue,
-        new_price: price,
-        new_original_price: originalPrice,
-        new_discount_percentage: discountPercentage,
-        new_amount_sale: amountSale,
-        new_discount: discount,
-        new_additional_sales: additionalSales,
-        new_net_sales: netSales,
-        new_discount_percentage_2: discountPercentage2,
-        new_real_discount_percentage: realDiscountPercentage,
-        new_payment_cash: paymentCash,
-        new_payment_check: paymentCheck,
-        new_balance: balance,
-        new_saler: saler,
-        new_currency_sepidar:currSepidar,
-        new_dollar_sepidar: dollarSepidar,
-        new_currency: currency,
-        new_dollar: dollar,
-        new_manager_rating: managerRating,
-        new_senior_saler: seniorSaler,
-        new_tot_monthly_sales: totMonthlySales,
-        new_receipment: receipment,
-        new_ct: ct,
-        new_payment_type: paymentType,
-        new_costumer_size: costumerSize,
-        new_saler_factor: salerFactor,
-        new_prim_percentage: primPercentage,
-        new_bonus_factor: bonusFactor,
-        new_bonus: bonus,
+        new_amount: amount,
 
-        old_no: oldData[0],
-        old_bill_number: oldData[1],
-        old_date: oldData[2],
-        old_psr: oldData[3],
-        old_customer_code: oldData[4],
-        old_name: oldData[5],
-        old_city: oldData[6],
-        old_area: oldData[7],
-        old_color_making_saler: oldData[8],
-        old_group: oldData[9],
-        old_product_code: oldData[10],
-        old_product_name: oldData[11],
-        old_unit: oldData[12],
-        old_unit2: oldData[13],
-        old_kg: oldData[14],
-        old_original_value: oldData[15],
-        old_original_output_value: oldData[16],
-        old_secondary_output_value: oldData[17],
-        old_price: oldData[18],
-        old_original_price: oldData[19],
-        old_discount_percentage: oldData[20],
-        old_amount_sale: oldData[21],
-        old_discount: oldData[22],
-        old_additional_sales: oldData[23],
-        old_net_sales: oldData[24],
-        old_discount_percentage_2: oldData[25],
-        old_real_discount_percentage: oldData[26],
-        old_payment_cash: oldData[27],
-        old_payment_check: oldData[28],
-        old_balance: oldData[29],
-        old_saler: oldData[30],
-        old_currency_sepidar: oldData[31],
-        old_dollar_sepidar: oldData[32],
-        old_currency: oldData[33],
-        old_dollar: oldData[34],
-        old_manager_rating: oldData[35],
-        old_senior_saler: oldData[36],
-        old_tot_monthly_sales: oldData[37],
-        old_receipment: oldData[38],
-        old_ct: oldData[39],
-        old_payment_type: oldData[40],
-        old_costumer_size: oldData[41],
-        old_saler_factor: oldData[42],
-        old_prim_percentage: oldData[43],
-        old_bonus_factor: oldData[44],
-        old_bonus: oldData[45],
+        old_id: oldData[0],
+        old_date: oldData[1],
+        old_product_code: oldData[2],
+        old_provider_company: oldData[3],
+        old_reciever_company: oldData[4],
+        old_inflow_outflow: oldData[5],
+        old_status: oldData[6],
+        old_place_of_use: oldData[7],
+        old_group: oldData[8],
+        old_subgroup: oldData[9],
+        old_brand: oldData[10],
+        old_serial_number: oldData[11],
+        old_model: oldData[12],
+        old_description: oldData[13],
+        old_unit: oldData[14],
+        old_amount: oldData[15],
       };
       
-      fetch('http://127.0.0.1:8000/api/edit_sales/', {
+      fetch('http://127.0.0.1:8000/api/edit_product_flow/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -450,14 +328,14 @@ const [bonus, setBonus] = useState(null);
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-          console.log("sdadas")
+
           setIsLoading(false);
           errorUpload(data.error);
         });
       }
       else{
         return response.json().then(data => {
-          console.log("asdaasdas")
+
          setEditData(updatedData);
           successEdit()
         });
@@ -475,54 +353,23 @@ const [bonus, setBonus] = useState(null);
     useEffect(() => {
       
       if(editData){
-        
-        setNo(editData[0]);
-        setBillNumber(editData[1]);
-        setDate(editData[2]);
-        setPsr(editData[3]);
-        setCustomerCode(editData[4]);
-        setName(editData[5]);
-        setCity(editData[6])
-        setArea(editData[7]);
-        setColorMake(editData[8])
-        setGroup(editData[9]);
-        setProductCode(editData[10]);
-        setProductName(editData[11]);
-        setUnit(editData[12]);
-        setUnit2(editData[13]);
-        setKg(editData[14])
-        setOriginalValue(editData[15]);
-        setOriginalOutputValue(editData[16]);
-        setSecondaryOutputValue(editData[17]);
-        setPrice(editData[18]);
-        setOriginalPrice(editData[19]);
-        setDiscountPercentage(editData[20]);
-        setAmountSale(editData[21]);
-        setDiscount(editData[22]);
-        setAdditionalSales(editData[23]);
-        setNetSales(editData[24]);
-        setDiscountPercentage2(editData[25]);
-        setRealDiscountPercentage(editData[26]);
-        setPaymentCash(editData[27]);
-        setPaymentCheck(editData[28]);
-        setBalance(editData[29]);
-        setSaler(editData[30]);
-        setCurrSepidar(editData[31])
-        setDollarSepidar(editData[32])
-        setCurrency(editData[33]);
-        setDollar(editData[34]);
-        setManagerRating(editData[35]);
-        setSeniorSaler(editData[36]);
-        setTotMonthlySales(editData[37]);
-        setReceipment(editData[38]);
-        setCt(editData[39]);
-        setPaymentType(editData[40]);
-        setCostumerSize(editData[41]);
-        setSalerFactor(editData[42]);
-        setPrimPercentage(editData[43]);
-        setBonusFactor(editData[44]);
-        setBonus(editData[45]);
-          setIsUpdated(true)
+        setId(editData[0]);
+        setDate(editData[1]);
+        setProductCode(editData[2]);
+        setProviderCompany(editData[3]);
+        setRecieverCompany(editData[4]);
+        setInflowOutflow(editData[5]);
+        setStatus(editData[6]);
+        setPlaceOfUse(editData[7]);
+        setGroup(editData[8]);
+        setSubgroup(editData[9]);
+        setBrand(editData[10]);
+        setSerialNumber(editData[11]);
+        setModel(editData[12]);
+        setDescription(editData[13]);
+        setUnit(editData[14]);
+        setAmount(editData[15]);
+        setIsUpdated(true)
       }
     }, [editData])
     
@@ -601,425 +448,152 @@ const [bonus, setBonus] = useState(null);
               <div>
         <div className="form-group-col-sales">
 
-          <label>No</label>
-          <FormGroup>
-            <Input
-              name="no"
-              type="text"
-              defaultValue={no}
-              onChange={(e) => setNo(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Bill Number</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={billNumber}
-              onChange={(e) => setBillNumber(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Date</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>PSR</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={psr}
-              onChange={(e) => setPsr(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Customer Code</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={customerCode}
-              onChange={(e) => setCustomerCode(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Name</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </FormGroup>
+        <label>No</label>
+        <FormGroup>
+          <Input
+            name="id"
+            type="number"
+            defaultValue={id}
+            onChange={(e) => setId(e.target.value)}
+          />
+        </FormGroup>
         
-          <label>City</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={city}
-              onChange={(e) => setCity(e.target.value)}
-            />
-          </FormGroup>
-          </div>
-        
-          <div className="form-group-col-sales">
-          <label>Area</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={area}
-              onChange={(e) => setArea(e.target.value)}
-            />
-          </FormGroup>
-          <label>Color Making Saler</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={colorMake}
-              onChange={(e) => setColorMake(e.target.value)}
-            />
-          </FormGroup>
-          
-          
-          <label>Group</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={group}
-              onChange={(e) => setGroup(e.target.value)}
-            />
-          </FormGroup>
+        <label>Tarih</label>
+        <FormGroup>
+          <Input
+            name="date"
+            type="text"
+            defaultValue={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Product Code</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={productCode}
-              onChange={(e) => setProductCode(e.target.value)}
-            />
-          </FormGroup>
+        <label>Malzeme Kodu</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={productCode}
+            onChange={(e) => setProductCode(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Prodcut Name</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={productName}
-              onChange={(e) => setProductName(e.target.value)}
-            />
-          </FormGroup>
+        <label>Alınan Firma</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={providerCompany}
+            onChange={(e) => setProviderCompany(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Unit</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={unit}
-              onChange={(e) => setUnit(e.target.value)}
-            />
-          </FormGroup>
-          
-          <label>Unit2</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={unit2}
-              onChange={(e) => setUnit2(e.target.value)}
-            />
-          </FormGroup>
-          </div>
+        <label>Alan Firma</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={recieverCompany}
+            onChange={(e) => setRecieverCompany(e.target.value)}
+          />
+        </FormGroup>
 
-          <div className="form-group-col-sales">
+        <label>Giriş/Çıkış</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={inflowOutflow}
+            onChange={(e) => setInflowOutflow(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>KG</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={kg}
-              onChange={(e) => setKg(e.target.value)}
-            />
-          </FormGroup>
-          
-          <label>Orig. Output Val.</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={originalOutputValue}
-              onChange={(e) => setOriginalOutputValue(e.target.value)}
-            />
-          </FormGroup>
+        <label>Durum</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={status}
+            onChange={(e) => setStatus(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Second. Output Val.</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={secondaryOutputValue}
-              onChange={(e) => setSecondaryOutputValue(e.target.value)}
-            />
-          </FormGroup>
+        <label>Kullanım Yeri</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={placeOfUse}
+            onChange={(e) => setPlaceOfUse(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Price</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-          </FormGroup>
+        <label>Grup</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={group}
+            onChange={(e) => setGroup(e.target.value)}
+          />
+        </FormGroup>
 
+        <label>Alt Grup</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={subgroup}
+            onChange={(e) => setSubgroup(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Original Price</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={originalPrice}
-              onChange={(e) => setOriginalPrice(e.target.value)}
-            />
-          </FormGroup>
-         
+        <label>Marka</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={brand}
+            onChange={(e) => setBrand(e.target.value)}
+          />
+        </FormGroup>
 
-          
-          <label>Amount Sale</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={amountSale}
-              onChange={(e) => setAmountSale(e.target.value)}
-            />
-          </FormGroup>
+        <label>Seri Numarası</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={serialNumber}
+            onChange={(e) => setSerialNumber(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Discount</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={discount}
-              onChange={(e) =>  setDiscount(e.target.value)}
-            />
-          </FormGroup>
-          </div>
+        <label>Model</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={model}
+            onChange={(e) => setModel(e.target.value)}
+          />
+        </FormGroup>
 
+        <label>Açıklama</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </FormGroup>
 
-          <div className="form-group-col-sales">
-          <label>Additional Sales</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={additionalSales}
-              onChange={(e) =>  setAdditionalSales(e.target.value)}
-            />
-          </FormGroup>
+        <label>Birim</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={unit}
+            onChange={(e) => setUnit(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Net Sales</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={netSales}
-              onChange={(e) =>   setNetSales(e.target.value)}
-            />
-          </FormGroup>
+        <label>Miktar</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Discount Perc.(2)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={discountPercentage2}
-              onChange={(e) => setDiscountPercentage2(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Real Discount Perc.</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={realDiscountPercentage}
-              onChange={(e) =>  setRealDiscountPercentage(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Payment Cash</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={paymentCash}
-              onChange={(e) =>  setPaymentCash(e.target.value)}
-            />
-          </FormGroup>
-          
-          <label>Payment Check</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={paymentCheck}
-              onChange={(e) =>   setPaymentCheck(e.target.value)}
-            />
-          </FormGroup>
-         
-
-          
-          <label>Balance</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={balance}
-              onChange={(e) =>   setBalance(e.target.value)}
-            />
-          </FormGroup>
-          </div>
-
-          <div className="form-group-col-sales">
-          <label>Saler</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={saler}
-              onChange={(e) =>   setSaler(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Curreny-Sepidar</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={currSepidar}
-              onChange={(e) => setCurrSepidar(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Dollar-Sepidar</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={dollarSepidar}
-              onChange={(e) => setDollarSepidar(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Currency</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={currency}
-              onChange={(e) =>   setCurrency(e.target.value)}
-            />
-          </FormGroup>,
-
-          <label>Dollar</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={dollar}
-              onChange={(e) =>   setDollar(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Manager Rating</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={managerRating}
-              onChange={(e) =>   setManagerRating(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Senior Saler</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={seniorSaler}
-              onChange={(e) =>   setSeniorSaler(e.target.value)}
-            />
-          </FormGroup>
-
-          </div>
-
-          <div className="form-group-col-sales">
-          
-          <label>Total Monthly Sales</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={totMonthlySales}
-              onChange={(e) =>   setTotMonthlySales(e.target.value)}
-            />
-          </FormGroup>
-          
-
-          
-          <label>Receipment</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={receipment}
-              onChange={(e) =>   setReceipment(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>CT</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={ct}
-              onChange={(e) =>   setCt(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Payment Type</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={paymentType}
-              onChange={(e) =>   setPaymentType(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Customer Size</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={costumerSize}
-              onChange={(e) => setCostumerSize(e.target.value)}
-            />
-          </FormGroup>
-          
-          <label>Saler Factor</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={salerFactor}
-              onChange={(e) =>setSalerFactor(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Prim Percentage</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={primPercentage}
-              onChange={(e) =>setPrimPercentage(e.target.value)}
-            />
-          </FormGroup>
-          
-
-          
-          <label>Bonus Factor</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={bonusFactor}
-              onChange={(e) =>setBonusFactor(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Bonus</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={bonus}
-              onChange={(e) =>setBonus(e.target.value)}
-            />
-          </FormGroup>
           </div>
         </div>
         
@@ -1027,10 +601,10 @@ const [bonus, setBonus] = useState(null);
             </CardBody>
               <CardFooter>
                 <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
-                  Submit
+                  Onayla
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
-                  Cancel
+                  İptal Et
                 </Button>
               </CardFooter>
             </Card>
@@ -1046,11 +620,11 @@ const [bonus, setBonus] = useState(null);
         <div className="d-flex justify-content-between align-items-center">
           <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
             <i className="fa fa-plus-circle mr-1"></i>
-            Add File
+            Dosya Ekle
           </Button>
           <Button className="my-button-class" color="primary" onClick={handleExportClick}>
             <i className="fa fa-download mr-1"></i>
-            Export
+            Dışa Aktar
           </Button>
         </div>
       )}
@@ -1059,17 +633,17 @@ const [bonus, setBonus] = useState(null);
           <div className="d-flex justify-content-between align-items-center">
             <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
               <i className="fa fa-plus-circle mr-1"></i>
-              Add File
+              Dosya Ekle
             </Button>
             <Button className="my-button-class" color="primary" onClick={handleExportClick}>
               <i className="fa fa-download mr-1"></i>
-              Export
+              Dışa Aktar
             </Button>
           </div>
           <div className="mt-3">
             <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
             <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Upload
+              Yükle
             </Button>
             <div className="spinner-container">
               {isLoading && <div className="loading-spinner"></div>}
@@ -1086,53 +660,22 @@ const [bonus, setBonus] = useState(null);
 
                 <ReactTable
                   data={dataTable.map((row,index) => ({
-                    id: row.id,
-                    no: row[0],
-                    bill_number: row[1],
-                    date: row[2],
-                    psr: row[3],
-                    customer_code: row[4],
-                    name: row[5],
-                    city: row[6],
-                    area: row[7],
-                    color_making_saler: row[8],
-                    group: row[9],
-                    product_code: row[10],
-                    product_name: row[11],
-                    unit: row[12],
-                    unit2: row[13],
-                    kg: row[14],
-                    original_value: row[15],
-                    original_output_value: row[16],
-                    secondary_output_value: row[17],
-                    price: row[18],
-                    original_price: row[19],
-                    discount_percentage: row[20],
-                    amount_sale: row[21],
-                    discount: row[22],
-                    additional_sales: row[23],
-                    net_sales: row[24],
-                    discount_percentage_2: row[25],
-                    real_discount_percentage: row[26],
-                    payment_cash: row[27],
-                    payment_check: row[28],
-                    balance: row[29],
-                    saler: row[30],
-                    currency_sepidar: row[31],
-                    dollar_sepidar: row[32],
-                    currency: row[33],
-                    dollar: row[34],
-                    manager_rating: row[35],
-                    senior_saler: row[36],
-                    tot_monthly_sales: row[37],
-                    receipment: row[38],
-                    ct: row[39],
-                    payment_type: row[40],
-                    costumer_size: row[41],
-                    saler_factor: row[42],
-                    prim_percentage: row[43],
-                    bonus_factor: row[44],
-                    bonus: row[45],
+                    id: row[0],
+                    date: row[1],
+                    product_code : row[2],
+                    provider_company : row[3],
+                    reciever_company : row[4],
+                    inflow_outflow : row[5],
+                    status : row[6],
+                    place_of_use : row[7],
+                    group : row[8],
+                    subgroup : row[9],
+                    brand : row[10],
+                    serial_number : row[11],
+                    model : row[12],
+                    description : row[13],
+                    unit : row[14],
+                    amount : row[15],
 
                     actions: (
                       <div className='actions-left'>
@@ -1164,9 +707,9 @@ const [bonus, setBonus] = useState(null);
                                warningWithConfirmAndCancelMessage() 
                                const rowToDelete = {...row};
                                const data = {
-                                no: rowToDelete [0],
-                                product_code: rowToDelete [10],
-                                original_output_value: rowToDelete [16]
+                                id: rowToDelete [0],
+                                product_code: rowToDelete [2],
+                                amount: rowToDelete [15]
                               };
                               
                               setDeleteData(data);
@@ -1217,193 +760,70 @@ const [bonus, setBonus] = useState(null);
                   columns={[
                     {
                       Header: 'No',
-                      accessor: 'no',
-
-
-                    },
+                      accessor: 'id'
+                  },
                     {
-                      Header: 'Bill Number',
-                      accessor: 'bill_number'
-                    },
-                    {
-                      Header: 'Date',
+                      Header: 'Tarih',
                       accessor: 'date'
-                    },
-                  
-                    {
-                      Header: 'PSR',
-                      accessor: 'psr'
-                    },
-                    {
-                      Header: 'Customer Code',
-                      accessor: 'customer_code'
-                    },
-                    {
-                      Header: 'Name',
-                      accessor: 'name'
-                    },
-                    {
-                      Header: 'City',
-                      accessor: 'city'
-                    },
-                    {
-                      Header: 'Area',
-                      accessor: 'area'
-                    },
-                    {
-                      Header: 'Color Making Saler',
-                      accessor: 'color_making_saler'
-                    },
-                    {
-                      Header: 'Group',
-                      accessor: 'group'
-                    },
-                    {
-                      Header: 'Product Code',
+                  },
+                  {
+                      Header: 'Malzeme Kodu',
                       accessor: 'product_code'
-                    },
-                    {
-                      Header: 'Product Name',
-                      accessor: 'product_name'
-                    },
-                    {
-                      Header: 'Unit',
+                  },
+                  {
+                      Header: 'Alınan Firma',
+                      accessor: 'provider_company'
+                  },
+                  {
+                      Header: 'Alan Firma',
+                      accessor: 'reciever_company'
+                  },
+                  {
+                      Header: 'Giriş/Çıkış',
+                      accessor: 'inflow_outflow'
+                  },
+                  {
+                      Header: 'Durum',
+                      accessor: 'status'
+                  },
+                  {
+                      Header: 'Kullanım Yeri',
+                      accessor: 'place_of_use'
+                  },
+                  {
+                      Header: 'Grup',
+                      accessor: 'group'
+                  },
+                  {
+                      Header: 'Alt Grup',
+                      accessor: 'subgroup'
+                  },
+                  {
+                      Header: 'Marka',
+                      accessor: 'brand'
+                  },
+                  {
+                      Header: 'Seri Numarası',
+                      accessor: 'serial_number'
+                  },
+                  {
+                      Header: 'Model',
+                      accessor: 'model'
+                  },
+                  {
+                      Header: 'Açıklama',
+                      accessor: 'description'
+                  },
+                  {
+                      Header: 'Birim',
                       accessor: 'unit'
-                    },
+                  },
+                  {
+                      Header: 'Miktar',
+                      accessor: 'amount'
+                  },
                     {
-                      Header: 'Unit2',
-                      accessor: 'unit2'
-                    },
-                    {
-                      Header: 'KG',
-                      accessor: 'kg'
-                    },
-                    {
-                      Header: 'Original Value',
-                      accessor: 'original_value'
-                    },
-                    {
-                      Header: 'Original Output Value',
-                      accessor: 'original_output_value'
-                    },
-                    {
-                      Header: 'Secondary Output Value',
-                      accessor: 'secondary_output_value'
-                    },
-                    {
-                      Header: 'Price',
-                      accessor: 'price'
-                    },
-                    {
-                      Header: 'Original Price',
-                      accessor: 'original_price'
-                    },
-                    {
-                      Header: 'Discount Percentage',
-                      accessor: 'discount_percentage'
-                    },
-                    {
-                      Header: 'Amount Sale',
-                      accessor: 'amount_sale'
-                    },
-                    {
-                      Header: 'Discount',
-                      accessor: 'discount'
-                    },
-                    {
-                      Header: 'Additional Sales',
-                      accessor: 'additional_sales'
-                    },
-                    {
-                      Header: 'Net Sales',
-                      accessor: 'net_sales'
-                    },
-                    {
-                      Header: 'Discount Percentage (2)',
-                      accessor: 'discount_percentage_2'
-                    },
-                    {
-                      Header: 'Real Discount Percentage',
-                      accessor: 'real_discount_percentage'
-                    },
-                    {
-                      Header: 'Payment Cash',
-                      accessor: 'payment_cash'
-                    },
-                    {
-                      Header: 'Payment Check',
-                      accessor: 'payment_check'
-                    },
-                    {
-                      Header: 'Balance',
-                      accessor: 'balance'
-                    },
-                    {
-                      Header: 'Saler',
-                      accessor: 'saler'
-                    },
-                    {
-                      Header: 'Currency-Sepidar',
-                      accessor: 'currency_sepidar'
-                    },
-                    {
-                      Header: 'Dollar-Sepidar',
-                      accessor: 'dollar_sepidar'
-                    },
-                    {
-                      Header: 'Currency',
-                      accessor: 'currency'
-                    },
-                    {
-                      Header: 'Dollar',
-                      accessor: 'dollar'
-                    },
-                    {
-                      Header: 'Manager Rating',
-                      accessor: 'manager_rating'
-                    },
-                    {
-                      Header: 'Senior Saler',
-                      accessor: 'senior_saler'
-                    },
-                    {
-                      Header: 'Tot Monthly Sales',
-                      accessor: 'tot_monthly_sales'
-                    },
-                    {
-                      Header: 'Receipment',
-                      accessor: 'receipment'
-                    },
-                    {
-                      Header: 'CT',
-                      accessor: 'ct'
-                    },
-                    {
-                      Header: 'Payment Type',
-                      accessor: 'payment_type'
-                    },
-                    {
-                      Header: 'Costumer Size',
-                      accessor: 'costumer_size'
-                    },
-                    {
-                      Header: 'Saler Factor',
-                      accessor: 'saler_factor'
-                    },
-                    {
-                      Header: 'Prim Percentage',
-                      accessor: 'prim_percentage'
-                    },
-                    {
-                      Header: 'Bonus Factor',
-                      accessor: 'bonus_factor'
-                    },
-                    {
-                      Header: 'Bonus',
-                      accessor: 'bonus'
-                    },
-                    {
-                      Header: 'Actions',
+                      Header: 'İşlem',
                       accessor: 'actions',
                       sortable: false,
                       filterable: false,

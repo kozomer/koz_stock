@@ -15,7 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProductsView, AddProductsView, DeleteProductsView)
+from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProductsView, AddProductsView, DeleteProductsView, AddProductFlowView, ProductFlowView, EditProductFlowView, DeleteProductFlowView)
 # from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
 #                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
 #                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
@@ -48,6 +48,11 @@ urlpatterns = [
     path('api/edit_products/', EditProductsView.as_view(), name='edit_product'),
     path('api/add_products/',AddProductsView.as_view(), name='add_pricelists'),
     path('api/delete_products/', DeleteProductsView.as_view(), name='delete_goods'),
+
+    path('api/product_flow/', ProductFlowView.as_view(), name='product_flow'),
+    path('api/edit_product_flow/', EditProductFlowView.as_view(), name='edit_product_flow'),
+    path('api/add_product_flow/',AddProductFlowView.as_view(), name='add_product_flow'),
+    path('api/delete_product_flow/', DeleteProductFlowView.as_view(), name='delete_product_flow'),
 
     # path('api/add_customers/', AddCustomersView.as_view(), name='add_customers'),
     # path('api/add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),

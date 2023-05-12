@@ -22,7 +22,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 def wrap_text(text, style):
     return Paragraph(text, style)
 
-def create_receipt_pdf(filename, title, items, logo_path):
+def create_receipt_pdf(filename, title, items, logo_path, product_code):
     pdf = canvas.Canvas(filename, pagesize=landscape(A5))
 
     pdf.drawImage(logo_path, 10 * mm, 125 * mm, preserveAspectRatio=True, width=40 * mm, height=20 * mm)
@@ -32,43 +32,53 @@ def create_receipt_pdf(filename, title, items, logo_path):
     date_str = datetime.datetime.now().strftime("%d-%m-%Y")
     pdf.setFont("Helvetica", 12)
     pdf.drawRightString(200 * mm, 135 * mm, f"Tarih: {date_str}")
+    
+    product_code_str = product_code.replace(".", "")
+    date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
+
+    # Generate serial number
+    sequence_number = 12345#! databsede ardışık sayı tutması gerek.
+    serial_number = f"{product_code_str}-{date_str_serial}-{sequence_number:04}"
+    pdf.setFont("Helvetica-Bold", 12)
+    pdf.drawRightString(200 * mm, 125 * mm, f"SERI NO: {serial_number}")
 
     data = [["Malzeme Kodu", "Malzeme Adi", "Adet", "Birim"]]
     data.extend(items)
 
     style = getSampleStyleSheet()["BodyText"]
-
     wrapped_data = [[wrap_text(str(cell), style) for cell in row] for row in data]
 
     table = Table(wrapped_data, colWidths=[50 * mm, 80 * mm, 20 * mm, 30 * mm])
-
+    # Rest of the code...
+    
     table.setStyle(TableStyle([
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
-        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 12),
-        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-        ('GRID', (0, 0), (-1, -1), 1, colors.black)
-    ]))
+       ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+       ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+       ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+       ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+       ('FONTSIZE', (0, 0), (-1, 0), 12),
+       ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+       ('GRID', (0, 0), (-1, -1), 1, colors.black)
+   ]))
 
     table.wrapOn(pdf, 0, 0)
     table.drawOn(pdf, 15 * mm, 50 * mm)
 
-    # Add signatures
+   # Add signatures
     pdf.setFont("Helvetica", 10)
     signature_positions = [
-        (15 * mm, 40 * mm, "Malzemeyi Talep Eden"),
-        (60 * mm, 40 * mm, "Malzemeyi Teslim Alan"),
-        (105 * mm, 40 * mm, "Malzemeyi Teslim Eden"),
-        (150 * mm, 40 * mm, "Ambar Sorumlusu"),
-    ]
-    
+       (15 * mm, 40 * mm, "Malzemeyi Talep Eden"),
+       (60 * mm, 40 * mm, "Malzemeyi Teslim Alan"),
+       (105 * mm, 40 * mm, "Malzemeyi Teslim Eden"),
+       (150 * mm, 40 * mm, "Ambar Sorumlusu"),
+   ]
+   
     for x, y, text in signature_positions:
         pdf.drawString(x, y, text)
         pdf.line(x, y - 2 * mm, x + 40 * mm, y - 2 * mm)
 
     pdf.save()
+
 
 
 

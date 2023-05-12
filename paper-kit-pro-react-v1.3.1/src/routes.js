@@ -66,7 +66,7 @@ const routes = [
 
   {
     path: "/products-tables",
-    name: "Products",
+    name: "Malzemeler",
     icon:"nc-icon nc-tag-content",
     component: Products,
     layout: "/admin"
@@ -104,7 +104,7 @@ const routes = [
   },
   {
     path: "/sales-tables",
-    name: "Sales",
+    name: "Ambar Giriş/Çıkış",
     icon:"nc-icon nc-cart-simple",
     component: Sales,
     layout: "/admin"
