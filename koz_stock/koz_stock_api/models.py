@@ -4,8 +4,9 @@ from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
     is_superstaff = models.BooleanField(default=False)
-
-class Products(models.Model):
+    is_stockstaff = models.BooleanField(default=False)
+    is_accountingstaff = models.BooleanField(default=False)
+class Products(models.Model, DirtyFieldsMixin):
     product_code = models.IntegerField(unique= True)
     barcode= models.CharField(max_length=255)
     group = models.CharField(max_length=255)
@@ -18,9 +19,10 @@ class Products(models.Model):
     supplier = models.CharField(max_length=255)
     supplier_contact = models.CharField(max_length=255)
 
-class ProductFlow(models.Model):
+class ProductFlow(models.Model, DirtyFieldsMixin):
     date = models.DateField()
     product_code = models.IntegerField()
+    barcode= models.CharField(max_length=255)
     provider_company = models.CharField(max_length=255)
     reciever_company = models.CharField(max_length=255)
     inflow_outflow = models.CharField(max_length=255)
@@ -45,11 +47,58 @@ class Stock(models.Model):
     model = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     unit = models.CharField(max_length=255)
-    warehouse = models.CharField(max_length=255)
+    warehouse = models.CharField(max_length=255, null= True)
     inflow = models.FloatField(null= True)
     outflow = models.FloatField(null= True)
     stock = models.FloatField(null= True)
 
+class Accounting(models.Model, DirtyFieldsMixin):
+    date = models.DateField()
+    product_code = models.IntegerField()
+    barcode= models.CharField(max_length=255)
+    provider_company = models.CharField(max_length=255)
+    reciever_company = models.CharField(max_length=255)
+    status = models.CharField(max_length=255)
+    place_of_use = models.CharField(max_length=255)
+    group = models.CharField(max_length=255)
+    subgroup = models.CharField(max_length=255)
+    brand = models.CharField(max_length=255)
+    serial_number = models.CharField(max_length=255)
+    model = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
+    unit = models.CharField(max_length=255)
+    amount = models.FloatField(null= True)
+    unit_price = models.FloatField(null= True)
+    discount_rate = models.FloatField(null= True)
+    discount_amount = models.FloatField(null= True)
+    tax_rate = models.FloatField(null= True)
+    tevkifat_rate = models.FloatField(null= True)
+    price_without_tax = models.FloatField(null= True)
+    price_with_tevkifat = models.FloatField(null= True)
+    price_total = models.FloatField(null= True)
+    
+    def save(self, *args, **kwargs):
+        self.unit_price = float(self.unit_price)
+        self.discount_rate = float(self.discount_rate)
+        self.discount_amount = float(self.discount_amount)
+        self.tax_rate = float(self.tax_rate)
+        self.tevkifat_rate = float(self.tevkifat_rate)
+        self.price_without_tax = float(self.price_without_tax)
+        self.price_with_tevkifat = float(self.price_with_tevkifat)
+        self.price_total = float(self.price_total)
+        if self.discount_rate and float(self.discount_rate) != 0:
+            discount = self.discount_rate * self.unit_price * self.amount
+        else:
+            discount = 0
+        if self.discount_amount and self.discount_amount != 0:
+            discount = self.discount_amount
+        tax = (self.tax_rate/100) * (self.unit_price * self.amount - discount)
+        tax_tevkifat = ((self.tax_rate)-((self.tevkifat_rate/100)*self.tax_rate))/100 * (self.unit_price * self.amount - discount)
+        
+        self.price_without_tax = (self.unit_price * self.amount) - discount
+        self.price_with_tevkifat = (self.unit_price * self.amount) - discount + tax_tevkifat
+        self.price_total = (self.unit_price * self.amount) - discount + tax
+        super().save(*args, **kwargs)
 
 
 
