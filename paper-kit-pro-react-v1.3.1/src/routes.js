@@ -81,7 +81,7 @@ const routes = [
   },
   {
     path: "/warehouse-tables",
-    name: "Warehouse",
+    name: "Ambar",
     icon:"nc-icon nc-box",
     component: Warehouse,
     layout: "/admin"

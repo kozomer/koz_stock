@@ -15,7 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProductsView, AddProductsView, DeleteProductsView, AddProductFlowView, ProductFlowView, EditProductFlowView, DeleteProductFlowView)
+from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProductsView, AddProductsView,
+                                  DeleteProductsView, AddProductFlowView, ProductFlowView, EditProductFlowView, DeleteProductFlowView,
+                                    StockView, EditStockView, DeleteStockView,
+                                    AccountingView, EditAccountingView, DeleteAccountingView)
 # from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
 #                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
 #                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
@@ -53,6 +56,14 @@ urlpatterns = [
     path('api/edit_product_flow/', EditProductFlowView.as_view(), name='edit_product_flow'),
     path('api/add_product_flow/',AddProductFlowView.as_view(), name='add_product_flow'),
     path('api/delete_product_flow/', DeleteProductFlowView.as_view(), name='delete_product_flow'),
+
+    path('api/warehouse/', StockView.as_view(), name='view_warehouse'),
+    path('api/edit_warehouse/', EditStockView.as_view(), name='edit_warehouse'),
+    path('api/delete_warehouse/', DeleteStockView.as_view(), name='delete_warehouse'),
+
+    path('api/accounting/', AccountingView.as_view(), name='accounting'),
+    path('api/edit_accounting/', EditAccountingView.as_view(), name='edit_accounting'),
+    path('api/delete_accounting/', DeleteAccountingView.as_view(), name='delete_accounting'),
 
     # path('api/add_customers/', AddCustomersView.as_view(), name='add_customers'),
     # path('api/add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),

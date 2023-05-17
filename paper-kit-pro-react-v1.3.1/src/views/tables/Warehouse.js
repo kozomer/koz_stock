@@ -9,9 +9,19 @@ const DataTable = () => {
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [productCode, setProductCode] = useState(null);
-  const [productTitle, setProductTitle] = useState(null);
+  const [barcode, setBarcode] = useState(null);
+  const [group, setGroup] = useState(null);
+  const [subgroup, setSubgroup] = useState(null);
+  const [brand, setBrand] = useState(null);
+  const [serialNumber, setSerialNumber] = useState(null);
+  const [model, setModel] = useState(null);
+  const [description, setDescription] = useState(null);
   const [unit, setUnit] = useState(null);
+  const [warehouse, setWarehouse] = useState(null);
+  const [inflow, setInflow] = useState(null);
+  const [outflow, setOutflow] = useState(null);
   const [stock, setStock] = useState(null);
+  
   const [alert, setAlert] = useState(null);
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -108,9 +118,19 @@ const handleAddFileClick = () => {
     setOldData(row);
 
     setProductCode(row.product_code);
-    setProductTitle(row.title);
+    setBarcode(row.barcode);
+    setGroup(row.group);
+    setSubgroup(row.subgroup);
+    setBrand(row.brand);
+    setSerialNumber(row.serial_number);
+    setModel(row.model);
+    setDescription(row.description);
     setUnit(row.unit);
+    setWarehouse(row.warehouse);
+    setInflow(row.inflow);
+    setOutflow(row.outflow);
     setStock(row.stock);
+
    
     setShowPopup(!showPopup);
     console.log(row)
@@ -119,17 +139,34 @@ const handleAddFileClick = () => {
     const access_token = await localforage.getItem('access_token'); 
     
     const updatedData = {
-      new_product_code:productCode,
-      new_title:productTitle,
-      new_unit:unit,
-      new_stock:stock,
-     
-      
+      new_product_code: productCode,
+      new_barcode: barcode,
+      new_group: group,
+      new_subgroup: subgroup,
+      new_brand: brand,
+      new_serial_number: serialNumber,
+      new_model: model,
+      new_description: description,
+      new_unit: unit,
+      new_warehouse: warehouse,
+      new_inflow: inflow,
+      new_outflow: outflow,
+      new_stock: stock,
 
-      old_product_code:oldData[0],
-      old_title:oldData[1],
-      old_unit:oldData[2],
-      old_stock:oldData[3],
+      old_product_code: oldData[0],
+      old_barcode: oldData[1],
+      old_group: oldData[2],
+      old_subgroup: oldData[3],
+      old_brand: oldData[4],
+      old_serial_number: oldData[5],
+      old_model: oldData[6],
+      old_description: oldData[7],
+      old_unit: oldData[8],
+      old_warehouse: oldData[9],
+      old_inflow: oldData[10],
+      old_outflow: oldData[11],
+      old_stock: oldData[12],
+
       
       
     };
@@ -211,9 +248,19 @@ const handleAddFileClick = () => {
     if(editData){
       
       setProductCode(editData[0]);
-      setProductTitle(editData[1]);
-      setUnit(editData[2]);
-      setStock(editData[3]);
+      setBarcode(editData[1]);
+      setGroup(editData[2]);
+      setSubgroup(editData[3]);
+      setBrand(editData[4]);
+      setSerialNumber(editData[5]);
+      setModel(editData[6]);
+      setDescription(editData[7]);
+      setUnit(editData[8]);
+      setWarehouse(editData[9]);
+      setInflow(editData[10]);
+      setOutflow(editData[11]);
+      setStock(editData[12]);
+
        
         setIsUpdated(true)
     }
@@ -367,49 +414,130 @@ const handleAddFileClick = () => {
        <div className="popup">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Edit Customers</CardTitle>
+              <CardTitle tag="h4">Ambarı Düzenle</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleSubmit}>
               <div>
 
         <div className="form-group-col">
-          <label>Product Code</label>
-          <FormGroup>
-            <Input
-              
-              type="text"
-              defaultValue={productCode}
-              onChange={(e) => setProductCode(e.target.value)}
-            />
-          </FormGroup>
+        <label>Malzem Kodu</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={productCode}
+            onChange={(e) => setProductCode(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Product Title</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={productTitle}
-              onChange={(e) => setProductTitle(e.target.value)}
-            />
-          </FormGroup>
+        <label>Barkod</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Unit</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={unit}
-              onChange={(e) => setUnit(e.target.value)}
-            />
-          </FormGroup>
+        <label>Grup</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={group}
+            onChange={(e) => setGroup(e.target.value)}
+          />
+        </FormGroup>
 
-          <label>Stock</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={stock}
-              onChange={(e) => setStock(e.target.value)}
-            />
-          </FormGroup>
+        <label>Alt Grup</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={subgroup}
+            onChange={(e) => setSubgroup(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Marka</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={brand}
+            onChange={(e) => setBrand(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Seri Numarası</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={serialNumber}
+            onChange={(e) => setSerialNumber(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Model</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={model}
+            onChange={(e) => setModel(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Açıklama</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Birim</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={unit}
+            onChange={(e) => setUnit(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Depo</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={warehouse}
+            onChange={(e) => setWarehouse(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Giriş</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={inflow}
+            onChange={(e) => setInflow(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Çıkış</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={outflow}
+            onChange={(e) => setOutflow(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Stok</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={stock}
+            onChange={(e) => setStock(e.target.value)}
+          />
+        </FormGroup>
+
 
           
           </div>
@@ -422,10 +550,10 @@ const handleAddFileClick = () => {
             </CardBody>
               <CardFooter>
                 <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
-                  Submit
+                  Onayla
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
-                  Cancel
+                  İptal Et
                 </Button>
               </CardFooter>
             </Card>
@@ -434,7 +562,7 @@ const handleAddFileClick = () => {
 
 <Card>
   <CardHeader>
-    <CardTitle tag='h4'>WAREHOUSE</CardTitle>
+    <CardTitle tag='h4'>AMBAR</CardTitle>
   </CardHeader>
   <CardBody>
     <div className="upload-container">
@@ -442,11 +570,11 @@ const handleAddFileClick = () => {
         <div className="d-flex justify-content-between align-items-center">
           <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
             <i className="fa fa-plus-circle mr-1"></i>
-            Add File
+            Dosya Ekle
           </Button>
           <Button className="my-button-class" color="primary" onClick={handleExportClick}>
             <i className="fa fa-download mr-1"></i>
-            Export
+            Dışa Aktar
           </Button>
         </div>
       )}
@@ -455,17 +583,17 @@ const handleAddFileClick = () => {
           <div className="d-flex justify-content-between align-items-center">
             <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
               <i className="fa fa-plus-circle mr-1"></i>
-              Add File
+              Dosya Ekle
             </Button>
             <Button className="my-button-class" color="primary" onClick={handleExportClick}>
               <i className="fa fa-download mr-1"></i>
-              Export
+              Dışa Aktar
             </Button>
           </div>
           <div className="mt-3">
             <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
             <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Upload
+              Yükle
             </Button>
             <div className="spinner-container">
               {isLoading && <div className="loading-spinner"></div>}
@@ -486,9 +614,19 @@ const handleAddFileClick = () => {
                   data={dataTable.map((row, key) => ({
                     id: key,
                     product_code: row[0],
-                    title: row[1],
-                    unit: row[2],
-                    stock: row[3],
+                    barcode: row[1],
+                    group: row[2],
+                    subgroup: row[3],
+                    brand: row[4],
+                    serial_number: row[5],
+                    model: row[6],
+                    description: row[7],
+                    unit: row[8],
+                    warehouse: row[9],
+                    inflow: row[10],
+                    outflow: row[11],
+                    stock: row[12],
+                    
                     
                     actions: (
                       <div className='actions-left'>
@@ -539,12 +677,21 @@ const handleAddFileClick = () => {
                     ),
                   }))}
                   columns={[
-                    { Header: 'Product Code', accessor: 'product_code' },
-                    { Header: 'Product Title', accessor: 'title' },
-                    { Header: 'Unit', accessor: 'unit' },
-                    { Header: 'Stock', accessor: 'stock' },
-                    { Header: 'Actions', accessor: 'actions' ,sortable: false,
-                    filterable: false },
+                    { Header: 'Malzeme Kodu', accessor: 'product_code' },
+                    { Header: 'Barkod', accessor: 'barcode' },
+                    { Header: 'Grup', accessor: 'group' },
+                    { Header: 'Alt Grup', accessor: 'subgroup' },
+                    { Header: 'Marka', accessor: 'brand' },
+                    { Header: 'Seri Numarası', accessor: 'serial_number' },
+                    { Header: 'Model', accessor: 'model' },
+                    { Header: 'Açıklama', accessor: 'description' },
+                    { Header: 'Birim', accessor: 'unit' },
+                    { Header: 'Depo', accessor: 'warehouse' },
+                    { Header: 'Giriş', accessor: 'inflow' },
+                    { Header: 'Çıkış', accessor: 'outflow' },
+                    { Header: 'Stok', accessor: 'stock' },
+                    { Header: 'Actions', accessor: 'actions', sortable: false, filterable: false },
+
                   ]}
                   defaultPageSize={10}
                   className='-striped -highlight'

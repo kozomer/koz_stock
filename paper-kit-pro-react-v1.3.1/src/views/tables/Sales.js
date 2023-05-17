@@ -441,7 +441,7 @@ const [amount, setAmount] = useState(null);
        <div className="popup-sales">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Edit Sales</CardTitle>
+              <CardTitle tag="h4">Ambar Giriş/Çıkış Düzenle</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleSubmit}>
@@ -612,7 +612,7 @@ const [amount, setAmount] = useState(null);
 )}
 <Card>
   <CardHeader>
-    <CardTitle tag='h4'>SALES</CardTitle>
+    <CardTitle tag='h4'>AMBAR GİRİŞ/ÇIKIŞ</CardTitle>
   </CardHeader>
   <CardBody>
     <div className="upload-container">

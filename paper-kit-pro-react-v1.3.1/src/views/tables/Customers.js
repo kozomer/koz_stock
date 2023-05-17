@@ -20,14 +20,31 @@ const DataTable = () => {
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   /* Variables */
-  const [customerCode, setCustomerCode] = useState(null);
+  const [id, setId] = useState(null);
+  const [date, setDate] = useState(null);
+  const [productCode, setProductCode] = useState(null);
+  const [barcode, setBarcode] = useState(null);
+  const [providerCompany, setProviderCompany] = useState(null);
+  const [receiverCompany, setReceiverCompany] = useState(null);
+  const [status, setStatus] = useState(null);
+  const [placeOfUse, setPlaceOfUse] = useState(null);
+  const [group, setGroup] = useState(null);
+  const [subgroup, setSubgroup] = useState(null);
+  const [brand, setBrand] = useState(null);
+  const [serialNumber, setSerialNumber] = useState(null);
+  const [model, setModel] = useState(null);
   const [description, setDescription] = useState(null);
-  const [quantity, setQuantity] = useState(null);
-  const [areaCode, setAreaCode] = useState(null);
-  const [code, setCode] = useState(null);
-  const [city, setCity] = useState(null);
-  const [area, setArea] = useState(null);
   const [unit, setUnit] = useState(null);
+  const [amount, setAmount] = useState(null);
+  const [unitPrice, setUnitPrice] = useState(null);
+  const [discountRate, setDiscountRate] = useState(null);
+  const [discountAmount, setDiscountAmount] = useState(null);
+  const [taxRate, setTaxRate] = useState(null);
+  const [tevkifatRate, setTevkifatRate] = useState(null);
+  const [priceWithoutTax, setPriceWithoutTax] = useState(null);
+  const [priceWithTevkifat, setPriceWithTevkifat] = useState(null);
+  const [priceTotal, setPriceTotal] = useState(null);
+
   
   
 
@@ -45,7 +62,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       console.log(access_token)
-      const response = await fetch('http://127.0.0.1:8000/api/customers/',{
+      const response = await fetch('http://127.0.0.1:8000/api/accounting/',{
        
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +100,7 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/add_customers/', {
+    fetch('http://127.0.0.1:8000/api/add_accounting/', {
       method: 'POST',
       body: formData,
       headers: {
@@ -104,7 +121,7 @@ const DataTable = () => {
         setIsLoading(false);
         successUpload(data.message);
         
-        fetch('http://127.0.0.1:8000/api/customers/',{
+        fetch('http://127.0.0.1:8000/api/accounting/',{
           headers: {
             'Authorization': 'Bearer '+ String(access_token)
           }
@@ -246,7 +263,7 @@ const DataTable = () => {
       if (deleteConfirm) {
        console.log("delete")
        const access_token =  await localforage.getItem('access_token'); 
-        fetch(`http://127.0.0.1:8000/api/delete_customers/`, {
+        fetch(`http://127.0.0.1:8000/api/delete_accounting/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -269,13 +286,31 @@ const DataTable = () => {
       setEditData(row);
       setOldData(row);
 
-      setCustomerCode(row.customer_code);
+      setId(row.id);
+      setProductCode(row.product_code);
+      setDate(row.date);
+      setBarcode(row.barcode);
+      setProviderCompany(row.provider_company);
+      setReceiverCompany(row.receiver_company);
+      setStatus(row.status);
+      setPlaceOfUse(row.place_of_use);
+      setGroup(row.group);
+      setSubgroup(row.subgroup);
+      setBrand(row.brand);
+      setSerialNumber(row.serial_number);
+      setModel(row.model);
       setDescription(row.description);
-      setQuantity(row.quantity);
-      setAreaCode(row.area_code);
-      setCode(row.code);
-      setCity(row.city);
-      setArea(row.area);
+      setUnit(row.unit);
+      setAmount(row.amount);
+      setUnitPrice(row.unit_price);
+      setDiscountRate(row.discount_rate);
+      setDiscountAmount(row.discount_amount);
+      setTaxRate(row.tax_rate);
+      setTevkifatRate(row.tevkifat_rate);
+      setPriceWithoutTax(row.price_without_tax);
+      setPriceWithTevkifat(row.price_with_tevkifat);
+      setPriceTotal(row.price_total);
+
 
       setShowPopup(!showPopup);
       console.log(row)
@@ -286,26 +321,60 @@ const DataTable = () => {
       const access_token = await localforage.getItem('access_token'); 
       console.log(oldData)
       const updatedData = {
-        new_customer_code:customerCode,
-        new_description:description,
-        new_quantity:quantity,
-        new_area_code:areaCode,
-        new_code:code,
-        new_city:city,
-        new_area:area,
-        
+        new_id: id,
+        new_product_code: productCode,
+        new_date: date,
+        new_barcode: barcode,
+        new_provider_company: providerCompany,
+        new_receiver_company: receiverCompany,
+        new_status: status,
+        new_place_of_use: placeOfUse,
+        new_group: group,
+        new_subgroup: subgroup,
+        new_brand: brand,
+        new_serial_number: serialNumber,
+        new_model: model,
+        new_description: description,
+        new_unit: unit,
+        new_amount: amount,
+        new_unit_price: unitPrice,
+        new_discount_rate: discountRate,
+        new_discount_amount: discountAmount,
+        new_tax_rate: taxRate,
+        new_tevkifat_rate: tevkifatRate,
+        new_price_without_tax: priceWithoutTax,
+        new_price_with_tevkifat: priceWithTevkifat,
+        new_price_total: priceTotal,
 
-        old_customer_code:oldData[0],
-        old_description:oldData[1],
-        old_quantity:oldData[2],
-        old_area_code:oldData[3],
-        old_code:oldData[4],
-        old_city:oldData[5],
-        old_area:oldData[6],
+        old_id: oldData[0],
+        old_product_code: oldData[1],
+        old_date: oldData[2],
+        old_barcode: oldData[3],
+        old_provider_company: oldData[4],
+        old_receiver_company: oldData[5],
+        old_status: oldData[6],
+        old_place_of_use: oldData[7],
+        old_group: oldData[8],
+        old_subgroup: oldData[9],
+        old_brand: oldData[10],
+        old_serial_number: oldData[11],
+        old_model: oldData[12],
+        old_description: oldData[13],
+        old_unit: oldData[14],
+        old_amount: oldData[15],
+        old_unit_price: oldData[16],
+        old_discount_rate: oldData[17],
+        old_discount_amount: oldData[18],
+        old_tax_rate: oldData[19],
+        old_tevkifat_rate: oldData[20],
+        old_price_without_tax: oldData[21],
+        old_price_with_tevkifat: oldData[22],
+        old_price_total: oldData[23],
+
         
       };
       console.log(updatedData)
-      fetch('http://127.0.0.1:8000/api/edit_customers/', {
+      fetch('http://127.0.0.1:8000/api/edit_accounting/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -345,14 +414,32 @@ const DataTable = () => {
     useEffect(() => {
       console.log("useEffect called")
       if(editData){
-        
-        setCustomerCode(editData[0]);
-        setDescription(editData[1]);
-          setQuantity(editData[2]);
-          setAreaCode(editData[3]);
-          setCode(editData[4]);
-          setCity(editData[5]);
-          setArea(editData[6]);
+        setId(editData[0]);
+        setProductCode(editData[1]);
+        setDate(editData[2]);
+        setBarcode(editData[3]);
+        setProviderCompany(editData[4]);
+        setReceiverCompany(editData[5]);
+        setStatus(editData[6]);
+        setPlaceOfUse(editData[7]);
+        setGroup(editData[8]);
+        setSubgroup(editData[9]);
+        setBrand(editData[10]);
+        setSerialNumber(editData[11]);
+        setModel(editData[12]);
+        setDescription(editData[13]);
+        setUnit(editData[14]);
+        setAmount(editData[15]);
+        setUnitPrice(editData[16]);
+        setDiscountRate(editData[17]);
+        setDiscountAmount(editData[18]);
+        setTaxRate(editData[19]);
+        setTevkifatRate(editData[20]);
+        setPriceWithoutTax(editData[21]);
+        setPriceWithTevkifat(editData[22]);
+        setPriceTotal(editData[23]);
+
+
           
           setIsUpdated(true)
       }
@@ -363,7 +450,7 @@ const DataTable = () => {
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('http://127.0.0.1:8000/api/export_customers/', {
+      const response = await fetch('http://127.0.0.1:8000/api/export_accounting/', {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },
@@ -402,24 +489,133 @@ const DataTable = () => {
        <div className="popup">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Edit Customers</CardTitle>
+              <CardTitle tag="h4">Muhasebe Girişi Düzenle</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleSubmit}>
               <div>
 
         <div className="form-group-col">
-          <label>Customer Code</label>
+        
+        <label>No</label>
+        <FormGroup>
+          <Input
+            name="id"
+            type="number"
+            defaultValue={id}
+            onChange={(e) => setId(e.target.value)}
+          />
+        </FormGroup>
+        
+        <label>Malzeme Kodu</label>
           <FormGroup>
             <Input
-              
               type="text"
-              defaultValue={customerCode}
-              onChange={(e) => setCustomerCode(e.target.value)}
+              defaultValue={productCode}
+              onChange={(e) => setProductCode(e.target.value)}
+            />
+          </FormGroup>
+        
+        <label>Tarih</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </FormGroup>
+          
+          <label>Barkod</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={barcode}
+              onChange={(e) => setBarcode(e.target.value)}
             />
           </FormGroup>
 
-          <label>Description</label>
+          <label>Alınan Firma</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={providerCompany}
+              onChange={(e) => setProviderCompany(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Alan Firma</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={receiverCompany}
+              onChange={(e) => setReceiverCompany(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Durum</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={status}
+              onChange={(e) => setStatus(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Kullanım Yeri</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={placeOfUse}
+              onChange={(e) => setPlaceOfUse(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Grup</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={group}
+              onChange={(e) => setGroup(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Alt Grup</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={subgroup}
+              onChange={(e) => setSubgroup(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Marka</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={brand}
+              onChange={(e) => setBrand(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Seri Numarası</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={serialNumber}
+              onChange={(e) => setSerialNumber(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Model</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={model}
+              onChange={(e) => setModel(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Açıklama</label>
           <FormGroup>
             <Input
               type="text"
@@ -428,50 +624,93 @@ const DataTable = () => {
             />
           </FormGroup>
 
-          <label>Quantity</label>
+          <label>Birim</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+              defaultValue={unit}
+              onChange={(e) => setUnit(e.target.value)}
             />
           </FormGroup>
 
-          <label>Area Code</label>
+          <label>Miktar</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={areaCode}
-              onChange={(e) => setAreaCode(e.target.value)}
+              defaultValue={amount}
+              onChange={(e) => setAmount(e.target.value)}
             />
           </FormGroup>
 
-          <label>Code</label>
+          <label>Birim Fiyatı</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={code}
-              onChange={(e) => setCode(e.target.value)}
+              defaultValue={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
             />
           </FormGroup>
 
-          <label>City</label>
+          <label>İndirim Oranı</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={city}
-              onChange={(e) => setCity(e.target.value)}
+              defaultValue={discountRate}
+              onChange={(e) => setDiscountRate(e.target.value)}
             />
           </FormGroup>
-        
 
-       
-          <label>Area</label>
+          <label>İndirim Miktarı</label>
           <FormGroup>
             <Input
               type="text"
-              defaultValue={area}
-              onChange={(e) => setArea(e.target.value)}
+              defaultValue={discountAmount}
+              onChange={(e) => setDiscountAmount(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>KDV Oranı</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={taxRate}
+              onChange={(e) => setTaxRate(e.target.value)}
+            />
+          </FormGroup>
+          
+          <label>Tevkifat Oranı</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={tevkifatRate}
+              onChange={(e) => setTevkifatRate(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Toplam Fiyat(Vergi Hariç)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={priceWithoutTax}
+              onChange={(e) => setPriceWithoutTax(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Tevkifatlı Fiyat</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={priceWithTevkifat}
+              onChange={(e) => setPriceWithTevkifat(e.target.value)}
+            />
+          </FormGroup>
+
+          <label>Toplam Fiyat(Vergi Dahil)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={priceTotal}
+              onChange={(e) => setPriceTotal(e.target.value)}
             />
           </FormGroup>
           </div>
@@ -484,10 +723,10 @@ const DataTable = () => {
             </CardBody>
               <CardFooter>
                 <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
-                  Submit
+                  Onayla
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
-                  Cancel
+                  İptal Et
                 </Button>
               </CardFooter>
             </Card>
@@ -497,7 +736,7 @@ const DataTable = () => {
 
 <Card>
   <CardHeader>
-    <CardTitle tag='h4'>CUSTOMERS</CardTitle>
+    <CardTitle tag='h4'>MUHASEBE</CardTitle>
   </CardHeader>
   <CardBody>
     <div className="upload-container">
@@ -505,11 +744,11 @@ const DataTable = () => {
         <div className="d-flex justify-content-between align-items-center">
           <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
             <i className="fa fa-plus-circle mr-1"></i>
-            Add File
+            Dosya Ekle
           </Button>
           <Button className="my-button-class" color="primary" onClick={handleExportClick}>
             <i className="fa fa-download mr-1"></i>
-            Export
+            Dışa Aktar
           </Button>
         </div>
       )}
@@ -518,17 +757,17 @@ const DataTable = () => {
           <div className="d-flex justify-content-between align-items-center">
             <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
               <i className="fa fa-plus-circle mr-1"></i>
-              Add File
+              Dosya Ekle
             </Button>
             <Button className="my-button-class" color="primary" onClick={handleExportClick}>
               <i className="fa fa-download mr-1"></i>
-              Export
+              Dışa Aktar
             </Button>
           </div>
           <div className="mt-3">
             <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
             <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Upload
+              Yükle
             </Button>
             <div className="spinner-container">
               {isLoading && <div className="loading-spinner"></div>}
@@ -550,14 +789,31 @@ const DataTable = () => {
 
                 <ReactTable
                   data={dataTable.map((row, index) => ({
-                    id: row.id,
-                    customer_code: row[0],
-                    description: row[1],
-                    quantity: row[2],
-                    area_code: row[3],
-                    code: row[4],
-                    city: row[5],
-                    area: row[6],
+                    id: row[0],
+                    product_code: row[1],
+                    date: row[2],
+                    barcode: row[3],
+                    provider_company: row[4],
+                    receiver_company: row[5],
+                    status: row[6],
+                    place_of_use: row[7],
+                    group: row[8],
+                    subgroup: row[9],
+                    brand: row[10],
+                    serial_number: row[11],
+                    model: row[12],
+                    description: row[13],
+                    unit: row[14],
+                    amount: row[15],
+                    unit_price: row[16],
+                    discount_rate: row[17],
+                    discount_amount: row[18],
+                    tax_rate: row[19],
+                    tevkifat_rate: row[20],
+                    price_without_tax: row[21],
+                    price_with_tevkifat: row[22],
+                    price_total: row[23],
+
                     actions: (
                       <div className='actions-left'>
                          <Button
@@ -587,7 +843,7 @@ const DataTable = () => {
                                warningWithConfirmAndCancelMessage() 
                                const rowToDelete = {...row};
                                const data = {
-                                customer_code: rowToDelete[0],
+                                id: rowToDelete [0],
 
                               };
                               setDeleteData(data);
@@ -633,14 +889,32 @@ const DataTable = () => {
                     ),
                   }))}
                   columns={[
-                    { Header: 'Customer Code', accessor: 'customer_code' },
-                    { Header: 'Description', accessor: 'description' },
-                    { Header: 'Quantity', accessor: 'quantity' },
-                    { Header: 'Area Code', accessor: 'area_code' },
-                    { Header: 'Code', accessor: 'code' },
-                    { Header: 'City', accessor: 'city' },
-                    { Header: 'Area', accessor: 'area' },
-                    { Header: 'Actions', accessor: 'actions' ,sortable: false,
+                    { Header: 'No', accessor: 'id' },
+                    { Header: 'Malzeme Kodu', accessor: 'product_code' },
+                    { Header: 'Tarih', accessor: 'date' },
+                    { Header: 'Barkod', accessor: 'barcode' },
+                    { Header: 'Alınan Firma', accessor: 'provider_company' },
+                    { Header: 'Alan Firma', accessor: 'receiver_company' },
+                    { Header: 'Durum', accessor: 'status' },
+                    { Header: 'Kullanım Yeri', accessor: 'place_of_use' },
+                    { Header: 'Grup', accessor: 'group' },
+                    { Header: 'Alt Grup', accessor: 'subgroup' },
+                    { Header: 'Marka', accessor: 'brand' },
+                    { Header: 'Seri Numarası', accessor: 'serial_number' },
+                    { Header: 'Model', accessor: 'model' },
+                    { Header: 'Açıklama', accessor: 'description' },
+                    { Header: 'Birim', accessor: 'unit' },
+                    { Header: 'Miktar', accessor: 'amount' },
+                    { Header: 'Birim Fiyatı', accessor: 'unit_price' },
+                    { Header: 'İndirim Oranı', accessor: 'discount_rate' },
+                    { Header: 'İndirim Miktarı', accessor: 'discount_amount' },
+                    { Header: 'KDV Oranı', accessor: 'tax_rate' },
+                    { Header: 'Tevkifat Oranı', accessor: 'tevkifat_rate' },
+                    { Header: 'Toplam Fiyat(Vergiler Hariç)', accessor: 'price_without_tax' },
+                    { Header: 'Tevkifatlı Fiyat', accessor: 'price_with_tevkifat' },
+                    { Header: 'Toplam Fiyat(Vergiler Dahil)', accessor: 'price_total' },
+
+                    { Header: 'İşlemler', accessor: 'actions' ,sortable: false,
                     filterable: false },
                   ]}
                   defaultPageSize={10}

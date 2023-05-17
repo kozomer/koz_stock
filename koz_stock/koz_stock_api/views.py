@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import ( Products, ProductFlow, Stock)
+from .models import ( Products, ProductFlow, Stock, Accounting)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -26,7 +26,7 @@ import base64
 from io import BytesIO
 import numpy as np
 from django.db import transaction
-from .permissions import IsSuperStaff
+from .permissions import IsSuperStaff, IsAccountingStaff, IsStockStaff
 
 
 
@@ -85,12 +85,13 @@ class LogoutView(APIView):
 #region Products
 
 class AddProductsView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff )
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
+            print(data)
 
             product_code = data.get('product_code')
             if not product_code:
@@ -119,7 +120,7 @@ class AddProductsView(APIView):
 
 
 class ProductsView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsStockStaff, IsSuperStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
@@ -129,9 +130,9 @@ class ProductsView(APIView):
                          p['supplier'], p['supplier_contact']] for p in products]
         return JsonResponse(product_list, safe=False, status=200)
     
-
+#! Edit yaparken product code değişmemeli
 class EditProductsView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -190,7 +191,7 @@ class DeleteProductsView(APIView):
 # region ProductFlow
 
 class AddProductFlowView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -200,6 +201,11 @@ class AddProductFlowView(APIView):
             if not product_code:
                 return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
 
+            # Validate inflow_outflow value
+            inflow_outflow = data.get('inflow_outflow')
+            if inflow_outflow not in ['Giriş', 'giriş', 'Çıkış', 'çıkış']:
+                return JsonResponse({'error': f"Yanlış Giriş/Çıkış değeri girdiniz. Girmiş olduğunuz değer: {inflow_outflow}. Girdiğiniz değer bu değerlerden biri olmalıdır: 'Giriş', 'giriş', 'Çıkış', 'çıkış'."}, status=400)
+            
             # Add new product flow
             new_product_flow_data = {}
             for field in ['date', 'provider_company', 'reciever_company', 'inflow_outflow', 'status', 'place_of_use', 'group', 'subgroup', 'brand', 'serial_number', 'model', 'description', 'unit', 'amount']:
@@ -220,7 +226,7 @@ class AddProductFlowView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
         
 class ProductFlowView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
@@ -290,7 +296,253 @@ class DeleteProductFlowView(APIView):
 # endregion
 
 
+# region Stock
 
+@receiver(post_save, sender=Products)
+def create_stock(sender, instance, created, **kwargs):
+    if created:
+        Stock.objects.create(
+            product_code=instance.product_code,
+            barcode=instance.barcode,
+            group=instance.group,
+            subgroup=instance.subgroup,
+            brand=instance.brand,
+            serial_number=instance.serial_number,
+            model=instance.model,
+            description=instance.description,
+            unit=instance.unit,
+            warehouse=None,
+            inflow=0,
+            outflow=0,
+            stock=0
+        )
+
+@receiver(post_save, sender=ProductFlow)
+def update_stock(sender, instance, created, **kwargs):
+    # Fetch the corresponding Stock object
+    try:
+        stock = Stock.objects.get(product_code=instance.product_code)
+    except Stock.DoesNotExist:
+        return
+
+    # Check which fields have been updated
+    dirty_fields = instance.get_dirty_fields()
+
+    # Handle creation of a new ProductFlow instance
+    if created:
+        if instance.inflow_outflow == "Giriş":
+            stock.inflow += float(instance.amount)
+        elif instance.inflow_outflow == "Çıkış":
+            stock.outflow += float(instance.amount)
+    else:
+        # Handle updates to existing ProductFlow instance
+        old_inflow_outflow = dirty_fields.get('inflow_outflow')
+        old_amount = dirty_fields.get('amount')
+
+        # If inflow_outflow has been changed
+        if old_inflow_outflow:
+            if old_inflow_outflow == "Giriş":
+                stock.inflow -= old_amount or float(instance.amount)
+            elif old_inflow_outflow == "Çıkış":
+                stock.outflow -= old_amount or float(instance.amount)
+
+            if instance.inflow_outflow == "Giriş":
+                stock.inflow += float(instance.amount)
+            elif instance.inflow_outflow == "Çıkış":
+                stock.outflow += float(instance.amount)
+
+        # If only amount has been changed
+        elif old_amount is not None:
+            if instance.inflow_outflow == "Giriş":
+                stock.inflow = (stock.inflow or 0) - old_amount + float(instance.amount)
+            elif instance.inflow_outflow == "Çıkış":
+                stock.outflow = (stock.outflow or 0) - old_amount + float(instance.amount)
+
+    # Compute stock as inflow - outflow
+    stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+
+    # Save the Stock object
+    stock.save()
+
+
+
+
+class StockView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        stocks = Stock.objects.values().all()
+        stock_list = [
+            [stock['product_code'], stock['barcode'], stock['group'], stock['subgroup'],
+             stock['brand'], stock['serial_number'], stock['model'], stock['description'],
+             stock['unit'], stock['warehouse'], stock['inflow'], stock['outflow'], stock['stock']] 
+            for stock in stocks
+        ]
+        return JsonResponse(stock_list, safe=False, status=200)
+
+class EditStockView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            old_product_code = data.get('old_product_code')
+            stock = Stock.objects.get(product_code=old_product_code)
+
+            # Check if new product_code value is unique
+            new_product_code = data.get('new_product_code')
+            if new_product_code and new_product_code != old_product_code:
+                if Stock.objects.filter(product_code=new_product_code).exists():
+                    return JsonResponse({'error': f"The Product Code '{new_product_code}' already exists in the database."}, status=400)
+                if not new_product_code:
+                    return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
+                else:
+                    stock.product_code = new_product_code
+
+            # Update other stock fields
+            for field in ['new_barcode', 'new_group', 'new_subgroup', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit', 'new_warehouse', 'new_inflow', 'new_outflow', 'new_stock']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    updated_field = field[4:]  # Remove the "new_" prefix
+                    setattr(stock, updated_field, value)
+                else:
+                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+
+            stock.save()
+            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+
+        except Stock.DoesNotExist:
+            return JsonResponse({'error': "Stock not found."}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        
+class DeleteStockView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            product_code = request.POST.get('product_code')
+            Stock.objects.filter(product_code=product_code).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': "Stock object has been successfully deleted"}, status=200)
+
+
+# endregion
+
+# region Accounting
+
+@receiver(post_save, sender=ProductFlow)
+def create_accounting(sender, instance, created, **kwargs):
+    if created and (instance.inflow_outflow == "Giriş" or instance.inflow_outflow == "giriş"):
+        Accounting.objects.create(
+            date = instance.date,
+            product_code=instance.product_code,
+            barcode=instance.barcode,
+            provider_company = instance.provider_company,
+            reciever_company = instance.reciever_company,
+            status = instance.status,
+            place_of_use = instance.place_of_use,
+            group=instance.group,
+            subgroup=instance.subgroup,
+            brand=instance.brand,
+            serial_number=instance.serial_number,
+            model=instance.model,
+            description=instance.description,
+            unit=instance.unit,
+            amount = instance.amount,
+            unit_price = 0,
+            discount_rate = 0,
+            discount_amount = 0,
+            tax_rate = 0,
+            tevkifat_rate = 0,
+            price_without_tax = 0,
+            price_with_tevkifat = 0,
+            price_total = 0,
+        )
+
+class AccountingView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsAccountingStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        accountings = Accounting.objects.values().all()
+        accounting_list = [
+            [ac['id'], ac['product_code'], ac['date'], ac['barcode'], ac['provider_company'], ac['reciever_company'],
+             ac['status'], ac['place_of_use'], ac['group'], ac['subgroup'], ac['brand'], ac['serial_number'], 
+             ac['model'], ac['description'], ac['unit'], ac['amount'], ac['unit_price'], ac['discount_rate'], 
+             ac['discount_amount'], ac['tax_rate'], ac['tevkifat_rate'], ac['price_without_tax'], ac['price_with_tevkifat'], 
+             ac['price_total']] for ac in accountings
+        ]
+        return JsonResponse(accounting_list, safe=False, status=200)
+
+
+class EditAccountingView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+
+            old_product_code = data.get('old_product_code')
+            old_id = data.get('old_id')
+            accounting = Accounting.objects.get(id=old_id)
+
+            # Check if new product_code value is unique
+            new_product_code = data.get('new_product_code')
+            if new_product_code and new_product_code != old_product_code:
+                if not Accounting.objects.filter(product_code=new_product_code).exists():
+                    return JsonResponse({'error': f"The Product Code '{new_product_code}' not exists in the database."}, status=400)
+                if not new_product_code:
+                    return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
+                else:
+                    accounting.product_code = new_product_code
+
+            # Update other accounting fields
+            for field in ['new_date', 'new_provider_company', 'new_receiver_company', 'new_status', 'new_place_of_use', 'new_group', 'new_subgroup', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit', 'new_amount', 'new_unit_price', 'new_discount_rate', 'new_discount_amount', 'new_tax_rate', 'new_tevkifat_rate']:
+                value = data.get(field)
+
+                if value is not None and value != '':
+                    updated_field = field[4:]  # Remove the "new_" prefix
+                    setattr(accounting, updated_field, value)
+                else:
+                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+
+            accounting.save()
+            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+
+        except Accounting.DoesNotExist:
+            return JsonResponse({'error': "Accounting record not found."}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+class DeleteAccountingView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            id = request.POST.get('id')
+            Accounting.objects.filter(id=id).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': "Accounting object has been successfully deleted"}, status=200)
+
+# endregion
 
 
 # # region Customers
