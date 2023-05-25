@@ -18,7 +18,9 @@ from django.urls import path
 from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProductsView, AddProductsView,
                                   DeleteProductsView, AddProductFlowView, ProductFlowView, EditProductFlowView, DeleteProductFlowView,
                                     StockView, EditStockView, DeleteStockView,
-                                    AccountingView, EditAccountingView, DeleteAccountingView)
+                                    AccountingView, EditAccountingView, DeleteAccountingView,
+                                    SetCurrentProjectView, GetProjectsView,
+                                    CreateUserView)
 # from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
 #                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
 #                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
@@ -46,6 +48,11 @@ urlpatterns = [
     path('api/token/blacklist/', TokenBlacklistView.as_view(), name='token_blacklist'),
     path('api/login/', LoginView.as_view(), name='login'),
     path('api/logout/', LogoutView.as_view(), name='logout'),
+
+    path('api/projects/', GetProjectsView.as_view(), name='get-projects'),
+    path('api/set_current_project/', SetCurrentProjectView.as_view(), name='set-current-project'),
+
+    path('api/create_user/', CreateUserView.as_view(), name='create-user'),
     
     path('api/products/', ProductsView.as_view(), name='products'),
     path('api/edit_products/', EditProductsView.as_view(), name='edit_product'),

@@ -2,10 +2,23 @@ from django.db import models
 from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
 
+class Company(models.Model):
+    name = models.CharField(max_length=200)
+
+class Project(models.Model):
+    name = models.CharField(max_length=200)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
 class CustomUser(AbstractUser):
     is_superstaff = models.BooleanField(default=False)
     is_stockstaff = models.BooleanField(default=False)
     is_accountingstaff = models.BooleanField(default=False)
+    company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
+    current_project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
+    projects = models.ManyToManyField(Project, related_name="users")
+
+
+
 class Products(models.Model, DirtyFieldsMixin):
     product_code = models.IntegerField(unique= True)
     barcode= models.CharField(max_length=255)

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import ( Products, ProductFlow, Stock, Accounting)
+from .models import ( Products, ProductFlow, Stock, Accounting, Project, CustomUser, Company)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -40,9 +40,13 @@ from rest_framework.decorators import  permission_classes, authentication_classe
 from django.db.utils import OperationalError
 from rest_framework.exceptions import ValidationError
 import filetype
+from django.core.exceptions import ObjectDoesNotExist
 
 
 
+
+#! Tüm sistemi farklı projelere ve şirketlere göre kurabiliriz. Mesela Koz Grup(Koz Oran, Koz Horizon) gibi. 
+#! Kullanıcı girişte zorunlu olarak proje seçer, daha sonra site üzerinde yaptığı her işlem o projeyle ilişkilendirilerek kaydedilir.
 
 # region Login/Logout
 
@@ -82,7 +86,93 @@ class LogoutView(APIView):
 
 # endregion
 
+# region Project Selection
+
+from django.http import JsonResponse
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from django.core.exceptions import ObjectDoesNotExist
+from .models import Project
+
+class GetProjectsView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        # Assuming your User model has a 'projects' ManyToManyField
+        projects = list(request.user.projects.values('id', 'name'))  # Convert QuerySet to a list
+        return JsonResponse(projects, safe=False)
+
+class SetCurrentProjectView(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request):
+        project_id = request.data.get('project_id')
+        try:
+            project = Project.objects.get(id=project_id, company=request.user.company)
+            request.user.current_project = project
+            request.user.save()
+            return JsonResponse({'status': 'Project set successfully'})
+        except ObjectDoesNotExist:
+            return JsonResponse({'error': 'Project not found or does not belong to your company'}, status=400, safe=False)
+
+
+# endregion
+
+# region User
+
+class CreateUserView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        # Extract the data from the request
+        username = request.data.get('username')
+        password = request.data.get('password')
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        is_superstaff = request.data.get('is_superstaff', False)
+        is_stockstaff = request.data.get('is_stockstaff', False)
+        is_accountingstaff = request.data.get('is_accountingstaff', False)
+        company_id = request.data.get('company')
+        current_project_id = request.data.get('current_project')
+        project_ids = request.data.get('projects', [])
+
+        # Get the Company and Project instances
+        try:
+            company = Company.objects.get(id=company_id)
+            current_project = Project.objects.get(id=current_project_id)
+            projects = Project.objects.filter(id__in=project_ids)
+        except (Company.DoesNotExist, Project.DoesNotExist):
+            return JsonResponse({'error': 'Invalid company or project ID'}, status=400)
+
+        # Create the user
+        user = CustomUser(
+            username=username, 
+            first_name=first_name, 
+            last_name=last_name, 
+        )
+        user.set_password(password)
+        user.is_superstaff = is_superstaff
+        user.is_stockstaff = is_stockstaff
+        user.is_accountingstaff = is_accountingstaff
+        user.company = company
+        user.current_project = current_project
+        user.save()
+
+        # Assign the projects to the user
+        user.projects.set(projects)
+
+        return JsonResponse({'message': 'User created successfully'})
+
+# endregion
+
+
 #region Products
+#! 1) Ürün kodu seçilen grup ve alt gruplara göre otomatik oluşturulmalı. Örn: "001.002.1234"
+#! 2) Kullanıcı Grup ve Alt grupları seçerken Dropdown menü ile seçimi yapmalı.
+#! 3) Grup ve Alt grupların eklenebileceği ayrı bir tablo oluşturulmalı. İleride yeni sınıf ekleneceği zaman buradan eklenmeli.
+#? Product ya da customer gibi öğeleri Foreign Key ile giriş çıkışlarla ilişkilendirirsek ilerde bu alandaki değişiklikler otomatik olarak giriş çıkışlarda da uygulanacaktır.
+#? Mesela şuan bir product'ın ismini değiştirirsek bundan önce o product ile girilmiş ambar giriş çıkışlarında o productın ismi değişmiyor.
 
 class AddProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff )
@@ -484,7 +574,7 @@ class AccountingView(APIView):
         ]
         return JsonResponse(accounting_list, safe=False, status=200)
 
-
+#! Total Price'lar edit yapılamamalı. Onlar diğer verilere göre otomatik hesaplanıyor.
 class EditAccountingView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)

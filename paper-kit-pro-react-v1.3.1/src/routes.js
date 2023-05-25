@@ -73,8 +73,15 @@ const routes = [
   },
  
   {
+    path: "/sales-tables",
+    name: "Ambar Giriş/Çıkış",
+    icon:"nc-icon nc-cart-simple",
+    component: Sales,
+    layout: "/admin"
+  },
+  {
     path: "/customer-tables",
-    name: "Customers",
+    name: "Ambar Muhasebe",
     icon:"nc-icon nc-briefcase-24",
     component: CustomerTables,
     layout: "/admin"
@@ -102,13 +109,7 @@ const routes = [
     component: StaffPerformance,
     layout: "/admin"
   },
-  {
-    path: "/sales-tables",
-    name: "Ambar Giriş/Çıkış",
-    icon:"nc-icon nc-cart-simple",
-    component: Sales,
-    layout: "/admin"
-  },
+ 
   
   {
     path: "/sales-report",
