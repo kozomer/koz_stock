@@ -1,13 +1,14 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import ( Products, ProductFlow, Stock, Accounting, Project, CustomUser, Company)
+from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
+                      Stock, Accounting, Project, CustomUser, Company)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse
 import json
-from django.db.models.signals import post_save, post_delete, pre_save
+from django.db.models.signals import post_save, post_delete, pre_save, pre_delete
 from django.dispatch import receiver
 #from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, calculate_passive_saler_experience_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future
 from datetime import datetime
@@ -96,6 +97,7 @@ from .models import Project
 
 class GetProjectsView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
 
     def get(self, request):
         # Assuming your User model has a 'projects' ManyToManyField
@@ -104,6 +106,7 @@ class GetProjectsView(APIView):
 
 class SetCurrentProjectView(APIView):
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
 
     def post(self, request):
         project_id = request.data.get('project_id')
@@ -133,6 +136,7 @@ class CreateUserView(APIView):
         is_superstaff = request.data.get('is_superstaff', False)
         is_stockstaff = request.data.get('is_stockstaff', False)
         is_accountingstaff = request.data.get('is_accountingstaff', False)
+        #! brda bir düzenleme gerekecek, company ve project verielri direk user üzerinden çekilebilir. user.company ya da user.projects gibi.
         company_id = request.data.get('company')
         current_project_id = request.data.get('current_project')
         project_ids = request.data.get('projects', [])
@@ -278,91 +282,155 @@ class DeleteProductsView(APIView):
 
 # endregion
 
-# region ProductFlow
+# region ProductInflow
 
-class AddProductFlowView(APIView):
+class AddProductInflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         try:
-            data = json.loads(request.body)
-            product_code = data.get('product_code')
-            if not product_code:
-                return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
-
-            # Validate inflow_outflow value
-            inflow_outflow = data.get('inflow_outflow')
-            if inflow_outflow not in ['Giriş', 'giriş', 'Çıkış', 'çıkış']:
-                return JsonResponse({'error': f"Yanlış Giriş/Çıkış değeri girdiniz. Girmiş olduğunuz değer: {inflow_outflow}. Girdiğiniz değer bu değerlerden biri olmalıdır: 'Giriş', 'giriş', 'Çıkış', 'çıkış'."}, status=400)
+            product_code = request.data.get('product_code')
+            date = request.data.get('date')
+            barcode = request.data.get('barcode')
+            provider_company_tax_code = request.data.get('provider_company_tax_code')
+            receiver_company_tax_code = request.data.get('receiver_company_tax_code')
+            status = request.data.get('status')
+            place_of_use = request.data.get('place_of_use')
+            amount = request.data.get('amount')
+            #! company ve project id'ler user üzerinden çekilecek.
+            company_id = request.data.get('company_id')
+            project_id = request.data.get('project_id')
             
-            # Add new product flow
-            new_product_flow_data = {}
-            for field in ['date', 'provider_company', 'reciever_company', 'inflow_outflow', 'status', 'place_of_use', 'group', 'subgroup', 'brand', 'serial_number', 'model', 'description', 'unit', 'amount']:
-                value = data.get(field)
-                if value is not None and value != '':
-                    new_product_flow_data[field] = value
-                else:
-                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+            # Fetch the product using the product code
+            product = Products.objects.get(product_code=product_code)
+            provider_company = Suppliers.objects.get(tax_code=provider_company_tax_code)
+            receiver_company = Suppliers.objects.get(tax_code=receiver_company_tax_code)
+            company = Company.objects.get(id=company_id)
+            project = Project.objects.get(id=project_id)
 
-            new_product_flow = ProductFlow.objects.create(product_code=product_code, **new_product_flow_data)
+            # Create the ProductInflow object
+            product_inflow = ProductInflow.objects.create(
+                product=product,
+                date=date,
+                barcode=barcode,
+                provider_company=provider_company, 
+                receiver_company=receiver_company, 
+                status=status,
+                place_of_use=place_of_use, 
+                amount=amount, 
+                company=company, 
+                project=project
+            )
 
-            return JsonResponse({'message': f"New product flow for product '{new_product_flow.product_code}' has been successfully created."}, status=201)
-
-        except ValueError as e:
-            return JsonResponse({'error': str(e)}, status=400)
-
+            return JsonResponse({'message': 'ProductInflow created successfully'}, status=201)
+        except Products.DoesNotExist:
+            return JsonResponse({'error': 'Product with the provided product code does not exist.'}, status=400)
+        except Suppliers.DoesNotExist:
+            return JsonResponse({'error': 'Supplier with the provided tax code does not exist.'}, status=400)
+        except Company.DoesNotExist:
+            return JsonResponse({'error': 'Company with the provided company id does not exist.'}, status=400)
+        except Project.DoesNotExist:
+            return JsonResponse({'error': 'Project with the provided project id does not exist.'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-        
-class ProductFlowView(APIView):
+
+class ProductInflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        product_flows = ProductFlow.objects.values().all()
-        product_flow_list = [
-            [pf['id'], pf['date'], pf['product_code'], pf['provider_company'], pf['reciever_company'],
-             pf['inflow_outflow'], pf['status'], pf['place_of_use'], pf['group'], pf['subgroup'],
-             pf['brand'], pf['serial_number'], pf['model'], pf['description'], pf['unit'], pf['amount']] for pf in product_flows
-        ]
-        return JsonResponse(product_flow_list, safe=False, status=200)
+        product_inflows = ProductInflow.objects.select_related('product').all()
 
-class EditProductFlowView(APIView):
+        product_inflow_list = [
+            [
+                pf.id, 
+                pf.date, 
+                pf.product.product_code,
+                pf.barcode, 
+                pf.supplier_company.tax_code,
+                pf.supplier_company.name, 
+                pf.receiver_company.tax_code,
+                pf.receiver_company.name,  
+                pf.status, 
+                pf.place_of_use,
+                pf.product.group,
+                pf.product.subgroup,
+                pf.product.brand,
+                pf.product.serial_number,
+                pf.product.model,
+                pf.product.description,
+                pf.product.unit,
+                pf.amount
+            ] 
+            for pf in product_inflows
+        ]
+
+        return JsonResponse(product_inflow_list, safe=False, status=200)
+
+
+# class ProductFlowView(APIView):
+#     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
+#     authentication_classes = (JWTAuthentication,)
+#     #! Burada ürünleri kullanıcının şirketi ve şuanda uzerinde çalıştığı projeye göre filitrelemeke gerekiyor.
+#     def get(self, request, *args, **kwargs):
+#         product_flows = ProductFlow.objects.values().all()
+#         product_flow_list = [
+#             [pf['id'], pf['date'], pf['product_code'], pf['provider_company'], pf['reciever_company'],
+#              pf['inflow_outflow'], pf['status'], pf['place_of_use'], pf['group'], pf['subgroup'],
+#              pf['brand'], pf['serial_number'], pf['model'], pf['description'], pf['unit'], pf['amount']] for pf in product_flows
+#         ]
+#         return JsonResponse(product_flow_list, safe=False, status=200)
+
+
+class EditProductInflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         try:
-            data = json.loads(request.body)
+            data = request.data
 
-            old_product_code = data.get('old_product_code')
             old_id = data.get('old_id')
-            product_flow = ProductFlow.objects.get(id=old_id)
+            product_inflow = ProductInflow.objects.get(id=old_id)
 
             # Check if new product_code value is unique
             new_product_code = data.get('new_product_code')
-            if new_product_code and new_product_code != old_product_code:
-                if not Products.objects.filter(product_code=new_product_code).exists():
+            if new_product_code and new_product_code != product_inflow.product.product_code:
+                product = Products.objects.filter(product_code=new_product_code).first()
+                if not product:
                     return JsonResponse({'error': f"The Product Code '{new_product_code}' not exists in the database."}, status=400)
-                if not new_product_code:
-                    return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
-                else:
-                    product_flow.product_code = new_product_code
+                product_inflow.product = product
 
-            # Update other product flow fields
-            for field in ['new_date', 'new_provider_company', 'new_reciever_company', 'new_inflow_outflow', 'new_status', 'new_place_of_use', 'new_group', 'new_subgroup', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit', 'new_amount']:
+            # Update supplier_company
+            new_supplier_tax_code = data.get('new_supplier_tax_code')
+            if new_supplier_tax_code:
+                supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code).first()
+                if not supplier_company:
+                    return JsonResponse({'error': f"The Supplier with tax code '{new_supplier_tax_code}' does not exist in the database."}, status=400)
+                product_inflow.supplier_company = supplier_company
+
+            # Update receiver_company
+            new_receiver_tax_code = data.get('new_receiver_tax_code')
+            if new_receiver_tax_code:
+                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code).first()
+                if not receiver_company:
+                    return JsonResponse({'error': f"The Receiver with tax code '{new_receiver_tax_code}' does not exist in the database."}, status=400)
+                product_inflow.receiver_company = receiver_company
+
+            # Update other product inflow fields
+            for field in ['new_date', 'new_status', 'new_place_of_use', 'new_amount', 'new_barcode']:
                 value = data.get(field)
                 if value is not None and value != '':
                     updated_field = field[4:]  # Remove the "new_" prefix
-                    setattr(product_flow, updated_field, value)
+                    setattr(product_inflow, updated_field, value)
                 else:
                     return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
 
-            product_flow.save()
+            product_inflow.save()
             return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
 
-        except ProductFlow.DoesNotExist:
+        except ProductInflow.DoesNotExist:
             return JsonResponse({'error': "Product not found."}, status=400)
 
         except ValueError as e:
@@ -371,20 +439,197 @@ class EditProductFlowView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-class DeleteProductFlowView(APIView):
+
+#! Ambar girişi silineceği zaman kullanıcıya silmeden önce, muhasebe kaydının da silineceği ile alakalı uyarı verilmeli. 
+class DeleteProductInflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         try:
-            id = request.POST.get('id')
-            ProductFlow.objects.filter(id=id).delete()
+            id = request.data.get('id')
+            product_inflow = ProductInflow.objects.get(id=id)
+
+            # Check if there are any associated accounting objects
+            if product_inflow.accounting_set.exists():
+                return JsonResponse({'error': 'Cannot delete product inflow object. There are accounting objects associated with it.'}, status=400)
+
+            product_inflow.delete()
+
+        except ProductInflow.DoesNotExist:
+            return JsonResponse({'error': "Product inflow object not found."}, status=400)
+
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-        return JsonResponse({'message': "Product Flow object has been successfully deleted"}, status=200)
+
+        return JsonResponse({'message': "Product inflow object has been successfully deleted"}, status=200)
+
 
 # endregion
 
+# region ProductOutflow
+
+class AddProductOutflowView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            product_code = request.data.get('product_code')
+            date = request.data.get('date')
+            barcode = request.data.get('barcode')
+            provider_company_tax_code = request.data.get('provider_company_tax_code')
+            receiver_company_tax_code = request.data.get('receiver_company_tax_code')
+            status = request.data.get('status')
+            place_of_use = request.data.get('place_of_use')
+            amount = request.data.get('amount')
+            #! company ve project id user izerinden çekiklecek
+            company_id = request.data.get('company_id')
+            project_id = request.data.get('project_id')
+
+            # Fetch the product using the product code
+            product = Products.objects.get(product_code=product_code)
+            provider_company = Consumers.objects.get(tax_code=provider_company_tax_code)
+            receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code)
+            company = Company.objects.get(id=company_id)
+            project = Project.objects.get(id=project_id)
+
+            # Create the ProductOutflow object
+            product_outflow = ProductOutflow.objects.create(
+                product=product,
+                date=date,
+                barcode=barcode,
+                provider_company=provider_company,
+                receiver_company=receiver_company,
+                status=status,
+                place_of_use=place_of_use,
+                amount=amount,
+                company=company,
+                project=project
+            )
+
+            return JsonResponse({'message': 'ProductOutflow created successfully'}, status=201)
+        except Products.DoesNotExist:
+            return JsonResponse({'error': 'Product with the provided product code does not exist.'}, status=400)
+        except Consumers.DoesNotExist:
+            return JsonResponse({'error': 'Consumer with the provided tax code does not exist.'}, status=400)
+        except Company.DoesNotExist:
+            return JsonResponse({'error': 'Company with the provided company id does not exist.'}, status=400)
+        except Project.DoesNotExist:
+            return JsonResponse({'error': 'Project with the provided project id does not exist.'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class ProductOutflowView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        product_outflows = ProductOutflow.objects.select_related('product').all()
+
+        product_outflow_list = [
+            [
+                pf.id, 
+                pf.date,
+                pf.barcode, 
+                pf.product.product_code, 
+                pf.supplier_company.tax_code, 
+                pf.receiver_company.tax_code, 
+                pf.status, 
+                pf.place_of_use,
+                pf.product.group,
+                pf.product.subgroup,
+                pf.product.brand,
+                pf.product.serial_number,
+                pf.product.model,
+                pf.product.description,
+                pf.product.unit,
+                pf.amount
+            ] 
+            for pf in product_outflows
+        ]
+
+        return JsonResponse(product_outflow_list, safe=False, status=200)
+
+class EditProductOutflowView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = request.data
+
+            old_id = data.get('old_id')
+            product_outflow = ProductOutflow.objects.get(id=old_id)
+
+            # Check if new product_code value is unique
+            new_product_code = data.get('new_product_code')
+            if new_product_code and new_product_code != product_outflow.product.product_code:
+                product = Products.objects.filter(product_code=new_product_code).first()
+                if not product:
+                    return JsonResponse({'error': f"The Product Code '{new_product_code}' not exists in the database."}, status=400)
+                product_outflow.product = product
+
+            # Update supplier_company
+            new_supplier_tax_code = data.get('new_supplier_tax_code')
+            if new_supplier_tax_code:
+                supplier_company = Consumers.objects.filter(tax_code=new_supplier_tax_code).first()
+                if not supplier_company:
+                    return JsonResponse({'error': f"The Supplier with tax code '{new_supplier_tax_code}' does not exist in the database."}, status=400)
+                product_outflow.supplier_company = supplier_company
+
+            # Update receiver_company
+            new_receiver_tax_code = data.get('new_receiver_tax_code')
+            if new_receiver_tax_code:
+                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code).first()
+                if not receiver_company:
+                    return JsonResponse({'error': f"The Receiver with tax code '{new_receiver_tax_code}' does not exist in the database."}, status=400)
+                product_outflow.receiver_company = receiver_company
+
+            # Update other product outflow fields
+            for field in ['new_date', 'new_status', 'new_place_of_use', 'new_amount', 'new_barcode']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    updated_field = field[4:]  # Remove the "new_" prefix
+                    setattr(product_outflow, updated_field, value)
+                else:
+                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+
+            product_outflow.save()
+            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+
+        except ProductOutflow.DoesNotExist:
+            return JsonResponse({'error': "Product not found."}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class DeleteProductOutflowView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            id = request.data.get('id')
+            product_outflow = ProductOutflow.objects.get(id=id)
+
+            # No need to check for associated accounting objects as there shouldn't be any
+
+            product_outflow.delete()
+
+        except ProductOutflow.DoesNotExist:
+            return JsonResponse({'error': "Product outflow object not found."}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+        return JsonResponse({'message': "Product outflow object has been successfully deleted"}, status=200)
+
+
+# endregion
 
 # region Stock
 
@@ -392,68 +637,107 @@ class DeleteProductFlowView(APIView):
 def create_stock(sender, instance, created, **kwargs):
     if created:
         Stock.objects.create(
-            product_code=instance.product_code,
-            barcode=instance.barcode,
-            group=instance.group,
-            subgroup=instance.subgroup,
-            brand=instance.brand,
-            serial_number=instance.serial_number,
-            model=instance.model,
-            description=instance.description,
-            unit=instance.unit,
+            product=instance,
             warehouse=None,
             inflow=0,
             outflow=0,
-            stock=0
+            stock=0,
+            company=instance.company,
+            project=instance.project
         )
 
-@receiver(post_save, sender=ProductFlow)
-def update_stock(sender, instance, created, **kwargs):
-    # Fetch the corresponding Stock object
+#! Aşağıdaki sinyal fonksiyonlarında ürünlerin şirket ve ürüne göre filitrelenmesi gerekiyor.
+@receiver(post_save, sender=ProductInflow)
+def update_stock_inflow(sender, instance, created, **kwargs):
+    dirty_fields = instance.get_dirty_fields()
+
+    # Check if product_code has been changed
+    old_product_code = dirty_fields.get('product__product_code')
+    if old_product_code:
+        try:
+            old_product_stock = Stock.objects.get(product_code=old_product_code)
+            old_product_stock.inflow -= instance.amount
+            old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
+            old_product_stock.save()
+        except Stock.DoesNotExist:
+            return JsonResponse({'error': "Ambarda böyle bir ürün bulunamadı."}, status=400)
+
     try:
-        stock = Stock.objects.get(product_code=instance.product_code)
+        stock = Stock.objects.get(product_code=instance.product.product_code)
     except Stock.DoesNotExist:
         return
 
-    # Check which fields have been updated
-    dirty_fields = instance.get_dirty_fields()
-
-    # Handle creation of a new ProductFlow instance
     if created:
-        if instance.inflow_outflow == "Giriş":
-            stock.inflow += float(instance.amount)
-        elif instance.inflow_outflow == "Çıkış":
-            stock.outflow += float(instance.amount)
+        # Add product to supplier
+        instance.supplier_company.products.add(instance.product)
+        stock.inflow += instance.amount
     else:
-        # Handle updates to existing ProductFlow instance
-        old_inflow_outflow = dirty_fields.get('inflow_outflow')
         old_amount = dirty_fields.get('amount')
+        if old_amount is not None:
+            stock.inflow = (stock.inflow or 0) - old_amount + instance.amount
 
-        # If inflow_outflow has been changed
-        if old_inflow_outflow:
-            if old_inflow_outflow == "Giriş":
-                stock.inflow -= old_amount or float(instance.amount)
-            elif old_inflow_outflow == "Çıkış":
-                stock.outflow -= old_amount or float(instance.amount)
-
-            if instance.inflow_outflow == "Giriş":
-                stock.inflow += float(instance.amount)
-            elif instance.inflow_outflow == "Çıkış":
-                stock.outflow += float(instance.amount)
-
-        # If only amount has been changed
-        elif old_amount is not None:
-            if instance.inflow_outflow == "Giriş":
-                stock.inflow = (stock.inflow or 0) - old_amount + float(instance.amount)
-            elif instance.inflow_outflow == "Çıkış":
-                stock.outflow = (stock.outflow or 0) - old_amount + float(instance.amount)
-
-    # Compute stock as inflow - outflow
     stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
-
-    # Save the Stock object
     stock.save()
 
+@receiver(pre_delete, sender=ProductInflow)
+def update_stock_inflow_on_delete(sender, instance, **kwargs):
+    try:
+        stock = Stock.objects.get(product=instance.product)
+        stock.inflow -= instance.amount
+        stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+        stock.save()
+
+        # If product was added to the supplier, remove it
+        instance.supplier_company.products.remove(instance.product)
+    except Stock.DoesNotExist:
+        return JsonResponse({'error': "Ambarda böyle bir ürün bulunamadı."}, status=400)
+
+
+@receiver(post_save, sender=ProductOutflow)
+def update_stock_outflow(sender, instance, created, **kwargs):
+    dirty_fields = instance.get_dirty_fields()
+
+    # Check if product_code has been changed
+    old_product_code = dirty_fields.get('product__product_code')
+    if old_product_code:
+        try:
+            old_product_stock = Stock.objects.get(product_code=old_product_code)
+            old_product_stock.outflow -= instance.amount
+            old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
+            old_product_stock.save()
+        except Stock.DoesNotExist:
+            return JsonResponse({'error': "Ambarda böyle bir ürün bulunamadı."}, status=400)
+
+    try:
+        stock = Stock.objects.get(product_code=instance.product.product_code)
+    except Stock.DoesNotExist:
+        return
+
+    if created:
+        instance.receiver_company.products.add(instance.product)
+        stock.outflow += instance.amount
+    else:
+        old_amount = dirty_fields.get('amount')
+        if old_amount is not None:
+            stock.outflow = (stock.outflow or 0) - old_amount + instance.amount
+
+    stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+    stock.save()
+
+from django.core.exceptions import ValidationError
+
+@receiver(pre_delete, sender=ProductOutflow)
+def update_stock_outflow_on_delete(sender, instance, **kwargs):
+    try:
+        stock = Stock.objects.get(product=instance.product)
+        stock.outflow -= instance.amount
+        stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+        stock.save()
+
+        # If product was added to the receiver, remove it
+        instance.receiver_company.products.remove(instance.product)
+    except Stock.DoesNotExist:
+        return JsonResponse({'error': "Ambarda böyle bir ürün bulunamadı."}, status=400)
 
 
 
@@ -462,117 +746,114 @@ class StockView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        stocks = Stock.objects.values().all()
+        stocks = Stock.objects.all()
         stock_list = [
-            [stock['product_code'], stock['barcode'], stock['group'], stock['subgroup'],
-             stock['brand'], stock['serial_number'], stock['model'], stock['description'],
-             stock['unit'], stock['warehouse'], stock['inflow'], stock['outflow'], stock['stock']] 
+            [
+                stock.product.product_code, 
+                stock.product.group, 
+                stock.product.subgroup,
+                stock.product.brand, 
+                stock.product.serial_number, 
+                stock.product.model, 
+                stock.product.description,
+                stock.product.unit, 
+                stock.warehouse, 
+                stock.inflow, 
+                stock.outflow, 
+                stock.stock,
+                stock.reserve_stock
+            ] 
             for stock in stocks
         ]
         return JsonResponse(stock_list, safe=False, status=200)
 
-class EditStockView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff)
-    authentication_classes = (JWTAuthentication,)
+#! Kullanıcı stock üzerinde edit yapamasın diye bu view kapatıldı.
+# class EditStockView(APIView):
+#     permission_classes = (IsAuthenticated, IsSuperStaff)
+#     authentication_classes = (JWTAuthentication,)
 
-    def post(self, request, *args, **kwargs):
-        try:
-            data = json.loads(request.body)
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             data = json.loads(request.body)
 
-            old_product_code = data.get('old_product_code')
-            stock = Stock.objects.get(product_code=old_product_code)
+#             product_code = data.get('product_code')
+#             stock = Stock.objects.get(product__product_code=product_code)
 
-            # Check if new product_code value is unique
-            new_product_code = data.get('new_product_code')
-            if new_product_code and new_product_code != old_product_code:
-                if Stock.objects.filter(product_code=new_product_code).exists():
-                    return JsonResponse({'error': f"The Product Code '{new_product_code}' already exists in the database."}, status=400)
-                if not new_product_code:
-                    return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
-                else:
-                    stock.product_code = new_product_code
+#             # Update stock fields
+#             for field in ['new_warehouse', 'new_inflow', 'new_outflow', 'new_stock']:
+#                 value = data.get(field)
+#                 if value is not None and value != '':
+#                     updated_field = field[4:]  # Remove the "new_" prefix
+#                     setattr(stock, updated_field, value)
+#                 else:
+#                     return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
 
-            # Update other stock fields
-            for field in ['new_barcode', 'new_group', 'new_subgroup', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit', 'new_warehouse', 'new_inflow', 'new_outflow', 'new_stock']:
-                value = data.get(field)
-                if value is not None and value != '':
-                    updated_field = field[4:]  # Remove the "new_" prefix
-                    setattr(stock, updated_field, value)
-                else:
-                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+#             stock.save()
+#             return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
 
-            stock.save()
-            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+#         except Stock.DoesNotExist:
+#             return JsonResponse({'error': "Stock not found."}, status=400)
+#         except Products.DoesNotExist:
+#             return JsonResponse({'error': "Product not found."}, status=400)
+#         except ValueError as e:
+#             return JsonResponse({'error': str(e)}, status=400)
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
 
-        except Stock.DoesNotExist:
-            return JsonResponse({'error': "Stock not found."}, status=400)
+#! Kullanıcı stock üzerinde delete yapamasın diye bu view kapatıldı.       
+# class DeleteStockView(APIView):
+#     permission_classes = (IsAuthenticated, IsSuperStaff)
+#     authentication_classes = (JWTAuthentication,)
 
-        except ValueError as e:
-            return JsonResponse({'error': str(e)}, status=400)
-
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-        
-class DeleteStockView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff)
-    authentication_classes = (JWTAuthentication,)
-
-    def post(self, request, *args, **kwargs):
-        try:
-            product_code = request.POST.get('product_code')
-            Stock.objects.filter(product_code=product_code).delete()
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-        return JsonResponse({'message': "Stock object has been successfully deleted"}, status=200)
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             product_code = request.POST.get('product_code')
+#             Stock.objects.filter(product_code=product_code).delete()
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse({'message': "Stock object has been successfully deleted"}, status=200)
 
 
 # endregion
 
 # region Accounting
 
-@receiver(post_save, sender=ProductFlow)
+@receiver(post_save, sender=ProductInflow)
 def create_accounting(sender, instance, created, **kwargs):
-    if created and (instance.inflow_outflow == "Giriş" or instance.inflow_outflow == "giriş"):
+    if created:
         Accounting.objects.create(
-            date = instance.date,
-            product_code=instance.product_code,
-            barcode=instance.barcode,
-            provider_company = instance.provider_company,
-            reciever_company = instance.reciever_company,
-            status = instance.status,
-            place_of_use = instance.place_of_use,
-            group=instance.group,
-            subgroup=instance.subgroup,
-            brand=instance.brand,
-            serial_number=instance.serial_number,
-            model=instance.model,
-            description=instance.description,
-            unit=instance.unit,
-            amount = instance.amount,
+            product_inflow=instance,
+            company_id = 1,  # Assuming Company and Project models exist, and the following values represent actual ids from their records
+            project_id = 1,
             unit_price = 0,
             discount_rate = 0,
             discount_amount = 0,
             tax_rate = 0,
             tevkifat_rate = 0,
             price_without_tax = 0,
+            unit_price_without_tax = 0,
             price_with_tevkifat = 0,
             price_total = 0,
         )
+
+
 
 class AccountingView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        accountings = Accounting.objects.values().all()
+        accountings = Accounting.objects.all()
         accounting_list = [
-            [ac['id'], ac['product_code'], ac['date'], ac['barcode'], ac['provider_company'], ac['reciever_company'],
-             ac['status'], ac['place_of_use'], ac['group'], ac['subgroup'], ac['brand'], ac['serial_number'], 
-             ac['model'], ac['description'], ac['unit'], ac['amount'], ac['unit_price'], ac['discount_rate'], 
-             ac['discount_amount'], ac['tax_rate'], ac['tevkifat_rate'], ac['price_without_tax'], ac['price_with_tevkifat'], 
-             ac['price_total']] for ac in accountings
+            [ac.id, ac.product_inflow.product.product_code, ac.product_inflow.date, ac.product_inflow.barcode, ac.product_inflow.supplier_company, ac.product_inflow.receiver_company,
+             ac.product_inflow.status, ac.product_inflow.place_of_use, ac.product_inflow.product.group, ac.product_inflow.product.subgroup, ac.product_inflow.product.brand, ac.product_inflow.product.serial_number, 
+             ac.product_inflow.product.model, ac.product_inflow.product.description, ac.product_inflow.product.unit, ac.product_inflow.amount, ac.unit_price, ac.discount_rate, 
+             ac.discount_amount, ac.tax_rate, ac.tevkifat_rate, ac.price_without_tax, ac.unit_price_without_tax, ac.price_with_tevkifat, 
+             ac.price_total] for ac in accountings
         ]
         return JsonResponse(accounting_list, safe=False, status=200)
+
+
 
 #! Total Price'lar edit yapılamamalı. Onlar diğer verilere göre otomatik hesaplanıyor.
 class EditAccountingView(APIView):
@@ -583,22 +864,11 @@ class EditAccountingView(APIView):
         try:
             data = json.loads(request.body)
 
-            old_product_code = data.get('old_product_code')
             old_id = data.get('old_id')
             accounting = Accounting.objects.get(id=old_id)
 
-            # Check if new product_code value is unique
-            new_product_code = data.get('new_product_code')
-            if new_product_code and new_product_code != old_product_code:
-                if not Accounting.objects.filter(product_code=new_product_code).exists():
-                    return JsonResponse({'error': f"The Product Code '{new_product_code}' not exists in the database."}, status=400)
-                if not new_product_code:
-                    return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
-                else:
-                    accounting.product_code = new_product_code
-
-            # Update other accounting fields
-            for field in ['new_date', 'new_provider_company', 'new_receiver_company', 'new_status', 'new_place_of_use', 'new_group', 'new_subgroup', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit', 'new_amount', 'new_unit_price', 'new_discount_rate', 'new_discount_amount', 'new_tax_rate', 'new_tevkifat_rate']:
+            # Update accounting fields
+            for field in ['new_unit_price', 'new_discount_rate', 'new_discount_amount', 'new_tax_rate', 'new_tevkifat_rate', 'new_price_without_tax', 'new_unit_price_without_tax', 'new_price_with_tevkifat', 'new_price_total']:
                 value = data.get(field)
 
                 if value is not None and value != '':
@@ -620,17 +890,20 @@ class EditAccountingView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
 
-class DeleteAccountingView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff)
-    authentication_classes = (JWTAuthentication,)
 
-    def post(self, request, *args, **kwargs):
-        try:
-            id = request.POST.get('id')
-            Accounting.objects.filter(id=id).delete()
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
-        return JsonResponse({'message': "Accounting object has been successfully deleted"}, status=200)
+#! muhasebenin kayıt silmesi engellendi, kayıtları sadece amar girişi üzerinden silinebilir. Ambar girişinde silinen 
+#! ürün otomatik olarak muhasebe kısmından da silinecektir.
+# class DeleteAccountingView(APIView):
+#     permission_classes = (IsAuthenticated, IsSuperStaff)
+#     authentication_classes = (JWTAuthentication,)
+
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             id = request.POST.get('id')
+#             Accounting.objects.filter(id=id).delete()
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+#         return JsonResponse({'message': "Accounting object has been successfully deleted"}, status=200)
 
 # endregion
 

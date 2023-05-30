@@ -5,9 +5,11 @@ from django.contrib.auth.models import AbstractUser
 class Company(models.Model):
     name = models.CharField(max_length=200)
 
+
 class Project(models.Model):
     name = models.CharField(max_length=200)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
 
 class CustomUser(AbstractUser):
     is_superstaff = models.BooleanField(default=False)
@@ -18,10 +20,8 @@ class CustomUser(AbstractUser):
     projects = models.ManyToManyField(Project, related_name="users")
 
 
-
 class Products(models.Model, DirtyFieldsMixin):
     product_code = models.IntegerField(unique= True)
-    barcode= models.CharField(max_length=255)
     group = models.CharField(max_length=255)
     subgroup = models.CharField(max_length=255)
     brand = models.CharField(max_length=255)
@@ -29,67 +29,83 @@ class Products(models.Model, DirtyFieldsMixin):
     model = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
     unit = models.CharField(max_length=255)
-    supplier = models.CharField(max_length=255)
-    supplier_contact = models.CharField(max_length=255)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    pass
 
-class ProductFlow(models.Model, DirtyFieldsMixin):
+
+class Suppliers(models.Model, DirtyFieldsMixin):
+    tax_code = models.IntegerField(unique=True)
+    name = models.CharField(max_length=350)
+    contact_name = models.CharField(max_length=255)
+    contact_no = models.CharField(max_length=255)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    products = models.ManyToManyField(Products)
+    pass
+
+class Consumers(models.Model, DirtyFieldsMixin):
+    tax_code = models.IntegerField(unique=True)
+    name = models.CharField(max_length=350)
+    contact_name = models.CharField(max_length=255)
+    contact_no = models.CharField(max_length=255)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    products = models.ManyToManyField(Products)
+    pass
+
+#! Ambar Giriş Çıkışları iki Ayrı Tabloda tutulabilir.
+class ProductInflow(models.Model, DirtyFieldsMixin):
     date = models.DateField()
-    product_code = models.IntegerField()
-    barcode= models.CharField(max_length=255)
-    provider_company = models.CharField(max_length=255)
-    reciever_company = models.CharField(max_length=255)
-    inflow_outflow = models.CharField(max_length=255)
+    product = models.ForeignKey(Products, on_delete=models.PROTECT)
+    barcode = models.CharField(max_length=100)
+    supplier_company = models.ForeignKey(Suppliers, on_delete=models.PROTECT)
+    receiver_company = models.ForeignKey(Suppliers, on_delete=models.PROTECT)
     status = models.CharField(max_length=255)
     place_of_use = models.CharField(max_length=255)
-    group = models.CharField(max_length=255)
-    subgroup = models.CharField(max_length=255)
-    brand = models.CharField(max_length=255)
-    serial_number = models.CharField(max_length=255)
-    model = models.CharField(max_length=255)
-    description = models.CharField(max_length=255)
-    unit = models.CharField(max_length=255)
     amount = models.FloatField(null= True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+class ProductOutflow(models.Model, DirtyFieldsMixin):
+    date = models.DateField()
+    product = models.ForeignKey(Products, on_delete=models.PROTECT)
+    barcode = models.CharField(max_length=100)
+    supplier_company = models.ForeignKey(Consumers, on_delete=models.PROTECT)
+    receiver_company = models.ForeignKey(Consumers, on_delete=models.PROTECT)
+    status = models.CharField(max_length=255)
+    place_of_use = models.CharField(max_length=255)
+    amount = models.FloatField(null= True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
 
 class Stock(models.Model):
-    product_code = models.IntegerField(unique= True)
-    barcode= models.CharField(max_length=255)
-    group = models.CharField(max_length=255)
-    subgroup = models.CharField(max_length=255)
-    brand = models.CharField(max_length=255)
-    serial_number = models.CharField(max_length=255)
-    model = models.CharField(max_length=255)
-    description = models.CharField(max_length=255)
-    unit = models.CharField(max_length=255)
-    warehouse = models.CharField(max_length=255, null= True)
-    inflow = models.FloatField(null= True)
-    outflow = models.FloatField(null= True)
-    stock = models.FloatField(null= True)
+    product = models.ForeignKey(Products, on_delete=models.PROTECT)
+    warehouse = models.CharField(max_length=255, null=True)
+    inflow = models.FloatField(null=True)
+    outflow = models.FloatField(null=True)
+    stock = models.FloatField(null=True)
+    reserve_stock = models.FloatField(null=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
 
 class Accounting(models.Model, DirtyFieldsMixin):
-    date = models.DateField()
-    product_code = models.IntegerField()
-    barcode= models.CharField(max_length=255)
-    provider_company = models.CharField(max_length=255)
-    reciever_company = models.CharField(max_length=255)
-    status = models.CharField(max_length=255)
-    place_of_use = models.CharField(max_length=255)
-    group = models.CharField(max_length=255)
-    subgroup = models.CharField(max_length=255)
-    brand = models.CharField(max_length=255)
-    serial_number = models.CharField(max_length=255)
-    model = models.CharField(max_length=255)
-    description = models.CharField(max_length=255)
-    unit = models.CharField(max_length=255)
-    amount = models.FloatField(null= True)
+    product_inflow = models.ForeignKey(ProductInflow, on_delete=models.CASCADE)
     unit_price = models.FloatField(null= True)
     discount_rate = models.FloatField(null= True)
     discount_amount = models.FloatField(null= True)
     tax_rate = models.FloatField(null= True)
     tevkifat_rate = models.FloatField(null= True)
     price_without_tax = models.FloatField(null= True)
+    unit_price_without_tax = models.FloatField(null= True)
     price_with_tevkifat = models.FloatField(null= True)
     price_total = models.FloatField(null= True)
-    
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+
     def save(self, *args, **kwargs):
         self.unit_price = float(self.unit_price)
         self.discount_rate = float(self.discount_rate)
@@ -99,18 +115,20 @@ class Accounting(models.Model, DirtyFieldsMixin):
         self.price_without_tax = float(self.price_without_tax)
         self.price_with_tevkifat = float(self.price_with_tevkifat)
         self.price_total = float(self.price_total)
+        self.product_inflow.amount = float(self.product_inflow.amount)
         if self.discount_rate and float(self.discount_rate) != 0:
-            discount = self.discount_rate * self.unit_price * self.amount
+            discount = self.discount_rate * self.unit_price * self.product_inflow.amount
         else:
             discount = 0
         if self.discount_amount and self.discount_amount != 0:
             discount = self.discount_amount
-        tax = (self.tax_rate/100) * (self.unit_price * self.amount - discount)
-        tax_tevkifat = ((self.tax_rate)-((self.tevkifat_rate/100)*self.tax_rate))/100 * (self.unit_price * self.amount - discount)
+        tax = (self.tax_rate/100) * (self.unit_price * self.product_inflow.amount - discount)
+        tax_tevkifat = ((self.tax_rate)-((self.tevkifat_rate/100)*self.tax_rate))/100 * (self.unit_price * self.product_inflow.amount - discount)
         
-        self.price_without_tax = (self.unit_price * self.amount) - discount
-        self.price_with_tevkifat = (self.unit_price * self.amount) - discount + tax_tevkifat
-        self.price_total = (self.unit_price * self.amount) - discount + tax
+        self.unit_price_without_tax = self.price_without_tax / self.product_inflow.amount
+        self.price_without_tax = (self.unit_price * self.product_inflow.amount) - discount
+        self.price_with_tevkifat = (self.unit_price * self.product_inflow.amount) - discount + tax_tevkifat
+        self.price_total = (self.unit_price * self.product_inflow.amount) - discount + tax
         super().save(*args, **kwargs)
 
 
