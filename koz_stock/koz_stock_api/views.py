@@ -907,6 +907,38 @@ class EditAccountingView(APIView):
 
 # endregion
 
+# region Search Supplier and Consumer
+
+class SupplierSearchView(APIView):
+    permission_classes = (IsAuthenticated,IsSuperStaff, IsAccountingStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        product_code = request.GET.get('product_code')
+        if not product_code:
+            return JsonResponse({'error': 'Missing product_code parameter'}, status=400)
+
+        suppliers = Suppliers.objects.filter(products__product_code=product_code)
+        suppliers_data = [{'id': supplier.id, 'name': supplier.name, 'contact_name': supplier.contact_name, 'contact_no': supplier.contact_no} for supplier in suppliers]
+
+        return JsonResponse({'suppliers': suppliers_data})
+
+class ConsumerSearchView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsAccountingStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        product_code = request.GET.get('product_code')
+        if not product_code:
+            return JsonResponse({'error': 'Missing product_code parameter'}, status=400)
+
+        consumers = Consumers.objects.filter(products__product_code=product_code)
+        consumers_data = [{'id': consumer.id, 'name': consumer.name, 'contact_name': consumer.contact_name, 'contact_no': consumer.contact_no } for consumer in consumers]
+
+        return JsonResponse({'consumers': consumers_data})
+
+# endregion
+
 
 # # region Customers
 
