@@ -19,7 +19,7 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                   DeleteProductsView, AddProductInflowView, ProductInflowView, EditProductInflowView, DeleteProductInflowView,
                                     StockView,  AddProductOutflowView, ProductOutflowView, EditProductOutflowView, DeleteProductOutflowView,
                                     AccountingView, EditAccountingView, 
-                                    SetCurrentProjectView, GetProjectsView,
+                                    SetCurrentProjectView, GetProjectsView, CreateProjectView,
                                     CreateUserView, ConsumerSearchView, SupplierSearchView)
 # from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
 #                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
@@ -51,6 +51,7 @@ urlpatterns = [
 
     path('api/projects/', GetProjectsView.as_view(), name='get-projects'),
     path('api/set_current_project/', SetCurrentProjectView.as_view(), name='set-current-project'),
+    path('api/create_project/', CreateProjectView.as_view(), name='create_project'),
 
     path('api/create_user/', CreateUserView.as_view(), name='create-user'),
     

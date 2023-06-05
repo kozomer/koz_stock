@@ -1,7 +1,7 @@
 from django.shortcuts import render
 import pandas as pd
 from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
-                      Stock, Accounting, Project, CustomUser, Company)
+                      Stock, Accounting, Project, CustomUser, Company, ProductGroups)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -14,7 +14,7 @@ from django.dispatch import receiver
 from datetime import datetime
 import datetime
 import jdatetime
-from django.db.models import Sum, Avg
+from django.db.models import Sum, Avg, Max, F
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 import statistics
@@ -26,7 +26,7 @@ import openpyxl
 import base64
 from io import BytesIO
 import numpy as np
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from .permissions import IsSuperStaff, IsAccountingStaff, IsStockStaff
 
 
@@ -42,6 +42,12 @@ from django.db.utils import OperationalError
 from rest_framework.exceptions import ValidationError
 import filetype
 from django.core.exceptions import ObjectDoesNotExist
+
+from django.http import JsonResponse
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from django.core.exceptions import ObjectDoesNotExist
+from .models import Project
 
 
 
@@ -89,11 +95,25 @@ class LogoutView(APIView):
 
 # region Project Selection
 
-from django.http import JsonResponse
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from django.core.exceptions import ObjectDoesNotExist
-from .models import Project
+class CreateProjectView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        name = request.data.get('name')
+        company = request.user.company  # Get the company from the logged in user
+
+        if not name or not company:
+            return JsonResponse({'error': 'Name and company are required'}, status=400)
+
+        project = Project(name=name, company=company)
+        project.save()
+
+        for user in CustomUser.objects.filter(company=request.user.company):
+            user.projects.add(project)
+            user.save()
+
+        return JsonResponse({'message': 'Project created and assigned to all users successfully'})
 
 class GetProjectsView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -109,13 +129,22 @@ class SetCurrentProjectView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request):
-        project_id = request.data.get('project_id')
+        # project_id=request.data.get('project_id')
+        # print(project_id)
+        data = json.loads(request.body)
+        project_id = data.get('project_id')
+        print(project_id)
         try:
+            print(request.user.company)
             project = Project.objects.get(id=project_id, company=request.user.company)
+            # print(project)
+            # print(request.user.current_project)
             request.user.current_project = project
+            print(request.user.current_project)
             request.user.save()
             return JsonResponse({'status': 'Project set successfully'})
         except ObjectDoesNotExist:
+            print("erro")
             return JsonResponse({'error': 'Project not found or does not belong to your company'}, status=400, safe=False)
 
 
@@ -136,7 +165,7 @@ class CreateUserView(APIView):
         is_superstaff = request.data.get('is_superstaff', False)
         is_stockstaff = request.data.get('is_stockstaff', False)
         is_accountingstaff = request.data.get('is_accountingstaff', False)
-        #! brda bir düzenleme gerekecek, company ve project verielri direk user üzerinden çekilebilir. user.company ya da user.projects gibi.
+        #! burada bir düzenleme gerekecek, company ve project verielri direk user üzerinden çekilebilir. user.company ya da user.projects gibi.
         company_id = request.data.get('company')
         current_project_id = request.data.get('current_project')
         project_ids = request.data.get('projects', [])
@@ -167,6 +196,109 @@ class CreateUserView(APIView):
         user.projects.set(projects)
 
         return JsonResponse({'message': 'User created successfully'})
+
+class EditUserView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        # Extract the data from the request
+        username = request.data.get('username')
+        password = request.data.get('password')
+        first_name = request.data.get('first_name')
+        last_name = request.data.get('last_name')
+        is_superstaff = request.data.get('is_superstaff', False)
+        is_stockstaff = request.data.get('is_stockstaff', False)
+        is_accountingstaff = request.data.get('is_accountingstaff', False)
+        project_ids = request.data.get('projects', [])
+
+        # Get the User, Projects instances
+        try:
+            user = CustomUser.objects.get(username=username)
+            projects = Project.objects.filter(id__in=project_ids)
+        except (CustomUser.DoesNotExist, Project.DoesNotExist):
+            return JsonResponse({'error': 'Invalid username or project ID'}, status=400)
+
+        # Update the user details
+        if password:
+            user.set_password(password)
+        if first_name:
+            user.first_name = first_name
+        if last_name:
+            user.last_name = last_name
+        if is_superstaff is not None:
+            user.is_superstaff = is_superstaff
+        if is_stockstaff is not None:
+            user.is_stockstaff = is_stockstaff
+        if is_accountingstaff is not None:
+            user.is_accountingstaff = is_accountingstaff
+        user.save()
+
+        # Assign the projects to the user
+        user.projects.set(projects)
+
+        return JsonResponse({'message': 'User details updated successfully'})
+
+class CollapsedUserView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+    
+    def get(self, request, *args, **kwargs):
+        active_users = CustomUser.objects.filter(is_active=True)
+        active_users_list = [[user.id, user.first_name, user.last_name, user.is_active] for user in active_users]
+        passive_users = CustomUser.objects.filter(is_active=False)
+        passive_users_list = [[user.id,user.first_name, user.last_name, user.is_active] for user in passive_users]
+        
+        return JsonResponse({"active_users_list": active_users_list,
+                             "passive_users_list": passive_users_list}, safe=False)
+
+class UserCardView(APIView):
+    permission_classes = (IsAuthenticated,) 
+    authentication_classes = (JWTAuthentication,)
+    
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        id = data.get('id')
+        try:
+            user = CustomUser.objects.get(id=id)
+        except ObjectDoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+
+        response_data = {
+            'id': user.id, 
+            'username': user.username, 
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+            'is_superuser': user.is_superuser,
+            'is_staff': user.is_staff,
+            'is_active': user.is_active,
+            'is_superstaff': user.is_superstaff,
+            'is_stockstaff': user.is_stockstaff,
+            'is_accountingstaff': user.is_accountingstaff,
+            'company': user.company.name if user.company else None,
+            'current_project': user.current_project.name if user.current_project else None,
+            'projects': [project.name for project in user.projects.all()],
+        }
+
+        return JsonResponse(response_data, safe=False)
+
+class DeleteUserView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        user_id = request.data.get('user_id')
+        try:
+            user = CustomUser.objects.get(id=user_id)
+            if request.user.is_superstaff or request.user.is_superuser:
+                user.delete()
+                return JsonResponse({'message': 'User deleted successfully'})
+            else:
+                return JsonResponse({'error': 'You do not have permission to delete this user'}, status=403)
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+
 
 # endregion
 
@@ -281,6 +413,106 @@ class DeleteProductsView(APIView):
 
 
 # endregion
+
+# region ProductGroups
+
+class CreateProductGroupView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        group_name = request.data.get('group_name')
+
+        # Retry the operation up to 5 times
+        for _ in range(5):
+            try:
+                with transaction.atomic():
+                    # Get the current maximum group code
+                    max_group_code = ProductGroups.objects.aggregate(Max('group_code'))['group_code__max']
+
+                    if max_group_code is None:
+                        # If no group codes exist, start at 1
+                        new_group_code = 1
+                    else:
+                        # Else, increment the highest group code by 1
+                        new_group_code = max_group_code + 1
+
+                    # Pad the group code with leading zeros to be 3 digits long
+                    padded_group_code = str(new_group_code).zfill(3)
+
+                    # Create the new product group
+                    product_group = ProductGroups(group_code=padded_group_code, group_name=group_name, company=request.user.company, project=request.user.current_project)
+                    product_group.save()
+
+                # If we reach this point, the operation was successful
+                return JsonResponse({'message': 'Product group created successfully'})
+
+            except IntegrityError:
+                # If an IntegrityError is raised, this means another transaction created a product group with the same code.
+                # We will retry the operation.
+                pass
+
+        # If we reach this point, we have failed to create a product group after several attempts.
+        return JsonResponse({'error': 'Could not create product group. Please try again.'}, status=500)
+
+class ProductGroupsView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request):
+        product_groups = ProductGroups.objects.filter(company=request.user.company, project=request.user.current_project)
+
+        # Create a list of lists where each sublist is [group_code, group_name]
+        product_groups_list = [[group.group_code, group.group_name] for group in product_groups]
+
+        return JsonResponse(product_groups_list, safe= False)
+
+class EditProductGroupView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        group_code = request.data.get('group_code')
+        new_group_name = request.data.get('new_group_name')
+
+        if not group_code or not new_group_name:
+            return JsonResponse({'error': 'Both group_code and new_group_name must be provided'}, status=400)
+
+        try:
+            product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
+        except ProductGroups.DoesNotExist:
+            return JsonResponse({'error': 'Product group not found'}, status=404)
+
+        product_group.group_name = new_group_name
+        product_group.save()
+
+        return JsonResponse({'message': 'Product group updated successfully'})
+    
+#! Bu view kontrol edilmeli, tam olarak düzgün çalışmıyor olabilir.
+class DeleteProductGroupView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        group_code = request.data.get('group_code')
+
+        if not group_code:
+            return JsonResponse({'error': 'group_code must be provided'}, status=400)
+
+        try:
+            product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
+        except ProductGroups.DoesNotExist:
+            return JsonResponse({'error': 'Product group not found'}, status=404)
+
+        product_group.delete()
+
+        # Decrement group_code of subsequent product groups
+        ProductGroups.objects.filter(group_code__gt=group_code, company=request.user.company, project=request.user.current_project).update(group_code=F('group_code') - 1)
+
+        return JsonResponse({'message': 'Product group deleted successfully'})
+
+# endregion
+
 
 # region ProductInflow
 
@@ -2094,6 +2326,11 @@ class ConsumerSearchView(APIView):
 #                             'is_active': saler.is_active, "active_or_passive": "Passive" }
 #         # Return the list of output_values as a JSON response
 #         return JsonResponse(response_data, safe=False)
+
+
+
+
+
 
 # class SalerTableView(APIView):
 #     permission_classes = (IsAuthenticated,)

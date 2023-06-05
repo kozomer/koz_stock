@@ -51,7 +51,7 @@ const [amount, setAmount] = useState(null);
    
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
-      const response = await fetch('http://127.0.0.1:8000/api/product_flow/',{
+      const response = await fetch('${process.env.PUBLIC_URL}/product_flow/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)

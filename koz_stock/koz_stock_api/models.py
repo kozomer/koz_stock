@@ -15,6 +15,7 @@ class CustomUser(AbstractUser):
     is_superstaff = models.BooleanField(default=False)
     is_stockstaff = models.BooleanField(default=False)
     is_accountingstaff = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
     company = models.ForeignKey(Company, on_delete=models.SET_NULL, null=True, blank=True)
     current_project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
     projects = models.ManyToManyField(Project, related_name="users")
@@ -33,6 +34,11 @@ class Products(models.Model, DirtyFieldsMixin):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     pass
 
+class ProductGroups(models.Model, DirtyFieldsMixin):
+    group_code = models.IntegerField(unique=True)
+    group_name = models.CharField(max_length=255)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
 class Suppliers(models.Model, DirtyFieldsMixin):
     tax_code = models.IntegerField(unique=True)
@@ -54,7 +60,7 @@ class Consumers(models.Model, DirtyFieldsMixin):
     products = models.ManyToManyField(Products)
     pass
 
-#! Ambar Giriş Çıkışları iki Ayrı Tabloda tutulabilir.
+
 class ProductInflow(models.Model, DirtyFieldsMixin):
     date = models.DateField()
     product = models.ForeignKey(Products, on_delete=models.PROTECT)

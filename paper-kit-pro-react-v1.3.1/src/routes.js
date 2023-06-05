@@ -26,6 +26,7 @@ import GridSystem from "views/components/GridSystem.js";
 import Icons from "views/components/Icons.js";
 import LockScreen from "views/pages/LockScreen.js";
 import Login from "views/pages/Login.js";
+import Select from "views/pages/SelectProject";
 import Notifications from "views/components/Notifications.js";
 import Panels from "views/components/Panels.js";
 import ReactTables from "views/tables/ReactTables.js";
@@ -148,6 +149,17 @@ const routes = [
     layout: "/auth",
     navbar: false  // Add this field to indicate that the Login link should not be displayed in the navbar
   },
+
+
+  {
+    path: "/select",
+    name: "Select",
+    icon: "nc-icon nc-bus-front-12",
+    component: Select,
+    layout: "/auth",
+   
+  },
+  
   
 ];
 

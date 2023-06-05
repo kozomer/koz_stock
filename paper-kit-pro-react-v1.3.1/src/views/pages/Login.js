@@ -80,7 +80,7 @@ function Login({ history }) {
         console.log("sadasd"),
         
         setTimeout(() => {
-          history.push('/admin/dashboard');
+          history.push('/auth/select');
         }, 500); // wait for 2 seconds before navigating to home page
         await localforage.setItem("access_token", access);
         await localforage.setItem("refresh_token", refresh);

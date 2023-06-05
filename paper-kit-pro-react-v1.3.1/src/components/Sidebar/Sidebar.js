@@ -166,7 +166,8 @@ function Sidebar(props) {
       
         const access_token = await localforage.getItem('access_token');
         const refresh_token = await localforage.getItem('refresh_token');
-        const response = await fetch('http://127.0.0.1:8000/api/logout/', {
+        console.log(process.env.PUBLIC_URL)
+        const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/logout/`, {
             
             method: 'POST',
             headers: {

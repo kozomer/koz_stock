@@ -1,0 +1,34 @@
+Kullanıcı siteye her giriş yaptığında üzerinde çalıştığı projeyi seçeceği bir proje seçim sayfası yapılacak.
+
+Tedarikçi Sayfası Yapılacak
+
+Tüketici Sayfası Yapılacak
+
+Ambar Giriş/Çıkış Sayfası Giriş ve Çıkış olarak 2 ayrı safaya bölünecek.
+
+Ambar Giriş ve Çıkışlarda kullanıcı fotoğraf da yüklemek zorunda olacak.
+
+Ambar Çıkışında kullanıcının otomatik hazırlanmış PDF indirme butonu eklencek.
+
+Program içindek Tüm ADD fonksiyonları, önceki programdaki Edit Windowu gibi olacak, exceden yükleme şuan için olmayacak.
+
+Ambardaki veriler değişti, düzenlenmesi gerek.
+
+Ambar Muhasebe kısmındaki veriler değişti, düzenlenmesi gerek.
+
+Kullanıcı oluşturma sayfası yapılacak.
+
+Malzeme Grup ve Grup kodu oluşturup, düzenleme sayfası yapılacak.
+
+Malzeme koduna göre artılıp o malzemenin şuana kadar hangi tedarikçiden alınıp, hangi tüketiciye verildiğini gösteren bir Search Sayfası
+
+Analiz Sayfaları eklencek.
+
+
+
+
+
+
+
+
+
