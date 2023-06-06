@@ -115,7 +115,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
+     
 ]
 
 ROOT_URLCONF = 'koz_stock.urls'
@@ -241,4 +243,19 @@ LOGGING = {
         },
     },
 }
+
+LOCALE_PATHS = (
+    os.path.join(BASE_DIR, 'locale'),
+)
+
+LANGUAGE_CODE = 'en-us'  # default language
+LANGUAGES = [  # languages your app supports
+    ('en', 'English'),
+    ('tr', 'Turkish'),
+]
+USE_I18N = True  # use internationalization
+USE_L10N = True  # use localization
+
+
+
 

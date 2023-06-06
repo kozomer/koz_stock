@@ -1,0 +1,213 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-06-06 15:57+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: .\koz_stock_api\views.py:87
+msgid "Invalid credentials"
+msgstr "Geçersiz kimlik bilgileri"
+
+#: .\koz_stock_api\views.py:98
+msgid "successfully log out"
+msgstr "başarıyla çıkış yapıldı"
+
+#: .\koz_stock_api\views.py:100
+msgid "BAD REQUEST"
+msgstr "HATALI İSTEK"
+
+#: .\koz_stock_api\views.py:116
+msgid "Name and company are required"
+msgstr "İsim ve şirket gereklidir"
+
+#: .\koz_stock_api\views.py:125
+msgid "Project created and assigned to all users successfully"
+msgstr "Proje başarıyla oluşturuldu ve tüm kullanıcılara atandı"
+
+#: .\koz_stock_api\views.py:168
+msgid "Project not found or does not belong to your company"
+msgstr "Proje bulunamadı veya şirketinize ait değil"
+
+#: .\koz_stock_api\views.py:212
+msgid "User created successfully"
+msgstr "Kullanıcı başarıyla oluşturuldu"
+
+#: .\koz_stock_api\views.py:234
+msgid "Invalid username or project ID"
+msgstr "Geçersiz kullanıcı adı veya proje kimliği"
+
+#: .\koz_stock_api\views.py:279 .\koz_stock_api\views.py:314
+msgid "User not found"
+msgstr "Kullanıcı bulunamadı"
+
+#: .\koz_stock_api\views.py:310
+#, fuzzy
+#| msgid "User created successfully"
+msgid "User deleted successfully"
+msgstr "Kullanıcı başarıyla silindi"
+
+#: .\koz_stock_api\views.py:312
+msgid "You do not have permission to delete this user"
+msgstr "Bu kullanıcıyı silme izniniz yok"
+
+#: .\koz_stock_api\views.py:338 .\koz_stock_api\views.py:395
+msgid "Product Code cannot be empty!"
+msgstr "Ürün Kodu boş olamaz!"
+
+#: .\koz_stock_api\views.py:340 .\koz_stock_api\views.py:393
+#, python-format
+msgid "The Product Code '%s' already exists in the database."
+msgstr "Ürün Kodu '%s' veritabanında zaten mevcut."
+
+#: .\koz_stock_api\views.py:350
+#, python-format
+msgid "The field '{%s}' cannot be empty."
+msgstr "Alan '{%s}' boş olamaz."
+
+#: .\koz_stock_api\views.py:355
+#, python-format
+msgid "New product '{%s}' has been successfully created."
+msgstr "Yeni ürün '{%s}' başarıyla oluşturuldu."
+
+#: .\koz_stock_api\views.py:406 .\koz_stock_api\views.py:679
+#: .\koz_stock_api\views.py:847
+#, python-format
+msgid "The field '%s' cannot be empty."
+msgstr "Alan '{%s}' boş olamaz."
+
+#: .\koz_stock_api\views.py:409 .\koz_stock_api\views.py:682
+#: .\koz_stock_api\views.py:850
+msgid "Your changes have been successfully saved."
+msgstr "Değişiklikleriniz başarıyla kaydedildi."
+
+#: .\koz_stock_api\views.py:412 .\koz_stock_api\views.py:685
+#: .\koz_stock_api\views.py:853
+msgid "Product not found."
+msgstr "Ürün bulunamadı."
+
+#: .\koz_stock_api\views.py:431
+msgid "Product object has been successfully deleted"
+msgstr "Ürün nesnesi başarıyla silindi"
+
+#: .\koz_stock_api\views.py:467
+#, fuzzy
+#| msgid "User created successfully"
+msgid "Product group created successfully"
+msgstr "Malzeme Grubu başarıyla oluşturuldu."
+
+#: .\koz_stock_api\views.py:475
+msgid "Could not create product group. Please try again."
+msgstr "Ürün grubu oluşturulamadı. Lütfen tekrar deneyin."
+
+#: .\koz_stock_api\views.py:498
+msgid "Both group_code and new_group_name must be provided"
+msgstr "group_code ve new_group_name değerleri sağlanmalıdır"
+
+#: .\koz_stock_api\views.py:503 .\koz_stock_api\views.py:524
+msgid "Product group not found"
+msgstr "Ürün grubu bulunamadı"
+
+#: .\koz_stock_api\views.py:508
+#, fuzzy
+#| msgid "User created successfully"
+msgid "Product group updated successfully"
+msgstr "Malzeme Grubu başarıyla güncellendi."
+
+#: .\koz_stock_api\views.py:519
+msgid "group_code must be provided"
+msgstr "group_code değeri sağlanmalıdır"
+
+#: .\koz_stock_api\views.py:531
+#, fuzzy
+#| msgid "User created successfully"
+msgid "Product group deleted successfully"
+msgstr "Malzeme Grubu başarıyla silindi."
+
+#: .\koz_stock_api\views.py:577
+#, fuzzy
+#| msgid "User created successfully"
+msgid "ProductInflow created successfully"
+msgstr "Kullanıcı başarıyla oluşturuldu"
+
+#: .\koz_stock_api\views.py:579 .\koz_stock_api\views.py:764
+msgid "Product with the provided product code does not exist."
+msgstr "Sağlanan ürün koduna sahip ürün bulunamadı."
+
+#: .\koz_stock_api\views.py:581
+msgid "Supplier with the provided tax code does not exist."
+msgstr "Sağlanan vergi koduna sahip tedarikçi bulunamadı."
+
+#: .\koz_stock_api\views.py:583 .\koz_stock_api\views.py:768
+msgid "Company with the provided company id does not exist."
+msgstr "Sağlanan şirket kimliğine sahip şirket bulunamadı."
+
+#: .\koz_stock_api\views.py:585 .\koz_stock_api\views.py:770
+msgid "Project with the provided project id does not exist."
+msgstr "Sağlanan proje kimliğine sahip proje bulunamadı."
+
+#: .\koz_stock_api\views.py:653 .\koz_stock_api\views.py:821
+#, python-format
+msgid "The Product Code '%s' does not exist in the database."
+msgstr "Veritabanında '%s' ürün kodu bulunamadı."
+
+#: .\koz_stock_api\views.py:661 .\koz_stock_api\views.py:829
+#, python-format
+msgid "The Supplier with tax code '%s' does not exist in the database."
+msgstr "Veritabanında '%s' vergi koduna sahip tedarikçi bulunamadı."
+
+#: .\koz_stock_api\views.py:669 .\koz_stock_api\views.py:837
+#, python-format
+msgid "The Receiver with tax code '%s' does not exist in the database."
+msgstr "Veritabanında '%s' vergi koduna sahip alıcı bulunamadı."
+
+#: .\koz_stock_api\views.py:706
+msgid ""
+"Cannot delete product inflow object. There are accounting objects associated "
+"with it."
+msgstr "Ürün akışı nesnesi silinemez. Bu nesneye bağlı muhasebe nesneleri bulunmaktadır."
+
+#: .\koz_stock_api\views.py:711
+msgid "Product inflow object not found."
+msgstr "Ürün akışı nesnesi bulunamadı."
+
+#: .\koz_stock_api\views.py:716
+msgid "Product inflow object has been successfully deleted."
+msgstr "Ürün akışı nesnesi başarıyla silindi."
+
+#: .\koz_stock_api\views.py:762
+#, fuzzy
+#| msgid "User created successfully"
+msgid "ProductOutflow created successfully"
+msgstr "Kullanıcı başarıyla oluşturuldu"
+
+#: .\koz_stock_api\views.py:766
+msgid "Consumer with the provided tax code does not exist."
+msgstr "Sağlanan vergi koduna sahip tüketici bulunamadı."
+
+#: .\koz_stock_api\views.py:875
+msgid "Product outflow object not found."
+msgstr "Ürün akışı nesnesi bulunamadı."
+
+#: .\koz_stock_api\views.py:880
+msgid "Product outflow object has been successfully deleted."
+msgstr "Ürün akışı nesnesi başarıyla silindi."
+
+#: .\koz_stock_api\views.py:914 .\koz_stock_api\views.py:944
+#: .\koz_stock_api\views.py:960 .\koz_stock_api\views.py:991
+msgid "Product could not be found on Stock."
+msgstr "Ürün stoğunda bulunamadı."
+

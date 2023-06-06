@@ -35,7 +35,7 @@ class Products(models.Model, DirtyFieldsMixin):
     pass
 
 class ProductGroups(models.Model, DirtyFieldsMixin):
-    group_code = models.IntegerField(unique=True)
+    group_code = models.IntegerField(null=True)
     group_name = models.CharField(max_length=255)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)

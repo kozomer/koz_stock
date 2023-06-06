@@ -28,6 +28,7 @@ from io import BytesIO
 import numpy as np
 from django.db import transaction, IntegrityError
 from .permissions import IsSuperStaff, IsAccountingStaff, IsStockStaff
+from django.utils.translation import gettext as _
 
 
 
@@ -48,10 +49,18 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Project
+from django.utils import translation
 
 
 
+# region Language
 
+def set_language(request):
+    user_language = 'tr'  # replace with the user's preferred language
+    translation.activate(user_language)
+    request.session[translation.LANGUAGE_SESSION_KEY] = user_language
+
+# endregion
 #! Tüm sistemi farklı projelere ve şirketlere göre kurabiliriz. Mesela Koz Grup(Koz Oran, Koz Horizon) gibi. 
 #! Kullanıcı girişte zorunlu olarak proje seçer, daha sonra site üzerinde yaptığı her işlem o projeyle ilişkilendirilerek kaydedilir.
 
@@ -75,7 +84,7 @@ class LoginView(TokenObtainPairView):
             response.data['last_name'] = last_name
             return response
         else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
+            return JsonResponse({'error': _('Invalid credentials')}, status=401)
 
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -86,9 +95,9 @@ class LogoutView(APIView):
             token = RefreshToken(refresh_token)
             token.blacklist()
 
-            return JsonResponse({'success': 'successfully log out'}, status=205)
+            return JsonResponse({'success': _('successfully log out')}, status=205)
         except Exception as e:
-            return JsonResponse({'error': 'BAD REQUEST'}, status=400)
+            return JsonResponse({'error': _('BAD REQUEST')}, status=400)
 
 
 # endregion
@@ -104,7 +113,7 @@ class CreateProjectView(APIView):
         company = request.user.company  # Get the company from the logged in user
 
         if not name or not company:
-            return JsonResponse({'error': 'Name and company are required'}, status=400)
+            return JsonResponse({'error': _('Name and company are required')}, status=400)
 
         project = Project(name=name, company=company)
         project.save()
@@ -113,16 +122,27 @@ class CreateProjectView(APIView):
             user.projects.add(project)
             user.save()
 
-        return JsonResponse({'message': 'Project created and assigned to all users successfully'})
+        return JsonResponse({'message': _('Project created and assigned to all users successfully')})
 
 class GetProjectsView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request):
-        # Assuming your User model has a 'projects' ManyToManyField
-        projects = list(request.user.projects.values('id', 'name'))  # Convert QuerySet to a list
+        # Get the projects that belong to the user's company and the user is associated with
+        projects = request.user.projects.filter(company=request.user.company)
+        projects = list(projects.values('id', 'name'))  # Convert QuerySet to a list
+        print(projects)
         return JsonResponse(projects, safe=False)
+
+# class GetProjectsView(APIView):
+#     permission_classes = (IsAuthenticated,)
+#     authentication_classes = (JWTAuthentication,)
+
+#     def get(self, request):
+#         # Assuming your User model has a 'projects' ManyToManyField
+#         projects = list(request.user.projects.values('id', 'name'))  # Convert QuerySet to a list
+#         return JsonResponse(projects, safe=False)
 
 class SetCurrentProjectView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -145,7 +165,7 @@ class SetCurrentProjectView(APIView):
             return JsonResponse({'status': 'Project set successfully'})
         except ObjectDoesNotExist:
             print("erro")
-            return JsonResponse({'error': 'Project not found or does not belong to your company'}, status=400, safe=False)
+            return JsonResponse({'error': _('Project not found or does not belong to your company')}, status=400, safe=False)
 
 
 # endregion
@@ -165,18 +185,11 @@ class CreateUserView(APIView):
         is_superstaff = request.data.get('is_superstaff', False)
         is_stockstaff = request.data.get('is_stockstaff', False)
         is_accountingstaff = request.data.get('is_accountingstaff', False)
-        #! burada bir düzenleme gerekecek, company ve project verielri direk user üzerinden çekilebilir. user.company ya da user.projects gibi.
-        company_id = request.data.get('company')
-        current_project_id = request.data.get('current_project')
         project_ids = request.data.get('projects', [])
 
-        # Get the Company and Project instances
-        try:
-            company = Company.objects.get(id=company_id)
-            current_project = Project.objects.get(id=current_project_id)
-            projects = Project.objects.filter(id__in=project_ids)
-        except (Company.DoesNotExist, Project.DoesNotExist):
-            return JsonResponse({'error': 'Invalid company or project ID'}, status=400)
+        # The new user's company should be equal to superstaff's company and set current_project to None
+        company = request.user.company
+        current_project = None
 
         # Create the user
         user = CustomUser(
@@ -193,9 +206,10 @@ class CreateUserView(APIView):
         user.save()
 
         # Assign the projects to the user
+        projects = Project.objects.filter(id__in=project_ids)
         user.projects.set(projects)
 
-        return JsonResponse({'message': 'User created successfully'})
+        return JsonResponse({'message': _('User created successfully')})
 
 class EditUserView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
@@ -217,7 +231,7 @@ class EditUserView(APIView):
             user = CustomUser.objects.get(username=username)
             projects = Project.objects.filter(id__in=project_ids)
         except (CustomUser.DoesNotExist, Project.DoesNotExist):
-            return JsonResponse({'error': 'Invalid username or project ID'}, status=400)
+            return JsonResponse({'error': _('Invalid username or project ID')}, status=400)
 
         # Update the user details
         if password:
@@ -262,7 +276,7 @@ class UserCardView(APIView):
         try:
             user = CustomUser.objects.get(id=id)
         except ObjectDoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
+            return JsonResponse({'error': _('User not found')}, status=404)
 
         response_data = {
             'id': user.id, 
@@ -293,11 +307,11 @@ class DeleteUserView(APIView):
             user = CustomUser.objects.get(id=user_id)
             if request.user.is_superstaff or request.user.is_superuser:
                 user.delete()
-                return JsonResponse({'message': 'User deleted successfully'})
+                return JsonResponse({'message': _('User deleted successfully')})
             else:
-                return JsonResponse({'error': 'You do not have permission to delete this user'}, status=403)
+                return JsonResponse({'error': _('You do not have permission to delete this user')}, status=403)
         except CustomUser.DoesNotExist:
-            return JsonResponse({'error': 'User not found'}, status=404)
+            return JsonResponse({'error': _('User not found')}, status=404)
 
 
 # endregion
@@ -321,9 +335,10 @@ class AddProductsView(APIView):
 
             product_code = data.get('product_code')
             if not product_code:
-                return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
+                return JsonResponse({'error': _("Product Code cannot be empty!")}, status=400)
             elif Products.objects.filter(product_code=product_code).exists():
-                return JsonResponse({'error': f"The Product Code '{product_code}' already exists in the database."}, status=400)
+                error_message = _("The Product Code '%s' already exists in the database.") % product_code
+                return JsonResponse({'error': error_message}, status=400)
 
             # Add new product
             new_product_data = {}
@@ -332,11 +347,13 @@ class AddProductsView(APIView):
                 if value is not None and value != '':
                     new_product_data[field] = value
                 else:
-                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+                    error_message = _("The field '{%s}' cannot be empty.") % field
+                    return JsonResponse({'error': error_message}, status=400)
 
             new_product = Products.objects.create(product_code=product_code, **new_product_data)
-
-            return JsonResponse({'message': f"New product '{new_product.product_code}' has been successfully created."}, status=201)
+            
+            message = _("New product '{%s}' has been successfully created.") % new_product.product_code
+            return JsonResponse({'message': message}, status=201)
 
         except ValueError as e:
             return JsonResponse({'error': str(e)}, status=400)
@@ -357,6 +374,7 @@ class ProductsView(APIView):
         return JsonResponse(product_list, safe=False, status=200)
     
 #! Edit yaparken product code değişmemeli
+
 class EditProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
@@ -372,9 +390,9 @@ class EditProductsView(APIView):
             new_product_code = data.get('new_product_code')
             if new_product_code and new_product_code != old_product_code:
                 if Products.objects.filter(product_code=new_product_code).exists():
-                    return JsonResponse({'error': f"The Product Code '{new_product_code}' already exists in the database."}, status=400)
+                    return JsonResponse({'error': _("The Product Code '%s' already exists in the database.") % new_product_code}, status=400)
                 if not new_product_code:
-                    return JsonResponse({'error': "Product Code cannot be empty!"}, status=400)
+                    return JsonResponse({'error': _("Product Code cannot be empty!")}, status=400)
                 else:
                     product.product_code = new_product_code
 
@@ -385,19 +403,20 @@ class EditProductsView(APIView):
                     updated_field = field[4:]  # Remove the "new_" prefix
                     setattr(product, updated_field, value)
                 else:
-                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+                    return JsonResponse({'error': _("The field '%s' cannot be empty.") % field}, status=400)
 
             product.save()
-            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
         except Products.DoesNotExist:
-            return JsonResponse({'error': "Product not found."}, status=400)
+            return JsonResponse({'error': _("Product not found.")}, status=400)
 
         except ValueError as e:
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
         
 
 class DeleteProductsView(APIView):
@@ -409,7 +428,7 @@ class DeleteProductsView(APIView):
             Products.objects.filter(product_code=product_code).delete()
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-        return JsonResponse({'message': "Product object has been successfully deleted"}, status=200)
+        return JsonResponse({'message': _("Product object has been successfully deleted")}, status=200)
 
 
 # endregion
@@ -445,7 +464,7 @@ class CreateProductGroupView(APIView):
                     product_group.save()
 
                 # If we reach this point, the operation was successful
-                return JsonResponse({'message': 'Product group created successfully'})
+                return JsonResponse({'message': _('Product group created successfully')})
 
             except IntegrityError:
                 # If an IntegrityError is raised, this means another transaction created a product group with the same code.
@@ -453,7 +472,7 @@ class CreateProductGroupView(APIView):
                 pass
 
         # If we reach this point, we have failed to create a product group after several attempts.
-        return JsonResponse({'error': 'Could not create product group. Please try again.'}, status=500)
+        return JsonResponse({'error': _('Could not create product group. Please try again.')}, status=500)
 
 class ProductGroupsView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -476,17 +495,17 @@ class EditProductGroupView(APIView):
         new_group_name = request.data.get('new_group_name')
 
         if not group_code or not new_group_name:
-            return JsonResponse({'error': 'Both group_code and new_group_name must be provided'}, status=400)
+            return JsonResponse({'error': _('Both group_code and new_group_name must be provided')}, status=400)
 
         try:
             product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
         except ProductGroups.DoesNotExist:
-            return JsonResponse({'error': 'Product group not found'}, status=404)
+            return JsonResponse({'error': _('Product group not found')}, status=404)
 
         product_group.group_name = new_group_name
         product_group.save()
 
-        return JsonResponse({'message': 'Product group updated successfully'})
+        return JsonResponse({'message': _('Product group updated successfully')})
     
 #! Bu view kontrol edilmeli, tam olarak düzgün çalışmıyor olabilir.
 class DeleteProductGroupView(APIView):
@@ -497,19 +516,19 @@ class DeleteProductGroupView(APIView):
         group_code = request.data.get('group_code')
 
         if not group_code:
-            return JsonResponse({'error': 'group_code must be provided'}, status=400)
+            return JsonResponse({'error': _('group_code must be provided')}, status=400)
 
         try:
             product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
         except ProductGroups.DoesNotExist:
-            return JsonResponse({'error': 'Product group not found'}, status=404)
+            return JsonResponse({'error': _('Product group not found')}, status=404)
 
         product_group.delete()
 
         # Decrement group_code of subsequent product groups
         ProductGroups.objects.filter(group_code__gt=group_code, company=request.user.company, project=request.user.current_project).update(group_code=F('group_code') - 1)
 
-        return JsonResponse({'message': 'Product group deleted successfully'})
+        return JsonResponse({'message': _('Product group deleted successfully')})
 
 # endregion
 
@@ -555,15 +574,15 @@ class AddProductInflowView(APIView):
                 project=project
             )
 
-            return JsonResponse({'message': 'ProductInflow created successfully'}, status=201)
+            return JsonResponse({'message': _('ProductInflow created successfully')}, status=201)
         except Products.DoesNotExist:
-            return JsonResponse({'error': 'Product with the provided product code does not exist.'}, status=400)
+            return JsonResponse({'error': _('Product with the provided product code does not exist.')}, status=400)
         except Suppliers.DoesNotExist:
-            return JsonResponse({'error': 'Supplier with the provided tax code does not exist.'}, status=400)
+            return JsonResponse({'error': _('Supplier with the provided tax code does not exist.')}, status=400)
         except Company.DoesNotExist:
-            return JsonResponse({'error': 'Company with the provided company id does not exist.'}, status=400)
+            return JsonResponse({'error': _('Company with the provided company id does not exist.')}, status=400)
         except Project.DoesNotExist:
-            return JsonResponse({'error': 'Project with the provided project id does not exist.'}, status=400)
+            return JsonResponse({'error': _('Project with the provided project id does not exist.')}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
@@ -631,7 +650,7 @@ class EditProductInflowView(APIView):
             if new_product_code and new_product_code != product_inflow.product.product_code:
                 product = Products.objects.filter(product_code=new_product_code).first()
                 if not product:
-                    return JsonResponse({'error': f"The Product Code '{new_product_code}' not exists in the database."}, status=400)
+                    return JsonResponse({'error': _("The Product Code '%s' does not exist in the database.") % new_product_code}, status=400)
                 product_inflow.product = product
 
             # Update supplier_company
@@ -639,7 +658,7 @@ class EditProductInflowView(APIView):
             if new_supplier_tax_code:
                 supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code).first()
                 if not supplier_company:
-                    return JsonResponse({'error': f"The Supplier with tax code '{new_supplier_tax_code}' does not exist in the database."}, status=400)
+                    return JsonResponse({'error': _("The Supplier with tax code '%s' does not exist in the database.") % new_supplier_tax_code}, status=400)
                 product_inflow.supplier_company = supplier_company
 
             # Update receiver_company
@@ -647,7 +666,7 @@ class EditProductInflowView(APIView):
             if new_receiver_tax_code:
                 receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code).first()
                 if not receiver_company:
-                    return JsonResponse({'error': f"The Receiver with tax code '{new_receiver_tax_code}' does not exist in the database."}, status=400)
+                    return JsonResponse({'error': _("The Receiver with tax code '%s' does not exist in the database.") % new_receiver_tax_code}, status=400)
                 product_inflow.receiver_company = receiver_company
 
             # Update other product inflow fields
@@ -657,13 +676,13 @@ class EditProductInflowView(APIView):
                     updated_field = field[4:]  # Remove the "new_" prefix
                     setattr(product_inflow, updated_field, value)
                 else:
-                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+                    return JsonResponse({'error': _("The field '%s' cannot be empty.") % field}, status=400)
 
             product_inflow.save()
-            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
         except ProductInflow.DoesNotExist:
-            return JsonResponse({'error': "Product not found."}, status=400)
+            return JsonResponse({'error': _("Product not found.")}, status=400)
 
         except ValueError as e:
             return JsonResponse({'error': str(e)}, status=400)
@@ -684,17 +703,17 @@ class DeleteProductInflowView(APIView):
 
             # Check if there are any associated accounting objects
             if product_inflow.accounting_set.exists():
-                return JsonResponse({'error': 'Cannot delete product inflow object. There are accounting objects associated with it.'}, status=400)
+                return JsonResponse({'error': _('Cannot delete product inflow object. There are accounting objects associated with it.')}, status=400)
 
             product_inflow.delete()
 
         except ProductInflow.DoesNotExist:
-            return JsonResponse({'error': "Product inflow object not found."}, status=400)
+            return JsonResponse({'error': _('Product inflow object not found.')}, status=400)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-        return JsonResponse({'message': "Product inflow object has been successfully deleted"}, status=200)
+        return JsonResponse({'message': _('Product inflow object has been successfully deleted.')}, status=200)
 
 
 # endregion
@@ -740,15 +759,15 @@ class AddProductOutflowView(APIView):
                 project=project
             )
 
-            return JsonResponse({'message': 'ProductOutflow created successfully'}, status=201)
+            return JsonResponse({'message': _('ProductOutflow created successfully')}, status=201)
         except Products.DoesNotExist:
-            return JsonResponse({'error': 'Product with the provided product code does not exist.'}, status=400)
+            return JsonResponse({'error': _('Product with the provided product code does not exist.')}, status=400)
         except Consumers.DoesNotExist:
-            return JsonResponse({'error': 'Consumer with the provided tax code does not exist.'}, status=400)
+            return JsonResponse({'error': _('Consumer with the provided tax code does not exist.')}, status=400)
         except Company.DoesNotExist:
-            return JsonResponse({'error': 'Company with the provided company id does not exist.'}, status=400)
+            return JsonResponse({'error': _('Company with the provided company id does not exist.')}, status=400)
         except Project.DoesNotExist:
-            return JsonResponse({'error': 'Project with the provided project id does not exist.'}, status=400)
+            return JsonResponse({'error': _('Project with the provided project id does not exist.')}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
@@ -799,7 +818,7 @@ class EditProductOutflowView(APIView):
             if new_product_code and new_product_code != product_outflow.product.product_code:
                 product = Products.objects.filter(product_code=new_product_code).first()
                 if not product:
-                    return JsonResponse({'error': f"The Product Code '{new_product_code}' not exists in the database."}, status=400)
+                    return JsonResponse({'error': _("The Product Code '%s' does not exist in the database.") % new_product_code}, status=400)
                 product_outflow.product = product
 
             # Update supplier_company
@@ -807,7 +826,7 @@ class EditProductOutflowView(APIView):
             if new_supplier_tax_code:
                 supplier_company = Consumers.objects.filter(tax_code=new_supplier_tax_code).first()
                 if not supplier_company:
-                    return JsonResponse({'error': f"The Supplier with tax code '{new_supplier_tax_code}' does not exist in the database."}, status=400)
+                    return JsonResponse({'error': _("The Supplier with tax code '%s' does not exist in the database.") % new_supplier_tax_code}, status=400)
                 product_outflow.supplier_company = supplier_company
 
             # Update receiver_company
@@ -815,7 +834,7 @@ class EditProductOutflowView(APIView):
             if new_receiver_tax_code:
                 receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code).first()
                 if not receiver_company:
-                    return JsonResponse({'error': f"The Receiver with tax code '{new_receiver_tax_code}' does not exist in the database."}, status=400)
+                    return JsonResponse({'error': _("The Receiver with tax code '%s' does not exist in the database.") % new_receiver_tax_code}, status=400)
                 product_outflow.receiver_company = receiver_company
 
             # Update other product outflow fields
@@ -825,13 +844,13 @@ class EditProductOutflowView(APIView):
                     updated_field = field[4:]  # Remove the "new_" prefix
                     setattr(product_outflow, updated_field, value)
                 else:
-                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+                    return JsonResponse({'error': _("The field '%s' cannot be empty.") % field}, status=400)
 
             product_outflow.save()
-            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
         except ProductOutflow.DoesNotExist:
-            return JsonResponse({'error': "Product not found."}, status=400)
+            return JsonResponse({'error': _("Product not found.")}, status=400)
 
         except ValueError as e:
             return JsonResponse({'error': str(e)}, status=400)
@@ -853,12 +872,12 @@ class DeleteProductOutflowView(APIView):
             product_outflow.delete()
 
         except ProductOutflow.DoesNotExist:
-            return JsonResponse({'error': "Product outflow object not found."}, status=400)
+            return JsonResponse({'error': _("Product outflow object not found.")}, status=400)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-        return JsonResponse({'message': "Product outflow object has been successfully deleted"}, status=200)
+        return JsonResponse({'message': _("Product outflow object has been successfully deleted.")}, status=200)
 
 
 # endregion
@@ -892,7 +911,7 @@ def update_stock_inflow(sender, instance, created, **kwargs):
             old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
             old_product_stock.save()
         except Stock.DoesNotExist:
-            return JsonResponse({'error': "Ambarda böyle bir ürün bulunamadı."}, status=400)
+            return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
     try:
         stock = Stock.objects.get(product_code=instance.product.product_code)
@@ -922,7 +941,7 @@ def update_stock_inflow_on_delete(sender, instance, **kwargs):
         # If product was added to the supplier, remove it
         instance.supplier_company.products.remove(instance.product)
     except Stock.DoesNotExist:
-        return JsonResponse({'error': "Ambarda böyle bir ürün bulunamadı."}, status=400)
+        return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
 @receiver(post_save, sender=ProductOutflow)
@@ -938,7 +957,7 @@ def update_stock_outflow(sender, instance, created, **kwargs):
             old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
             old_product_stock.save()
         except Stock.DoesNotExist:
-            return JsonResponse({'error': "Ambarda böyle bir ürün bulunamadı."}, status=400)
+            return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
     try:
         stock = Stock.objects.get(product_code=instance.product.product_code)
@@ -969,7 +988,7 @@ def update_stock_outflow_on_delete(sender, instance, **kwargs):
         # If product was added to the receiver, remove it
         instance.receiver_company.products.remove(instance.product)
     except Stock.DoesNotExist:
-        return JsonResponse({'error': "Ambarda böyle bir ürün bulunamadı."}, status=400)
+        return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
 
