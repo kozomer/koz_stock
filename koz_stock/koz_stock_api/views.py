@@ -1,3 +1,4 @@
+#hello
 from django.shortcuts import render
 import pandas as pd
 from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
