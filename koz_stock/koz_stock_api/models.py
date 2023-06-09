@@ -2,6 +2,9 @@ from django.db import models
 from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
 
+class SequenceNumber(models.Model):
+    number = models.IntegerField(default=1)
+
 class Company(models.Model):
     name = models.CharField(max_length=200)
 
@@ -31,6 +34,7 @@ class Products(models.Model, DirtyFieldsMixin):
     description = models.CharField(max_length=255)
     unit = models.CharField(max_length=255)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    #! project kısmında foreign key yerine manytomany field kullanılabilir. böylece tedarikçi ve tüketiciler tek bir projeye bağlı kalmaz
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     pass
 
@@ -41,7 +45,7 @@ class ProductGroups(models.Model, DirtyFieldsMixin):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
 class Suppliers(models.Model, DirtyFieldsMixin):
-    tax_code = models.IntegerField(unique=True)
+    tax_code = models.IntegerField()
     name = models.CharField(max_length=350)
     contact_name = models.CharField(max_length=255)
     contact_no = models.CharField(max_length=255)
@@ -51,7 +55,7 @@ class Suppliers(models.Model, DirtyFieldsMixin):
     pass
 
 class Consumers(models.Model, DirtyFieldsMixin):
-    tax_code = models.IntegerField(unique=True)
+    tax_code = models.IntegerField()
     name = models.CharField(max_length=350)
     contact_name = models.CharField(max_length=255)
     contact_no = models.CharField(max_length=255)
