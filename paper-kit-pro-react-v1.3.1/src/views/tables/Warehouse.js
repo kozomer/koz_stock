@@ -9,7 +9,7 @@ const DataTable = () => {
   const [showUploadDiv, setShowUploadDiv] = useState(false);
   const [showPopup, setShowPopup] = useState(false);
   const [productCode, setProductCode] = useState(null);
-  const [barcode, setBarcode] = useState(null);
+
   const [group, setGroup] = useState(null);
   const [subgroup, setSubgroup] = useState(null);
   const [brand, setBrand] = useState(null);
@@ -21,6 +21,7 @@ const DataTable = () => {
   const [inflow, setInflow] = useState(null);
   const [outflow, setOutflow] = useState(null);
   const [stock, setStock] = useState(null);
+  const [reserveStock, setReserveStock] = useState(null);
   
   const [alert, setAlert] = useState(null);
   const [renderEdit, setRenderEdit] = useState(false);
@@ -118,7 +119,7 @@ const handleAddFileClick = () => {
     setOldData(row);
 
     setProductCode(row.product_code);
-    setBarcode(row.barcode);
+    
     setGroup(row.group);
     setSubgroup(row.subgroup);
     setBrand(row.brand);
@@ -130,7 +131,7 @@ const handleAddFileClick = () => {
     setInflow(row.inflow);
     setOutflow(row.outflow);
     setStock(row.stock);
-
+    setReserveStock(row.reserve_stock);
    
     setShowPopup(!showPopup);
     console.log(row)
@@ -140,7 +141,7 @@ const handleAddFileClick = () => {
     
     const updatedData = {
       new_product_code: productCode,
-      new_barcode: barcode,
+   
       new_group: group,
       new_subgroup: subgroup,
       new_brand: brand,
@@ -152,21 +153,22 @@ const handleAddFileClick = () => {
       new_inflow: inflow,
       new_outflow: outflow,
       new_stock: stock,
+      new_reserve_stock: stock,
 
       old_product_code: oldData[0],
-      old_barcode: oldData[1],
-      old_group: oldData[2],
-      old_subgroup: oldData[3],
-      old_brand: oldData[4],
-      old_serial_number: oldData[5],
-      old_model: oldData[6],
-      old_description: oldData[7],
-      old_unit: oldData[8],
-      old_warehouse: oldData[9],
-      old_inflow: oldData[10],
-      old_outflow: oldData[11],
+     
+      old_group: oldData[1],
+      old_subgroup: oldData[2],
+      old_brand: oldData[3],
+      old_serial_number: oldData[4],
+      old_model: oldData[5],
+      old_description: oldData[6],
+      old_unit: oldData[7],
+      old_warehouse: oldData[8],
+      old_inflow: oldData[9],
+      old_outflow: oldData[10],
+      old_stock: oldData[11],
       old_stock: oldData[12],
-
       
       
     };
@@ -248,19 +250,19 @@ const handleAddFileClick = () => {
     if(editData){
       
       setProductCode(editData[0]);
-      setBarcode(editData[1]);
-      setGroup(editData[2]);
-      setSubgroup(editData[3]);
-      setBrand(editData[4]);
-      setSerialNumber(editData[5]);
-      setModel(editData[6]);
-      setDescription(editData[7]);
-      setUnit(editData[8]);
-      setWarehouse(editData[9]);
-      setInflow(editData[10]);
-      setOutflow(editData[11]);
-      setStock(editData[12]);
-
+     
+      setGroup(editData[1]);
+      setSubgroup(editData[2]);
+      setBrand(editData[3]);
+      setSerialNumber(editData[4]);
+      setModel(editData[5]);
+      setDescription(editData[6]);
+      setUnit(editData[7]);
+      setWarehouse(editData[8]);
+      setInflow(editData[9]);
+      setOutflow(editData[10]);
+      setStock(editData[11]);
+      setReserveStock(editData[12]);
        
         setIsUpdated(true)
     }
@@ -421,7 +423,7 @@ const handleAddFileClick = () => {
               <div>
 
         <div className="form-group-col">
-        <label>Malzem Kodu</label>
+        <label>Malzeme Kodu</label>
         <FormGroup>
           <Input
             type="text"
@@ -430,14 +432,7 @@ const handleAddFileClick = () => {
           />
         </FormGroup>
 
-        <label>Barkod</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={barcode}
-            onChange={(e) => setBarcode(e.target.value)}
-          />
-        </FormGroup>
+       
 
         <label>Grup</label>
         <FormGroup>
@@ -538,7 +533,14 @@ const handleAddFileClick = () => {
           />
         </FormGroup>
 
-
+        <label>Kullanımda Stok</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={reserveStock}
+            onChange={(e) => setReserveStock(e.target.value)}
+          />
+        </FormGroup>
           
           </div>
          
@@ -614,19 +616,19 @@ const handleAddFileClick = () => {
                   data={dataTable.map((row, key) => ({
                     id: key,
                     product_code: row[0],
-                    barcode: row[1],
-                    group: row[2],
-                    subgroup: row[3],
-                    brand: row[4],
-                    serial_number: row[5],
-                    model: row[6],
-                    description: row[7],
-                    unit: row[8],
-                    warehouse: row[9],
-                    inflow: row[10],
-                    outflow: row[11],
-                    stock: row[12],
-                    
+                   
+                    group: row[1],
+                    subgroup: row[2],
+                    brand: row[3],
+                    serial_number: row[4],
+                    model: row[5],
+                    description: row[6],
+                    unit: row[7],
+                    warehouse: row[8],
+                    inflow: row[9],
+                    outflow: row[10],
+                    stock: row[11],
+                    reserve_stock: row[12],
                     
                     actions: (
                       <div className='actions-left'>
@@ -678,7 +680,7 @@ const handleAddFileClick = () => {
                   }))}
                   columns={[
                     { Header: 'Malzeme Kodu', accessor: 'product_code' },
-                    { Header: 'Barkod', accessor: 'barcode' },
+                    
                     { Header: 'Grup', accessor: 'group' },
                     { Header: 'Alt Grup', accessor: 'subgroup' },
                     { Header: 'Marka', accessor: 'brand' },
@@ -690,6 +692,7 @@ const handleAddFileClick = () => {
                     { Header: 'Giriş', accessor: 'inflow' },
                     { Header: 'Çıkış', accessor: 'outflow' },
                     { Header: 'Stok', accessor: 'stock' },
+                    { Header: 'Kullanımda Stok', accessor: 'reserve_stock' },
                     { Header: 'Actions', accessor: 'actions', sortable: false, filterable: false },
 
                   ]}

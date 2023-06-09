@@ -785,7 +785,9 @@ class ProductOutflowView(APIView):
                 pf.barcode, 
                 pf.product.product_code, 
                 pf.supplier_company.tax_code, 
+                pf.supplier_company.name, 
                 pf.receiver_company.tax_code, 
+                 pf.receiver_company.name, 
                 pf.status, 
                 pf.place_of_use,
                 pf.product.group,
@@ -1164,22 +1166,25 @@ class SupplierSearchView(APIView):
     permission_classes = (IsAuthenticated,IsSuperStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
-    def get(self, request, *args, **kwargs):
-        product_code = request.GET.get('product_code')
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        product_code = data.get('product_code')
+        print(product_code)
         if not product_code:
             return JsonResponse({'error': 'Missing product_code parameter'}, status=400)
 
         suppliers = Suppliers.objects.filter(products__product_code=product_code)
         suppliers_data = [{'id': supplier.id, 'name': supplier.name, 'contact_name': supplier.contact_name, 'contact_no': supplier.contact_no} for supplier in suppliers]
-
+        print(suppliers_data)
         return JsonResponse({'suppliers': suppliers_data})
 
 class ConsumerSearchView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
-    def get(self, request, *args, **kwargs):
-        product_code = request.GET.get('product_code')
+    def post(self, request, *args, **kwargs):
+        data = json.loads(request.body)
+        product_code = data.get('product_code')
         if not product_code:
             return JsonResponse({'error': 'Missing product_code parameter'}, status=400)
 
