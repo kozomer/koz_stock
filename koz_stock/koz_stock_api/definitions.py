@@ -1,4 +1,4 @@
-import jdatetime
+
 from datetime import datetime
 import requests
 from bs4 import BeautifulSoup
@@ -6,7 +6,6 @@ from bs4 import BeautifulSoup
 import numpy as np
 from itertools import product
 #import matplotlib.pyplot as plt
-from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 from scipy.stats import norm
 
 
@@ -22,7 +21,9 @@ from reportlab.lib.styles import getSampleStyleSheet
 def wrap_text(text, style):
     return Paragraph(text, style)
 
-def create_receipt_pdf(filename, title, items, logo_path, product_code):
+
+
+def create_receipt_pdf(filename, title, items, logo_path, product_code, sequence_number):
     pdf = canvas.Canvas(filename, pagesize=landscape(A5))
 
     pdf.drawImage(logo_path, 10 * mm, 125 * mm, preserveAspectRatio=True, width=40 * mm, height=20 * mm)
@@ -37,7 +38,6 @@ def create_receipt_pdf(filename, title, items, logo_path, product_code):
     date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
 
     # Generate serial number
-    sequence_number = 12345#! databsede ardışık sayı tutması gerek.
     serial_number = f"{product_code_str}-{date_str_serial}-{sequence_number:04}"
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawRightString(200 * mm, 125 * mm, f"SERI NO: {serial_number}")

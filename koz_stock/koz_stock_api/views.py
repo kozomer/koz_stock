@@ -1,8 +1,8 @@
-#hello
 from django.shortcuts import render
 import pandas as pd
 from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
-                      Stock, Accounting, Project, CustomUser, Company, ProductGroups)
+                      Stock, Accounting, Project, CustomUser, Company, ProductGroups,
+                      SequenceNumber)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -11,7 +11,7 @@ from django.http import JsonResponse, HttpResponse
 import json
 from django.db.models.signals import post_save, post_delete, pre_save, pre_delete
 from django.dispatch import receiver
-#from .definitions import jalali_to_greg, greg_to_jalali, calculate_experience_rating, calculate_sale_rating, calculate_passive_saler_experience_rating, current_jalali_date, get_exchange_rate, get_model, generate_future_forecast_dates, the_man_from_future
+from .definitions import create_receipt_pdf
 from datetime import datetime
 import datetime
 import jdatetime
@@ -30,6 +30,9 @@ import numpy as np
 from django.db import transaction, IntegrityError
 from .permissions import IsSuperStaff, IsAccountingStaff, IsStockStaff
 from django.utils.translation import gettext as _
+import os
+import tempfile
+from django.http import FileResponse, Http404
 
 
 
@@ -431,6 +434,101 @@ class DeleteProductsView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
         return JsonResponse({'message': _("Product object has been successfully deleted")}, status=200)
 
+
+# endregion
+
+# region suppliers
+
+class AddSuppliersView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            data = json.loads(request.body)
+
+            tax_code = data.get('tax_code')
+            if not tax_code:
+                return JsonResponse({'error': _("Tax Code cannot be empty!")}, status=400)
+            elif Suppliers.objects.filter(tax_code=tax_code, company=user.company).exists():
+                error_message = _("The Tax Code '%s' already exists in the database for this company.") % tax_code
+                return JsonResponse({'error': error_message}, status=400)
+
+            # Add new supplier
+            new_supplier_data = {}
+            for field in ['name', 'contact_name', 'contact_no']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    new_supplier_data[field] = value
+                else:
+                    error_message = _("The field '{%s}' cannot be empty.") % field
+                    return JsonResponse({'error': error_message}, status=400)
+
+            new_supplier = Suppliers.objects.create(tax_code=tax_code, company=user.company, 
+                                                    project=user.current_project, **new_supplier_data)
+
+            message = _("New supplier '{%s}' has been successfully created.") % new_supplier.name
+            return JsonResponse({'message': message}, status=201)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+class SuppliersView(APIView):
+    permission_classes = (IsAuthenticated, IsStockStaff, IsSuperStaff, IsAccountingStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        suppliers = Suppliers.objects.values().all()
+        supplier_list = [[s['id'],s['tax_code'], s['name'], s['contact_name'], s['contact_no']] for s in suppliers]
+        return JsonResponse(supplier_list, safe=False, status=200)
+
+#! EditSuppliersView2ın doğru çalışıp çalışmadığını kontrol et.
+class EditSuppliersView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            data = json.loads(request.body)
+
+            tax_code = data.get('tax_code')
+            supplier = Suppliers.objects.get(tax_code=tax_code, company=user.company)
+
+            # Update supplier fields
+            for field in ['name', 'contact_name', 'contact_no']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    setattr(supplier, field, value)
+                else:
+                    return JsonResponse({'error': _("The field '%s' cannot be empty.") % field}, status=400)
+
+            # Check if any fields have been changed
+            if supplier.is_dirty():
+                dirty_fields = supplier.get_dirty_fields()
+
+                # Check if the tax_code is being updated and if it's unique within the same company
+                if 'tax_code' in dirty_fields:
+                    new_tax_code = getattr(supplier, 'tax_code')
+                    if Suppliers.objects.filter(tax_code=new_tax_code, company=user.company).exists():
+                        return JsonResponse({'error': _("The Tax Code '%s' already exists in the database for this company.") % new_tax_code}, status=400)
+
+            supplier.save()
+            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
+
+        except Suppliers.DoesNotExist:
+            return JsonResponse({'error': _("Supplier not found.")}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 # endregion
 
@@ -880,6 +978,52 @@ class DeleteProductOutflowView(APIView):
 
         return JsonResponse({'message': _("Product outflow object has been successfully deleted.")}, status=200)
 
+class CreateProductOutflowReceiptView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            id = request.data.get('id')
+            product_outflow = ProductOutflow.objects.get(id=id)  # Get the ProductOutflow object
+            product_code = product_outflow.product.product_code
+            items = [product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
+            # For example:
+            # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
+            title = _("Ambar Malzeme Cikis Fisi")
+            logo_path = "path/to/your/logo.png"  # Update this to the path where your logo is store
+
+            sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
+            sequence_number = sequence_number_obj.number
+            sequence_number_obj.number += 1
+            sequence_number_obj.save()
+            # Create a temporary file for the PDF
+            fd, temp_pdf_filename = tempfile.mkstemp()
+            os.close(fd)
+
+            # Create the PDF
+            create_receipt_pdf(temp_pdf_filename, title, items, logo_path, product_code, sequence_number)
+
+            # Read the temporary PDF file
+            with open(temp_pdf_filename, 'rb') as f:
+                pdf = f.read()
+
+            # Remove the temporary file
+            os.remove(temp_pdf_filename)
+
+            # Generate serial number
+            product_code_str = product_code.replace(".", "")
+            date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
+            serial_number = f"{product_code_str}-{date_str_serial}-{sequence_number:04}"
+
+            # Set filename to be serial_number
+            filename = f'{serial_number}.pdf'
+
+            response = FileResponse(pdf, as_attachment=True, filename=filename)
+            return response
+
+        except ProductOutflow.DoesNotExist:
+            return JsonResponse({'error': _("Product Outflow not found.")}, status=400)
 
 # endregion
 

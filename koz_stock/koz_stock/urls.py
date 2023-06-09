@@ -20,7 +20,7 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                     StockView,  AddProductOutflowView, ProductOutflowView, EditProductOutflowView, DeleteProductOutflowView,
                                     AccountingView, EditAccountingView, 
                                     SetCurrentProjectView, GetProjectsView, CreateProjectView,
-                                    CreateUserView, ConsumerSearchView, SupplierSearchView)
+                                    CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, CreateProductOutflowReceiptView)
 # from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
 #                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
 #                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
@@ -69,6 +69,7 @@ urlpatterns = [
     path('api/edit_product_outflow/', EditProductOutflowView.as_view(), name='edit_product_outflow'),
     path('api/add_product_outflow/',AddProductOutflowView.as_view(), name='add_product_outflow'),
     path('api/delete_product_outflow/', DeleteProductOutflowView.as_view(), name='delete_product_outflow'),
+    path('api/create_product_outflow_receipt_pdf/', CreateProductOutflowReceiptView.as_view(), name='create_product_outflow_receipt_pdf'),
 
     path('api/warehouse/', StockView.as_view(), name='view_warehouse'),
     # path('api/edit_warehouse/', EditStockView.as_view(), name='edit_warehouse'),
