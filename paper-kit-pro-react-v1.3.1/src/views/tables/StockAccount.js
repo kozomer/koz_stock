@@ -42,6 +42,7 @@ const DataTable = () => {
   const [taxRate, setTaxRate] = useState(null);
   const [tevkifatRate, setTevkifatRate] = useState(null);
   const [priceWithoutTax, setPriceWithoutTax] = useState(null);
+  const [unitPriceWithoutTax, setUnitPriceWithoutTax] = useState(null);
   const [priceWithTevkifat, setPriceWithTevkifat] = useState(null);
   const [priceTotal, setPriceTotal] = useState(null);
 
@@ -308,6 +309,7 @@ const DataTable = () => {
       setTaxRate(row.tax_rate);
       setTevkifatRate(row.tevkifat_rate);
       setPriceWithoutTax(row.price_without_tax);
+      setUnitPriceWithoutTax(row.unit_price_without_tax);
       setPriceWithTevkifat(row.price_with_tevkifat);
       setPriceTotal(row.price_total);
 
@@ -343,6 +345,7 @@ const DataTable = () => {
         new_tax_rate: taxRate,
         new_tevkifat_rate: tevkifatRate,
         new_price_without_tax: priceWithoutTax,
+        new_unit_price_without_tax: unitPriceWithoutTax,
         new_price_with_tevkifat: priceWithTevkifat,
         new_price_total: priceTotal,
 
@@ -368,8 +371,9 @@ const DataTable = () => {
         old_tax_rate: oldData[19],
         old_tevkifat_rate: oldData[20],
         old_price_without_tax: oldData[21],
-        old_price_with_tevkifat: oldData[22],
-        old_price_total: oldData[23],
+        old_unit_price_without_tax: oldData[22],
+        old_price_with_tevkifat: oldData[23],
+        old_price_total: oldData[24],
 
         
       };
@@ -436,8 +440,9 @@ const DataTable = () => {
         setTaxRate(editData[19]);
         setTevkifatRate(editData[20]);
         setPriceWithoutTax(editData[21]);
-        setPriceWithTevkifat(editData[22]);
-        setPriceTotal(editData[23]);
+        setUnitPriceWithoutTax(editData[22]);
+        setPriceWithTevkifat(editData[23]);
+        setPriceTotal(editData[24]);
 
 
           
@@ -696,6 +701,15 @@ const DataTable = () => {
             />
           </FormGroup>
 
+          <label>Birim Fiyat(Vergi Hariç)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={unitPriceWithoutTax}
+              onChange={(e) => setUnitPriceWithoutTax(e.target.value)}
+            />
+          </FormGroup>
+
           <label>Tevkifatlı Fiyat</label>
           <FormGroup>
             <Input
@@ -811,8 +825,9 @@ const DataTable = () => {
                     tax_rate: row[19],
                     tevkifat_rate: row[20],
                     price_without_tax: row[21],
-                    price_with_tevkifat: row[22],
-                    price_total: row[23],
+                    unit_price_without_tax: row[22],
+                    price_with_tevkifat: row[23],
+                    price_total: row[24],
 
                     actions: (
                       <div className='actions-left'>
@@ -911,6 +926,7 @@ const DataTable = () => {
                     { Header: 'KDV Oranı', accessor: 'tax_rate' },
                     { Header: 'Tevkifat Oranı', accessor: 'tevkifat_rate' },
                     { Header: 'Toplam Fiyat(Vergiler Hariç)', accessor: 'price_without_tax' },
+                    { Header: 'Birim Fiyat(Vergiler Hariç)', accessor: 'unit_price_without_tax' },
                     { Header: 'Tevkifatlı Fiyat', accessor: 'price_with_tevkifat' },
                     { Header: 'Toplam Fiyat(Vergiler Dahil)', accessor: 'price_total' },
 

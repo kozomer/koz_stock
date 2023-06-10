@@ -30,9 +30,11 @@ import Select from "views/pages/SelectProject";
 import Notifications from "views/components/Notifications.js";
 import Panels from "views/components/Panels.js";
 import ReactTables from "views/tables/ReactTables.js";
-import CustomerTables from "views/tables/Customers.js";
+
 import Bonus from "views/tables/Bonus.js";
-import Sales from "views/tables/Sales.js";
+import ProductInFlow from "views/tables/ProductInFlow";
+import ProductOutFlow from "views/tables/ProductOutFlow";
+
 import Warehouse from "views/tables/Warehouse.js";
 import Products from "views/tables/Products.js";
 import SalesReport from "views/tables/SalesReport";
@@ -40,7 +42,11 @@ import ReorderPoints from "views/tables/ReorderPoints.js";
 import Orderlist from "views/tables/OrderList";
 import GoodsOnRoad from "views/tables/GoodsOnRoad";
 import StaffPerformance from "views/tables/StaffPerfomance";
-
+import Suppliers from "views/tables/Suppliers";
+import StockAccount from "views/tables/StockAccount";
+import Consumers from "views/tables/Consumers";
+import Deneme from "views/tables/Deneme";
+import Search from "views/tables/Seach";
 import Register from "views/pages/Register.js";
 import RegularForms from "views/forms/RegularForms.js";
 import RegularTables from "views/tables/RegularTables.js";
@@ -74,17 +80,25 @@ const routes = [
   },
  
   {
-    path: "/sales-tables",
-    name: "Ambar Giriş/Çıkış",
+    path: "/product-in",
+    name: "Ambar Giriş",
     icon:"nc-icon nc-cart-simple",
-    component: Sales,
+    component: ProductInFlow,
+    layout: "/admin"
+  },
+
+  {
+    path: "/product-out",
+    name: "Ambar Çıkış",
+    icon:"nc-icon nc-cart-simple",
+    component: ProductOutFlow,
     layout: "/admin"
   },
   {
-    path: "/customer-tables",
+    path: "/stock-account",
     name: "Ambar Muhasebe",
     icon:"nc-icon nc-briefcase-24",
-    component: CustomerTables,
+    component: StockAccount,
     layout: "/admin"
   },
   {
@@ -94,7 +108,22 @@ const routes = [
     component: Warehouse,
     layout: "/admin"
   },
-  
+  {
+    path: "/suppliers",
+    name: "Tedarikçiler",
+    icon: "nc-icon nc-bus-front-12",
+    component: Suppliers,
+    layout: "/admin",
+   
+  },
+  {
+    path: "/consumers",
+    name: "Tüketiciler",
+    icon: "nc-icon nc-bus-front-12",
+    component: Consumers,
+    layout: "/admin",
+   
+  },
   {
     path: "/bonus-tables",
     name: "Staff",
@@ -159,7 +188,24 @@ const routes = [
     layout: "/auth",
    
   },
-  
+
+  {
+    path: "/deneme",
+    name: "Deneme",
+    icon: "nc-icon nc-bus-front-12",
+    component: Deneme,
+    layout: "/admin",
+   
+  },
+
+  {
+    path: "/searc",
+    name: "Sorgulama",
+    icon: "nc-icon nc-bus-front-12",
+    component: Search,
+    layout: "/admin",
+   
+  },
   
 ];
 

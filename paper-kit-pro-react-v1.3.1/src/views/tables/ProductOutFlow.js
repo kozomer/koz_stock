@@ -23,9 +23,11 @@ const DataTable = () => {
 const [id, setId] = useState(null);
 const [date, setDate] = useState(null);
 const [productCode, setProductCode] = useState(null);
-const [providerCompany, setProviderCompany] = useState(null);
-const [recieverCompany, setRecieverCompany] = useState(null);
-const [inflowOutflow, setInflowOutflow] = useState(null);
+const [barcode, setBarcode] = useState(null);
+const [providerCompanyTaxCode, setProviderCompanyTaxCode] = useState(null);
+const [providerCompanyName, setProviderCompanyName] = useState(null);
+const [recieverCompanyTaxCode, setRecieverCompanyTaxCode] = useState(null);
+const [recieverCompanyName, setRecieverCompanyName] = useState(null);
 const [status, setStatus] = useState(null);
 const [placeOfUse, setPlaceOfUse] = useState(null);
 const [group, setGroup] = useState(null);
@@ -51,7 +53,7 @@ const [amount, setAmount] = useState(null);
    
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
-      const response = await fetch('${process.env.PUBLIC_URL}/product_flow/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/product_outflow/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -86,7 +88,7 @@ const [amount, setAmount] = useState(null);
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token'); 
-    fetch('http://127.0.0.1:8000/api/add_product_flow/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_product_outflow/`, {
       method: 'POST',
       body: formData,
       
@@ -105,7 +107,7 @@ const [amount, setAmount] = useState(null);
         return response.json().then(data => {
           setIsLoading(false);
           successUpload(data.message);
-          fetch('http://127.0.0.1:8000/api/product_flow/',{
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/product_outflow/`,{
             headers: {
               'Authorization': 'Bearer '+ String(access_token)
             }
@@ -235,7 +237,7 @@ const [amount, setAmount] = useState(null);
       if (deleteConfirm) {
        
         const access_token =  await localforage.getItem('access_token');
-        fetch(`http://127.0.0.1:8000/api/delete_product_flow/`, {
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_product_outflow/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -260,9 +262,12 @@ const [amount, setAmount] = useState(null);
       setId(row.id);
       setDate(row.date);
       setProductCode(row.product_code);
-      setProviderCompany(row.provider_company);
-      setRecieverCompany(row.reciever_company);
-      setInflowOutflow(row.inflow_outflow);
+      setBarcode(row.barcode);
+      setProviderCompanyTaxCode(row.supplier_company_tax_code);
+      setProviderCompanyName(row.supplier_company_name);
+      setRecieverCompanyTaxCode(row.receiver_company_tax_code);
+      setRecieverCompanyName(row.receiver_company_name);
+      
       setStatus(row.status);
       setPlaceOfUse(row.place_of_use);
       setGroup(row.group);
@@ -286,7 +291,7 @@ const [amount, setAmount] = useState(null);
         new_product_code: productCode,
         new_provider_company: providerCompany,
         new_reciever_company: recieverCompany,
-        new_inflow_outflow: inflowOutflow,
+        new_outflow_outflow: outflowOutflow,
         new_status: status,
         new_place_of_use: placeOfUse,
         new_group: group,
@@ -303,7 +308,7 @@ const [amount, setAmount] = useState(null);
         old_product_code: oldData[2],
         old_provider_company: oldData[3],
         old_reciever_company: oldData[4],
-        old_inflow_outflow: oldData[5],
+        old_outflow_outflow: oldData[5],
         old_status: oldData[6],
         old_place_of_use: oldData[7],
         old_group: oldData[8],
@@ -316,7 +321,7 @@ const [amount, setAmount] = useState(null);
         old_amount: oldData[15],
       };
       
-      fetch('http://127.0.0.1:8000/api/edit_product_flow/', {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_flow/`, {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -356,19 +361,22 @@ const [amount, setAmount] = useState(null);
         setId(editData[0]);
         setDate(editData[1]);
         setProductCode(editData[2]);
-        setProviderCompany(editData[3]);
-        setRecieverCompany(editData[4]);
-        setInflowOutflow(editData[5]);
-        setStatus(editData[6]);
-        setPlaceOfUse(editData[7]);
-        setGroup(editData[8]);
-        setSubgroup(editData[9]);
-        setBrand(editData[10]);
-        setSerialNumber(editData[11]);
-        setModel(editData[12]);
-        setDescription(editData[13]);
-        setUnit(editData[14]);
-        setAmount(editData[15]);
+        setBarcode(editData[3]);
+        setProviderCompanyTaxCode(editData[4]);
+        setProviderCompanyName(editData[5]);
+        setRecieverCompanyTaxCode(editData[6]);
+        setRecieverCompanyName(editData[7]);
+       
+        setStatus(editData[8]);
+        setPlaceOfUse(editData[9]);
+        setGroup(editData[10]);
+        setSubgroup(editData[11]);
+        setBrand(editData[12]);
+        setSerialNumber(editData[13]);
+        setModel(editData[14]);
+        setDescription(editData[15]);
+        setUnit(editData[16]);
+        setAmount(editData[17]);
         setIsUpdated(true)
       }
     }, [editData])
@@ -441,7 +449,7 @@ const [amount, setAmount] = useState(null);
        <div className="popup-sales">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Ambar Giriş/Çıkış Düzenle</CardTitle>
+              <CardTitle tag="h4">Ambar Çıkış Düzenle</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleSubmit}>
@@ -477,30 +485,47 @@ const [amount, setAmount] = useState(null);
           />
         </FormGroup>
 
-        <label>Alınan Firma</label>
+        <label>Barkod</label>
         <FormGroup>
           <Input
             type="text"
-            defaultValue={providerCompany}
-            onChange={(e) => setProviderCompany(e.target.value)}
+            defaultValue={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+          />
+        </FormGroup>
+        <label>Tedarikçi Vergi No</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={providerCompanyTaxCode}
+            onChange={(e) => setProviderCompanyTaxCode(e.target.value)}
           />
         </FormGroup>
 
-        <label>Alan Firma</label>
+        <label>Tedarikçi Adı</label>
         <FormGroup>
           <Input
             type="text"
-            defaultValue={recieverCompany}
-            onChange={(e) => setRecieverCompany(e.target.value)}
+            defaultValue={providerCompanyName}
+            onChange={(e) => setProviderCompanyName(e.target.value)}
           />
         </FormGroup>
 
-        <label>Giriş/Çıkış</label>
+        <label>Alıcı Vergi No</label>
         <FormGroup>
           <Input
             type="text"
-            defaultValue={inflowOutflow}
-            onChange={(e) => setInflowOutflow(e.target.value)}
+            defaultValue={recieverCompanyTaxCode}
+            onChange={(e) => setRecieverCompanyTaxCode(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Alıcı Adı</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={recieverCompanyName}
+            onChange={(e) => setRecieverCompanyName(e.target.value)}
           />
         </FormGroup>
 
@@ -612,7 +637,7 @@ const [amount, setAmount] = useState(null);
 )}
 <Card>
   <CardHeader>
-    <CardTitle tag='h4'>AMBAR GİRİŞ/ÇIKIŞ</CardTitle>
+    <CardTitle tag='h4'>AMBAR ÇIKIŞ</CardTitle>
   </CardHeader>
   <CardBody>
     <div className="upload-container">
@@ -663,19 +688,21 @@ const [amount, setAmount] = useState(null);
                     id: row[0],
                     date: row[1],
                     product_code : row[2],
-                    provider_company : row[3],
-                    reciever_company : row[4],
-                    inflow_outflow : row[5],
-                    status : row[6],
-                    place_of_use : row[7],
-                    group : row[8],
-                    subgroup : row[9],
-                    brand : row[10],
-                    serial_number : row[11],
-                    model : row[12],
-                    description : row[13],
-                    unit : row[14],
-                    amount : row[15],
+                    barcode: row[3],
+                    supplier_company_tax_code : row[4],
+                    supplier_company_name : row[5],
+                    receiver_company_tax_code : row[6],
+                    receiver_company_name: row[7],
+                    status : row[8],
+                    place_of_use : row[9],
+                    group : row[10],
+                    subgroup : row[11],
+                    brand : row[12],
+                    serial_number : row[13],
+                    model : row[14],
+                    description : row[15],
+                    unit : row[16],
+                    amount : row[17],
 
                     actions: (
                       <div className='actions-left'>
@@ -767,20 +794,24 @@ const [amount, setAmount] = useState(null);
                       accessor: 'date'
                   },
                   {
-                      Header: 'Malzeme Kodu',
-                      accessor: 'product_code'
+                    Header: 'Barkod',
+                    accessor: 'barcode'
+                },
+                  {
+                      Header: 'Tedarikçi Vergi No',
+                      accessor: 'supplier_company_tax_code'
                   },
                   {
-                      Header: 'Alınan Firma',
-                      accessor: 'provider_company'
+                      Header: 'Tedarikçi Adı',
+                      accessor: 'supplier_company_name'
                   },
                   {
-                      Header: 'Alan Firma',
-                      accessor: 'reciever_company'
+                      Header: 'Alıcı Vergi No',
+                      accessor: 'receiver_company_tax_code'
                   },
                   {
-                      Header: 'Giriş/Çıkış',
-                      accessor: 'inflow_outflow'
+                      Header: 'Alıcı Adı',
+                      accessor: 'receiver_company_name'
                   },
                   {
                       Header: 'Durum',

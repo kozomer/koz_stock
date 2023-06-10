@@ -1,20 +1,22 @@
-Kullanıcı siteye her giriş yaptığında üzerinde çalıştığı projeyi seçeceği bir proje seçim sayfası yapılacak.
+Kullanıcı siteye her giriş yaptığında üzerinde çalıştığı projeyi seçeceği bir proje seçim sayfası yapılacak(done)
 
-Tedarikçi Sayfası Yapılacak
+Tedarikçi Sayfası Yapılacak(done)
 
-Tüketici Sayfası Yapılacak
+Tüketici Sayfası Yapılacak(done)
 
-Ambar Giriş/Çıkış Sayfası Giriş ve Çıkış olarak 2 ayrı safaya bölünecek.
+tedarikçi ve tüketici views.py kodları
 
-Ambar Giriş ve Çıkışlarda kullanıcı fotoğraf da yüklemek zorunda olacak.
+Ambar Giriş/Çıkış Sayfası Giriş ve Çıkış olarak 2 ayrı safaya bölünecek.(done)
 
-Ambar Çıkışında kullanıcının otomatik hazırlanmış PDF indirme butonu eklencek.
+Ambar Giriş ve Çıkışlarda kullanıcı fotoğraf da yüklemek zorunda olacak.(eklenebiliyor, dizayn düzeltilecek, zorunlu hallere getirilecek)
+ 
+Ambar Çıkışında kullanıcının otomatik hazırlanmış PDF indirme butonu eklencek.(OK)
 
 Program içindek Tüm ADD fonksiyonları, önceki programdaki Edit Windowu gibi olacak, exceden yükleme şuan için olmayacak.
 
-Ambardaki veriler değişti, düzenlenmesi gerek.
+Ambardaki veriler değişti, düzenlenmesi gerek.(done)
 
-Ambar Muhasebe kısmındaki veriler değişti, düzenlenmesi gerek.
+Ambar Muhasebe kısmındaki veriler değişti, düzenlenmesi gerek.(done)
 
 Kullanıcı oluşturma sayfası yapılacak.
 
