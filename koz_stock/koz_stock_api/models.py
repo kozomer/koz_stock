@@ -23,11 +23,22 @@ class CustomUser(AbstractUser):
     current_project = models.ForeignKey(Project, on_delete=models.SET_NULL, null=True, blank=True)
     projects = models.ManyToManyField(Project, related_name="users")
 
+class ProductGroups(models.Model, DirtyFieldsMixin):
+    group_code = models.IntegerField(null=True)
+    group_name = models.CharField(max_length=255)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+class ProductSubgroups(models.Model, DirtyFieldsMixin):
+    subgroup_code = models.IntegerField(null=True)
+    subgroup_name = models.CharField(max_length=255)
+    group = models.ForeignKey(ProductGroups, on_delete=models.PROTECT)
+    sequence_number = models.IntegerField(default= 1)
 
 class Products(models.Model, DirtyFieldsMixin):
-    product_code = models.IntegerField(unique= True)
-    group = models.CharField(max_length=255)
-    subgroup = models.CharField(max_length=255)
+    product_code = models.CharField(max_length=255)
+    group = models.ForeignKey(ProductGroups, on_delete=models.PROTECT)
+    subgroup = models.ForeignKey(ProductSubgroups, on_delete=models.PROTECT)
     brand = models.CharField(max_length=255)
     serial_number = models.CharField(max_length=255)
     model = models.CharField(max_length=255)
@@ -38,11 +49,7 @@ class Products(models.Model, DirtyFieldsMixin):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
     pass
 
-class ProductGroups(models.Model, DirtyFieldsMixin):
-    group_code = models.IntegerField(null=True)
-    group_name = models.CharField(max_length=255)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
 
 class Suppliers(models.Model, DirtyFieldsMixin):
     tax_code = models.IntegerField()

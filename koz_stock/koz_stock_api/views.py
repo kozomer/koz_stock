@@ -2,7 +2,7 @@ from django.shortcuts import render
 import pandas as pd
 from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
                       Stock, Accounting, Project, CustomUser, Company, ProductGroups,
-                      SequenceNumber)
+                      SequenceNumber, ProductSubgroups)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -346,7 +346,7 @@ class AddProductsView(APIView):
 
             # Add new product
             new_product_data = {}
-            for field in ['barcode', 'group', 'subgroup', 'brand', 'serial_number', 'model', 'description', 'unit', 'supplier', 'supplier_contact']:
+            for field in ['barcode', 'group', 'subgroup', 'brand', 'serial_number', 'model', 'description', 'unit']:
                 value = data.get(field)
                 if value is not None and value != '':
                     new_product_data[field] = value
@@ -371,13 +371,10 @@ class ProductsView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        products = Products.objects.values().all()
-        product_list = [[p['product_code'], p['barcode'], p['group'], p['subgroup'], p['brand'],
-                         p['serial_number'], p['model'], p['description'], p['unit'],
-                         p['supplier'], p['supplier_contact']] for p in products]
+        products = Products.objects.all()
+        product_list = [[p.id, p.product_code, p.barcode, p.group.group_name, p.subgroup.subgroup_name, p.brand,
+                         p.serial_number, p.model, p.description, p.unit] for p in products]
         return JsonResponse(product_list, safe=False, status=200)
-    
-#! Edit yaparken product code değişmemeli
 
 class EditProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
@@ -387,8 +384,9 @@ class EditProductsView(APIView):
         try:
             data = json.loads(request.body)
 
+            id = data.get('id')
             old_product_code = data.get('old_product_code')
-            product = Products.objects.get(product_code=old_product_code)
+            product = Products.objects.get(id=id)
 
             # Check if new product_code value is unique
             new_product_code = data.get('new_product_code')
@@ -401,13 +399,27 @@ class EditProductsView(APIView):
                     product.product_code = new_product_code
 
             # Update other product fields
-            for field in ['new_barcode', 'new_group', 'new_subgroup', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit', 'new_supplier', 'new_supplier_contact']:
+            for field in ['new_barcode', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit']:
                 value = data.get(field)
                 if value is not None and value != '':
                     updated_field = field[4:]  # Remove the "new_" prefix
                     setattr(product, updated_field, value)
-                else:
-                    return JsonResponse({'error': _("The field '%s' cannot be empty.") % field}, status=400)
+
+            new_group_name = data.get('new_group')
+            if new_group_name:
+                try:
+                    group = ProductGroups.objects.get(group_name=new_group_name)
+                    product.group = group
+                except ProductGroups.DoesNotExist:
+                    return JsonResponse({'error': _("Group with name '%s' does not exist.") % new_group_name}, status=400)
+
+            new_subgroup_name = data.get('new_subgroup')
+            if new_subgroup_name:
+                try:
+                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name)
+                    product.subgroup = subgroup
+                except ProductSubgroups.DoesNotExist:
+                    return JsonResponse({'error': _("Subgroup with name '%s' does not exist.") % new_subgroup_name}, status=400)
 
             product.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
@@ -421,18 +433,19 @@ class EditProductsView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-        
-
 class DeleteProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+    
     def post(self, request, *args, **kwargs):
         try:
-            product_code = request.POST.get('product_code')
-            Products.objects.filter(product_code=product_code).delete()
+            data = json.loads(request.body)
+            id = data.get('id')
+            Products.objects.get(id=id).delete()
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
         return JsonResponse({'message': _("Product object has been successfully deleted")}, status=200)
+
 
 
 # endregion
@@ -530,7 +543,127 @@ class EditSuppliersView(APIView):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
+class DeleteSupplierView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            id = data.get('id')
+            Suppliers.objects.get(id=id).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': _("Supplier object has been successfully deleted")}, status=200)
+
 # endregion
+
+# region Consumers
+
+class AddConsumersView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            data = json.loads(request.body)
+
+            tax_code = data.get('tax_code')
+            if not tax_code:
+                return JsonResponse({'error': _("Tax Code cannot be empty!")}, status=400)
+            elif Consumers.objects.filter(tax_code=tax_code, company=user.company).exists():
+                error_message = _("The Tax Code '%s' already exists in the database for this company.") % tax_code
+                return JsonResponse({'error': error_message}, status=400)
+
+            # Add new consumer
+            new_consumer_data = {}
+            for field in ['name', 'contact_name', 'contact_no']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    new_consumer_data[field] = value
+                else:
+                    error_message = _("The field '{%s}' cannot be empty.") % field
+                    return JsonResponse({'error': error_message}, status=400)
+
+            new_consumer = Consumers.objects.create(tax_code=tax_code, company=user.company, 
+                                                    project=user.current_project, **new_consumer_data)
+
+            message = _("New consumer '{%s}' has been successfully created.") % new_consumer.name
+            return JsonResponse({'message': message}, status=201)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class ConsumersView(APIView):
+    permission_classes = (IsAuthenticated, IsStockStaff, IsSuperStaff, IsAccountingStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request, *args, **kwargs):
+        consumers = Consumers.objects.values().all()
+        consumer_list = [[c['id'], c['tax_code'], c['name'], c['contact_name'], c['contact_no']] for c in consumers]
+        return JsonResponse(consumer_list, safe=False, status=200)
+
+class EditConsumersView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            user = request.user
+            data = json.loads(request.body)
+
+            tax_code = data.get('tax_code')
+            consumer = Consumers.objects.get(tax_code=tax_code, company=user.company)
+
+            # Update consumer fields
+            for field in ['name', 'contact_name', 'contact_no']:
+                value = data.get(field)
+                if value is not None and value != '':
+                    setattr(consumer, field, value)
+                else:
+                    return JsonResponse({'error': _("The field '%s' cannot be empty.") % field}, status=400)
+
+            # Check if any fields have been changed
+            if consumer.is_dirty():
+                dirty_fields = consumer.get_dirty_fields()
+
+                # Check if the tax_code is being updated and if it's unique within the same company
+                if 'tax_code' in dirty_fields:
+                    new_tax_code = getattr(consumer, 'tax_code')
+                    if Consumers.objects.filter(tax_code=new_tax_code, company=user.company).exists():
+                        return JsonResponse({'error': _("The Tax Code '%s' already exists in the database for this company.") % new_tax_code}, status=400)
+
+            consumer.save()
+            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
+
+        except Consumers.DoesNotExist:
+            return JsonResponse({'error': _("Consumer not found.")}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class DeleteConsumerView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = json.loads(request.body)
+            id = data.get('id')
+            Consumers.objects.get(id=id).delete()
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({'message': _("Consumer object has been successfully deleted")}, status=200)
+
+# endregion
+
 
 # region ProductGroups
 
@@ -631,6 +764,100 @@ class DeleteProductGroupView(APIView):
 
 # endregion
 
+# region ProductSubgroups
+
+class CreateProductSubgroupView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        subgroup_name = request.data.get('subgroup_name')
+        group_code = request.data.get('group_code')
+
+        # Retry the operation up to 5 times
+        for _ in range(5):
+            try:
+                with transaction.atomic():
+                    group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
+                    max_subgroup_code = ProductSubgroups.objects.filter(group=group).aggregate(Max('subgroup_code'))['subgroup_code__max']
+
+                    if max_subgroup_code is None:
+                        new_subgroup_code = 1
+                    else:
+                        new_subgroup_code = max_subgroup_code + 1
+
+                    padded_subgroup_code = str(new_subgroup_code).zfill(3)
+
+                    product_subgroup = ProductSubgroups(subgroup_code=padded_subgroup_code, subgroup_name=subgroup_name, group=group)
+                    product_subgroup.save()
+
+                return JsonResponse({'message': _('Product subgroup created successfully')})
+
+            except IntegrityError:
+                pass
+
+        return JsonResponse({'error': _('Could not create product subgroup. Please try again.')}, status=500)
+
+
+class ProductSubgroupsView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request):
+        group_code = request.data.get('group_code')
+        group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
+        product_subgroups = ProductSubgroups.objects.filter(group=group)
+
+        product_subgroups_list = [[subgroup.subgroup_code, subgroup.subgroup_name] for subgroup in product_subgroups]
+
+        return JsonResponse(product_subgroups_list, safe=False)
+
+
+class EditProductSubgroupView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        subgroup_code = request.data.get('subgroup_code')
+        new_subgroup_name = request.data.get('new_subgroup_name')
+
+        if not subgroup_code or not new_subgroup_name:
+            return JsonResponse({'error': _('Both subgroup_code and new_subgroup_name must be provided')}, status=400)
+
+        try:
+            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__company=request.user.company, group__project=request.user.current_project)
+        except ProductSubgroups.DoesNotExist:
+            return JsonResponse({'error': _('Product subgroup not found')}, status=404)
+
+        product_subgroup.subgroup_name = new_subgroup_name
+        product_subgroup.save()
+
+        return JsonResponse({'message': _('Product subgroup updated successfully')})
+
+
+class DeleteProductSubgroupView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def post(self, request, *args, **kwargs):
+        subgroup_code = request.data.get('subgroup_code')
+
+        if not subgroup_code:
+            return JsonResponse({'error': _('subgroup_code must be provided')}, status=400)
+
+        try:
+            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__company=request.user.company, group__project=request.user.current_project)
+        except ProductSubgroups.DoesNotExist:
+            return JsonResponse({'error': _('Product subgroup not found')}, status=404)
+
+        product_subgroup.delete()
+
+        ProductSubgroups.objects.filter(subgroup_code__gt=subgroup_code, group=product_subgroup.group).update(subgroup_code=F('subgroup_code') - 1)
+
+        return JsonResponse({'message': _('Product subgroup deleted successfully')})
+
+
+# endregion
 
 # region ProductInflow
 
@@ -978,6 +1205,53 @@ class DeleteProductOutflowView(APIView):
 
         return JsonResponse({'message': _("Product outflow object has been successfully deleted.")}, status=200)
 
+# class CreateProductOutflowReceiptView(APIView):
+#     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+#     authentication_classes = (JWTAuthentication,)
+
+#     def get(self, request, *args, **kwargs):
+#         try:
+#             id = request.data.get('id')
+#             product_outflow = ProductOutflow.objects.get(id=id)  # Get the ProductOutflow object
+#             product_code = product_outflow.product.product_code
+#             items = [product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
+#             # For example:
+#             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
+#             title = _("Ambar Malzeme Cikis Fisi")
+#             logo_path = "path/to/your/logo.png"  # Update this to the path where your logo is store
+
+#             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
+#             sequence_number = sequence_number_obj.number
+#             sequence_number_obj.number += 1
+#             sequence_number_obj.save()
+#             # Create a temporary file for the PDF
+#             fd, temp_pdf_filename = tempfile.mkstemp()
+#             os.close(fd)
+
+#             # Create the PDF
+#             create_receipt_pdf(temp_pdf_filename, title, items, logo_path, product_code, sequence_number)
+
+#             # Read the temporary PDF file
+#             with open(temp_pdf_filename, 'rb') as f:
+#                 pdf = f.read()
+
+#             # Remove the temporary file
+#             os.remove(temp_pdf_filename)
+
+#             # Generate serial number
+#             product_code_str = product_code.replace(".", "")
+#             date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
+#             serial_number = f"{product_code_str}-{date_str_serial}-{sequence_number:04}"
+
+#             # Set filename to be serial_number
+#             filename = f'{serial_number}.pdf'
+
+#             response = FileResponse(pdf, as_attachment=True, filename=filename)
+#             return response
+
+#         except ProductOutflow.DoesNotExist:
+#             return JsonResponse({'error': _("Product Outflow not found.")}, status=400)
+
 class CreateProductOutflowReceiptView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
@@ -1004,13 +1278,6 @@ class CreateProductOutflowReceiptView(APIView):
             # Create the PDF
             create_receipt_pdf(temp_pdf_filename, title, items, logo_path, product_code, sequence_number)
 
-            # Read the temporary PDF file
-            with open(temp_pdf_filename, 'rb') as f:
-                pdf = f.read()
-
-            # Remove the temporary file
-            os.remove(temp_pdf_filename)
-
             # Generate serial number
             product_code_str = product_code.replace(".", "")
             date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
@@ -1019,8 +1286,14 @@ class CreateProductOutflowReceiptView(APIView):
             # Set filename to be serial_number
             filename = f'{serial_number}.pdf'
 
-            response = FileResponse(pdf, as_attachment=True, filename=filename)
-            return response
+            with open(temp_pdf_filename, 'rb') as f:
+                pdf = f.read()
+                base64_content = base64.b64encode(pdf).decode()
+
+            # Remove the temporary file
+            os.remove(temp_pdf_filename)
+
+            return JsonResponse({'filename': filename, 'content': base64_content})
 
         except ProductOutflow.DoesNotExist:
             return JsonResponse({'error': _("Product Outflow not found.")}, status=400)
@@ -1274,10 +1547,10 @@ class EditAccountingView(APIView):
                     return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
 
             accounting.save()
-            return JsonResponse({'message': f"Your changes have been successfully saved."}, status=200)
+            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
         except Accounting.DoesNotExist:
-            return JsonResponse({'error': "Accounting record not found."}, status=400)
+            return JsonResponse({'error': _("Accounting record not found.")}, status=400)
 
         except ValueError as e:
             return JsonResponse({'error': str(e)}, status=400)
@@ -1312,7 +1585,7 @@ class SupplierSearchView(APIView):
     def get(self, request, *args, **kwargs):
         product_code = request.GET.get('product_code')
         if not product_code:
-            return JsonResponse({'error': 'Missing product_code parameter'}, status=400)
+            return JsonResponse({'error': _('Missing product_code parameter')}, status=400)
 
         suppliers = Suppliers.objects.filter(products__product_code=product_code)
         suppliers_data = [{'id': supplier.id, 'name': supplier.name, 'contact_name': supplier.contact_name, 'contact_no': supplier.contact_no} for supplier in suppliers]
@@ -1326,7 +1599,7 @@ class ConsumerSearchView(APIView):
     def get(self, request, *args, **kwargs):
         product_code = request.GET.get('product_code')
         if not product_code:
-            return JsonResponse({'error': 'Missing product_code parameter'}, status=400)
+            return JsonResponse({'error': _('Missing product_code parameter')}, status=400)
 
         consumers = Consumers.objects.filter(products__product_code=product_code)
         consumers_data = [{'id': consumer.id, 'name': consumer.name, 'contact_name': consumer.contact_name, 'contact_no': consumer.contact_no } for consumer in consumers]
