@@ -329,24 +329,34 @@ class DeleteUserView(APIView):
 #? Mesela şuan bir product'ın ismini değiştirirsek bundan önce o product ile girilmiş ambar giriş çıkışlarında o productın ismi değişmiyor.
 
 class AddProductsView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff )
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
 
-            product_code = data.get('product_code')
-            if not product_code:
-                return JsonResponse({'error': _("Product Code cannot be empty!")}, status=400)
-            elif Products.objects.filter(product_code=product_code).exists():
-                error_message = _("The Product Code '%s' already exists in the database.") % product_code
+            group_name = data.get('group')
+            subgroup_name = data.get('subgroup')
+
+            # Fetch group and subgroup objects using their names
+            try:
+                group = ProductGroups.objects.get(group_name=group_name)
+                subgroup = ProductSubgroups.objects.get(subgroup_name=subgroup_name, group=group)
+            except (ProductGroups.DoesNotExist, ProductSubgroups.DoesNotExist):
+                error_message = _("The specified group or subgroup does not exist.")
                 return JsonResponse({'error': error_message}, status=400)
+
+            # Construct product code
+            product_code = f'{group.group_code}.{subgroup.subgroup_code}.{subgroup.sequence_number}'
+
+            # Increment sequence_number in the subgroup
+            subgroup.sequence_number += 1
+            subgroup.save()
 
             # Add new product
             new_product_data = {}
-            for field in ['barcode', 'group', 'subgroup', 'brand', 'serial_number', 'model', 'description', 'unit']:
+            for field in ['brand', 'serial_number', 'model', 'description', 'unit']:
                 value = data.get(field)
                 if value is not None and value != '':
                     new_product_data[field] = value
@@ -354,8 +364,8 @@ class AddProductsView(APIView):
                     error_message = _("The field '{%s}' cannot be empty.") % field
                     return JsonResponse({'error': error_message}, status=400)
 
-            new_product = Products.objects.create(product_code=product_code, **new_product_data)
-            
+            new_product = Products.objects.create(product_code=product_code, group=group, subgroup=subgroup, **new_product_data)
+
             message = _("New product '{%s}' has been successfully created.") % new_product.product_code
             return JsonResponse({'message': message}, status=201)
 
@@ -366,15 +376,23 @@ class AddProductsView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
 
+
 class ProductsView(APIView):
     permission_classes = (IsAuthenticated, IsStockStaff, IsSuperStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        products = Products.objects.all()
-        product_list = [[p.id, p.product_code, p.barcode, p.group.group_name, p.subgroup.subgroup_name, p.brand,
+        company = request.user.company
+
+        if not company:
+            return JsonResponse({'error': _('Company not associated with user.')}, status=400)
+
+        products = Products.objects.filter(company=company)
+        product_list = [[p.id, p.product_code, p.group.group_name, p.subgroup.subgroup_name, p.brand,
                          p.serial_number, p.model, p.description, p.unit] for p in products]
+        
         return JsonResponse(product_list, safe=False, status=200)
+
 
 class EditProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
@@ -385,27 +403,19 @@ class EditProductsView(APIView):
             data = json.loads(request.body)
 
             id = data.get('id')
-            old_product_code = data.get('old_product_code')
             product = Products.objects.get(id=id)
 
-            # Check if new product_code value is unique
-            new_product_code = data.get('new_product_code')
-            if new_product_code and new_product_code != old_product_code:
-                if Products.objects.filter(product_code=new_product_code).exists():
-                    return JsonResponse({'error': _("The Product Code '%s' already exists in the database.") % new_product_code}, status=400)
-                if not new_product_code:
-                    return JsonResponse({'error': _("Product Code cannot be empty!")}, status=400)
-                else:
-                    product.product_code = new_product_code
+            # Check if product belongs to the same company as the user
+            if product.company != request.user.company:
+                return JsonResponse({'error': _("Product doesn't belong to your company!")}, status=400)
 
             # Update other product fields
-            for field in ['new_barcode', 'new_brand', 'new_serial_number', 'new_model', 'new_description', 'new_unit']:
+            for field in ['barcode', 'brand', 'serial_number', 'model', 'description', 'unit']:
                 value = data.get(field)
                 if value is not None and value != '':
-                    updated_field = field[4:]  # Remove the "new_" prefix
-                    setattr(product, updated_field, value)
+                    setattr(product, field, value)
 
-            new_group_name = data.get('new_group')
+            new_group_name = data.get('group')
             if new_group_name:
                 try:
                     group = ProductGroups.objects.get(group_name=new_group_name)
@@ -413,13 +423,23 @@ class EditProductsView(APIView):
                 except ProductGroups.DoesNotExist:
                     return JsonResponse({'error': _("Group with name '%s' does not exist.") % new_group_name}, status=400)
 
-            new_subgroup_name = data.get('new_subgroup')
+            new_subgroup_name = data.get('subgroup')
             if new_subgroup_name:
                 try:
                     subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name)
                     product.subgroup = subgroup
                 except ProductSubgroups.DoesNotExist:
                     return JsonResponse({'error': _("Subgroup with name '%s' does not exist.") % new_subgroup_name}, status=400)
+
+            product.refresh_from_db()
+            dirty_fields = product.get_dirty_fields()
+
+            if 'group' in dirty_fields or 'subgroup' in dirty_fields:
+                # Here, assign the new product code based on the new group and subgroup
+                new_product_code = f'{group.group_code}.{subgroup.subgroup_code}.{subgroup.sequence_number}'
+                product.product_code = new_product_code
+                subgroup.sequence_number += 1
+                subgroup.save()
 
             product.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
@@ -432,6 +452,7 @@ class EditProductsView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
 
 class DeleteProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
@@ -1060,16 +1081,17 @@ class AddProductOutflowView(APIView):
             status = request.data.get('status')
             place_of_use = request.data.get('place_of_use')
             amount = request.data.get('amount')
-            #! company ve project id user izerinden çekiklecek
-            company_id = request.data.get('company_id')
-            project_id = request.data.get('project_id')
+
+            # Check if the date is in correct format
+            try:
+                date = datetime.strptime(date, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({'error': _('Invalid date format. Use YYYY-MM-DD.')}, status=400)
 
             # Fetch the product using the product code
-            product = Products.objects.get(product_code=product_code)
-            provider_company = Consumers.objects.get(tax_code=provider_company_tax_code)
-            receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code)
-            company = Company.objects.get(id=company_id)
-            project = Project.objects.get(id=project_id)
+            product = Products.objects.get(product_code=product_code, company=request.user.company)
+            provider_company = Consumers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
+            receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company)
 
             # Create the ProductOutflow object
             product_outflow = ProductOutflow.objects.create(
@@ -1081,19 +1103,15 @@ class AddProductOutflowView(APIView):
                 status=status,
                 place_of_use=place_of_use,
                 amount=amount,
-                company=company,
-                project=project
+                company=request.user.company,
+                project=request.user.current_project
             )
 
             return JsonResponse({'message': _('ProductOutflow created successfully')}, status=201)
         except Products.DoesNotExist:
-            return JsonResponse({'error': _('Product with the provided product code does not exist.')}, status=400)
+            return JsonResponse({'error': _('Product with the provided product code does not exist or doesnt belong to your company.')}, status=400)
         except Consumers.DoesNotExist:
-            return JsonResponse({'error': _('Consumer with the provided tax code does not exist.')}, status=400)
-        except Company.DoesNotExist:
-            return JsonResponse({'error': _('Company with the provided company id does not exist.')}, status=400)
-        except Project.DoesNotExist:
-            return JsonResponse({'error': _('Project with the provided project id does not exist.')}, status=400)
+            return JsonResponse({'error': _('Consumer with the provided tax code does not exist or doesnt belong to your company.')}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
@@ -1113,7 +1131,7 @@ class ProductOutflowView(APIView):
                 pf.supplier_company.tax_code, 
                 pf.supplier_company.name, 
                 pf.receiver_company.tax_code, 
-                 pf.receiver_company.name, 
+                pf.receiver_company.name, 
                 pf.status, 
                 pf.place_of_use,
                 pf.product.group,
@@ -1141,41 +1159,54 @@ class EditProductOutflowView(APIView):
             old_id = data.get('old_id')
             product_outflow = ProductOutflow.objects.get(id=old_id)
 
+            # Save original state for dirty fields checking
+            product_outflow.save_dirty_fields()
+
             # Check if new product_code value is unique
-            new_product_code = data.get('new_product_code')
+            new_product_code = data.get('product_code')
             if new_product_code and new_product_code != product_outflow.product.product_code:
-                product = Products.objects.filter(product_code=new_product_code).first()
+                product = Products.objects.filter(product_code=new_product_code, company=request.user.company).first()
                 if not product:
-                    return JsonResponse({'error': _("The Product Code '%s' does not exist in the database.") % new_product_code}, status=400)
+                    return JsonResponse({'error': _("The Product Code '%s' does not exist in the database or doesn't belong to your company.") % new_product_code}, status=400)
                 product_outflow.product = product
 
+            # Update date
+            new_date = data.get('date')
+            if new_date:
+                try:
+                    new_date = datetime.strptime(new_date, '%Y-%m-%d').date()
+                    product_outflow.date = new_date
+                except ValueError:
+                    return JsonResponse({'error': _("Invalid date format. Use YYYY-MM-DD.")}, status=400)
+
             # Update supplier_company
-            new_supplier_tax_code = data.get('new_supplier_tax_code')
+            new_supplier_tax_code = data.get('provider_company_tax_code')
             if new_supplier_tax_code:
-                supplier_company = Consumers.objects.filter(tax_code=new_supplier_tax_code).first()
+                supplier_company = Consumers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company).first()
                 if not supplier_company:
-                    return JsonResponse({'error': _("The Supplier with tax code '%s' does not exist in the database.") % new_supplier_tax_code}, status=400)
-                product_outflow.supplier_company = supplier_company
+                    return JsonResponse({'error': _("The Supplier with tax code '%s' does not exist in the database or doesn't belong to your company.") % new_supplier_tax_code}, status=400)
+                product_outflow.provider_company = supplier_company
 
             # Update receiver_company
-            new_receiver_tax_code = data.get('new_receiver_tax_code')
+            new_receiver_tax_code = data.get('receiver_company_tax_code')
             if new_receiver_tax_code:
-                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code).first()
+                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company).first()
                 if not receiver_company:
-                    return JsonResponse({'error': _("The Receiver with tax code '%s' does not exist in the database.") % new_receiver_tax_code}, status=400)
+                    return JsonResponse({'error': _("The Receiver with tax code '%s' does not exist in the database or doesn't belong to your company.") % new_receiver_tax_code}, status=400)
                 product_outflow.receiver_company = receiver_company
 
             # Update other product outflow fields
-            for field in ['new_date', 'new_status', 'new_place_of_use', 'new_amount', 'new_barcode']:
+            for field in ['status', 'place_of_use', 'amount', 'barcode']:
                 value = data.get(field)
-                if value is not None and value != '':
-                    updated_field = field[4:]  # Remove the "new_" prefix
-                    setattr(product_outflow, updated_field, value)
-                else:
-                    return JsonResponse({'error': _("The field '%s' cannot be empty.") % field}, status=400)
+                if value is not None:
+                    setattr(product_outflow, field, value)
 
-            product_outflow.save()
-            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
+            # Check dirty fields and save if any
+            if product_outflow.is_dirty():
+                product_outflow.save()
+                return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
+            else:
+                return JsonResponse({'message': _("No changes detected.")}, status=200)
 
         except ProductOutflow.DoesNotExist:
             return JsonResponse({'error': _("Product not found.")}, status=400)
@@ -1207,52 +1238,6 @@ class DeleteProductOutflowView(APIView):
 
         return JsonResponse({'message': _("Product outflow object has been successfully deleted.")}, status=200)
 
-# class CreateProductOutflowReceiptView(APIView):
-#     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
-#     authentication_classes = (JWTAuthentication,)
-
-#     def get(self, request, *args, **kwargs):
-#         try:
-#             id = request.data.get('id')
-#             product_outflow = ProductOutflow.objects.get(id=id)  # Get the ProductOutflow object
-#             product_code = product_outflow.product.product_code
-#             items = [product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
-#             # For example:
-#             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
-#             title = _("Ambar Malzeme Cikis Fisi")
-#             logo_path = "path/to/your/logo.png"  # Update this to the path where your logo is store
-
-#             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
-#             sequence_number = sequence_number_obj.number
-#             sequence_number_obj.number += 1
-#             sequence_number_obj.save()
-#             # Create a temporary file for the PDF
-#             fd, temp_pdf_filename = tempfile.mkstemp()
-#             os.close(fd)
-
-#             # Create the PDF
-#             create_receipt_pdf(temp_pdf_filename, title, items, logo_path, product_code, sequence_number)
-
-#             # Read the temporary PDF file
-#             with open(temp_pdf_filename, 'rb') as f:
-#                 pdf = f.read()
-
-#             # Remove the temporary file
-#             os.remove(temp_pdf_filename)
-
-#             # Generate serial number
-#             product_code_str = product_code.replace(".", "")
-#             date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
-#             serial_number = f"{product_code_str}-{date_str_serial}-{sequence_number:04}"
-
-#             # Set filename to be serial_number
-#             filename = f'{serial_number}.pdf'
-
-#             response = FileResponse(pdf, as_attachment=True, filename=filename)
-#             return response
-
-#         except ProductOutflow.DoesNotExist:
-#             return JsonResponse({'error': _("Product Outflow not found.")}, status=400)
 
 class CreateProductOutflowReceiptView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
@@ -1317,7 +1302,7 @@ def create_stock(sender, instance, created, **kwargs):
             project=instance.project
         )
 
-#! Aşağıdaki sinyal fonksiyonlarında ürünlerin şirket ve ürüne göre filitrelenmesi gerekiyor.
+
 @receiver(post_save, sender=ProductInflow)
 def update_stock_inflow(sender, instance, created, **kwargs):
     dirty_fields = instance.get_dirty_fields()
@@ -1326,7 +1311,7 @@ def update_stock_inflow(sender, instance, created, **kwargs):
     old_product_code = dirty_fields.get('product__product_code')
     if old_product_code:
         try:
-            old_product_stock = Stock.objects.get(product_code=old_product_code)
+            old_product_stock = Stock.objects.get(product__product_code=old_product_code, company=instance.company, project=instance.project)
             old_product_stock.inflow -= instance.amount
             old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
             old_product_stock.save()
@@ -1334,7 +1319,7 @@ def update_stock_inflow(sender, instance, created, **kwargs):
             return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
     try:
-        stock = Stock.objects.get(product_code=instance.product.product_code)
+        stock = Stock.objects.get(product__product_code=instance.product.product_code, company=instance.company, project=instance.project)
     except Stock.DoesNotExist:
         return
 
@@ -1350,10 +1335,11 @@ def update_stock_inflow(sender, instance, created, **kwargs):
     stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
     stock.save()
 
+
 @receiver(pre_delete, sender=ProductInflow)
 def update_stock_inflow_on_delete(sender, instance, **kwargs):
     try:
-        stock = Stock.objects.get(product=instance.product)
+        stock = Stock.objects.get(product=instance.product, company=instance.company, project=instance.project)
         stock.inflow -= instance.amount
         stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
         stock.save()
@@ -1372,7 +1358,7 @@ def update_stock_outflow(sender, instance, created, **kwargs):
     old_product_code = dirty_fields.get('product__product_code')
     if old_product_code:
         try:
-            old_product_stock = Stock.objects.get(product_code=old_product_code)
+            old_product_stock = Stock.objects.get(product__product_code=old_product_code, company=instance.company, project=instance.project)
             old_product_stock.outflow -= instance.amount
             old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
             old_product_stock.save()
@@ -1380,7 +1366,7 @@ def update_stock_outflow(sender, instance, created, **kwargs):
             return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
     try:
-        stock = Stock.objects.get(product_code=instance.product.product_code)
+        stock = Stock.objects.get(product__product_code=instance.product.product_code, company=instance.company, project=instance.project)
     except Stock.DoesNotExist:
         return
 
@@ -1395,12 +1381,11 @@ def update_stock_outflow(sender, instance, created, **kwargs):
     stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
     stock.save()
 
-from django.core.exceptions import ValidationError
 
 @receiver(pre_delete, sender=ProductOutflow)
 def update_stock_outflow_on_delete(sender, instance, **kwargs):
     try:
-        stock = Stock.objects.get(product=instance.product)
+        stock = Stock.objects.get(product=instance.product, company=instance.company, project=instance.project)
         stock.outflow -= instance.amount
         stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
         stock.save()
@@ -1412,14 +1397,16 @@ def update_stock_outflow_on_delete(sender, instance, **kwargs):
 
 
 
+
 class StockView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        stocks = Stock.objects.all()
+        stocks = Stock.objects.filter(company=request.user.company, project=request.user.current_project)
         stock_list = [
             [
+                stock.id,
                 stock.product.product_code, 
                 stock.product.group, 
                 stock.product.subgroup,
@@ -1492,20 +1479,22 @@ class StockView(APIView):
 @receiver(post_save, sender=ProductInflow)
 def create_accounting(sender, instance, created, **kwargs):
     if created:
+        user = instance.user
         Accounting.objects.create(
             product_inflow=instance,
-            company_id = 1,  # Assuming Company and Project models exist, and the following values represent actual ids from their records
-            project_id = 1,
-            unit_price = 0,
-            discount_rate = 0,
-            discount_amount = 0,
-            tax_rate = 0,
-            tevkifat_rate = 0,
-            price_without_tax = 0,
-            unit_price_without_tax = 0,
-            price_with_tevkifat = 0,
-            price_total = 0,
+            company=user.company,
+            project=user.current_project,
+            unit_price=0,
+            discount_rate=0,
+            discount_amount=0,
+            tax_rate=0,
+            tevkifat_rate=0,
+            price_without_tax=0,
+            unit_price_without_tax=0,
+            price_with_tevkifat=0,
+            price_total=0,
         )
+
 
 
 
@@ -1514,7 +1503,7 @@ class AccountingView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        accountings = Accounting.objects.all()
+        accountings = Accounting.objects.all(company=request.user.company, project=request.user.current_project)
         accounting_list = [
             [ac.id, ac.product_inflow.product.product_code, ac.product_inflow.date, ac.product_inflow.barcode, ac.product_inflow.supplier_company, ac.product_inflow.receiver_company,
              ac.product_inflow.status, ac.product_inflow.place_of_use, ac.product_inflow.product.group, ac.product_inflow.product.subgroup, ac.product_inflow.product.brand, ac.product_inflow.product.serial_number, 
@@ -1533,20 +1522,23 @@ class EditAccountingView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            data = json.loads(request.body)
+            data = request.data
 
             old_id = data.get('old_id')
-            accounting = Accounting.objects.get(id=old_id)
+            # Filter Accounting based on user's company and project
+            accounting = Accounting.objects.filter(company=request.user.company, project=request.user.current_project).get(id=old_id)
+            accounting_fields = accounting.get_dirty_fields()
 
             # Update accounting fields
-            for field in ['new_unit_price', 'new_discount_rate', 'new_discount_amount', 'new_tax_rate', 'new_tevkifat_rate', 'new_price_without_tax', 'new_unit_price_without_tax', 'new_price_with_tevkifat', 'new_price_total']:
-                value = data.get(field)
+            for field in ['unit_price', 'discount_rate', 'discount_amount', 'tax_rate', 'tevkifat_rate', 'price_without_tax', 'unit_price_without_tax', 'price_with_tevkifat', 'price_total']:
+                value = data.get('new_' + field)
 
                 if value is not None and value != '':
-                    updated_field = field[4:]  # Remove the "new_" prefix
-                    setattr(accounting, updated_field, value)
+                    old_value = accounting_fields.get(field)
+                    if old_value != value:  # If the field has changed
+                        setattr(accounting, field, value)
                 else:
-                    return JsonResponse({'error': f"The field '{field}' cannot be empty."}, status=400)
+                    return JsonResponse({'error': f"The field 'new_{field}' cannot be empty."}, status=400)
 
             accounting.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
@@ -1559,6 +1551,7 @@ class EditAccountingView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
 
 
 
@@ -1591,7 +1584,7 @@ class SupplierSearchView(APIView):
         if not product_code:
             return JsonResponse({'error': _('Missing product_code parameter')}, status=400)
 
-        suppliers = Suppliers.objects.filter(products__product_code=product_code)
+        suppliers = Suppliers.objects.filter(products__product_code=product_code, company=request.user.company, project=request.user.current_project)
         suppliers_data = [{'id': supplier.id, 'name': supplier.name, 'contact_name': supplier.contact_name, 'contact_no': supplier.contact_no} for supplier in suppliers]
         print(suppliers_data)
         return JsonResponse({'suppliers': suppliers_data})
@@ -1606,7 +1599,7 @@ class ConsumerSearchView(APIView):
         if not product_code:
             return JsonResponse({'error': _('Missing product_code parameter')}, status=400)
 
-        consumers = Consumers.objects.filter(products__product_code=product_code)
+        consumers = Consumers.objects.filter(products__product_code=product_code, company=request.user.company, project=request.user.current_project)
         consumers_data = [{'id': consumer.id, 'name': consumer.name, 'contact_name': consumer.contact_name, 'contact_no': consumer.contact_no } for consumer in consumers]
 
         return JsonResponse({'consumers': consumers_data})
