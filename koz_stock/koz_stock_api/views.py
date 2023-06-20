@@ -14,7 +14,6 @@ from django.dispatch import receiver
 from .definitions import create_receipt_pdf
 from datetime import datetime
 import datetime
-import jdatetime
 from django.db.models import Sum, Avg, Max, F
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
@@ -341,8 +340,8 @@ class AddProductsView(APIView):
 
             # Fetch group and subgroup objects using their names
             try:
-                group = ProductGroups.objects.get(group_name=group_name)
-                subgroup = ProductSubgroups.objects.get(subgroup_name=subgroup_name, group=group)
+                group = ProductGroups.objects.get(group_name=group_name, company=request.user.company, project=request.user.current_project)
+                subgroup = ProductSubgroups.objects.get(subgroup_name=subgroup_name, group=group, company=request.user.company, project=request.user.current_project)
             except (ProductGroups.DoesNotExist, ProductSubgroups.DoesNotExist):
                 error_message = _("The specified group or subgroup does not exist.")
                 return JsonResponse({'error': error_message}, status=400)
@@ -364,7 +363,7 @@ class AddProductsView(APIView):
                     error_message = _("The field '{%s}' cannot be empty.") % field
                     return JsonResponse({'error': error_message}, status=400)
 
-            new_product = Products.objects.create(product_code=product_code, group=group, subgroup=subgroup, **new_product_data)
+            new_product = Products.objects.create(product_code=product_code, group=group, subgroup=subgroup, company=request.user.company, project=request.user.current_project, **new_product_data)
 
             message = _("New product '{%s}' has been successfully created.") % new_product.product_code
             return JsonResponse({'message': message}, status=201)
@@ -418,7 +417,7 @@ class EditProductsView(APIView):
             new_group_name = data.get('group')
             if new_group_name:
                 try:
-                    group = ProductGroups.objects.get(group_name=new_group_name)
+                    group = ProductGroups.objects.get(group_name=new_group_name, company=request.user.company, project=request.user.current_project)
                     product.group = group
                 except ProductGroups.DoesNotExist:
                     return JsonResponse({'error': _("Group with name '%s' does not exist.") % new_group_name}, status=400)
@@ -426,7 +425,7 @@ class EditProductsView(APIView):
             new_subgroup_name = data.get('subgroup')
             if new_subgroup_name:
                 try:
-                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name)
+                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name, company=request.user.company, project=request.user.current_project)
                     product.subgroup = subgroup
                 except ProductSubgroups.DoesNotExist:
                     return JsonResponse({'error': _("Subgroup with name '%s' does not exist.") % new_subgroup_name}, status=400)
@@ -700,7 +699,7 @@ class CreateProductGroupView(APIView):
             try:
                 with transaction.atomic():
                     # Get the current maximum group code
-                    max_group_code = ProductGroups.objects.aggregate(Max('group_code'))['group_code__max']
+                    max_group_code = ProductGroups.objects.filter(company=request.user.company, project=request.user.current_project).aggregate(Max('group_code'))['group_code__max']
 
                     if max_group_code is None:
                         # If no group codes exist, start at 1
@@ -901,9 +900,9 @@ class AddProductInflowView(APIView):
             project_id = request.data.get('project_id')
             
             # Fetch the product using the product code
-            product = Products.objects.get(product_code=product_code)
-            provider_company = Suppliers.objects.get(tax_code=provider_company_tax_code)
-            receiver_company = Suppliers.objects.get(tax_code=receiver_company_tax_code)
+            product = Products.objects.get(product_code=product_code,company=request.user.company, project=request.user.current_project)
+            provider_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company, project=request.user.current_project)
+            receiver_company = Suppliers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company, project=request.user.current_project)
             company = Company.objects.get(id=company_id)
             project = Project.objects.get(id=project_id)
 
@@ -938,7 +937,7 @@ class ProductInflowView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        product_inflows = ProductInflow.objects.select_related('product').all()
+        product_inflows = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').all()
 
         product_inflow_list = [
             [
@@ -967,18 +966,6 @@ class ProductInflowView(APIView):
         return JsonResponse(product_inflow_list, safe=False, status=200)
 
 
-# class ProductFlowView(APIView):
-#     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
-#     authentication_classes = (JWTAuthentication,)
-#     #! Burada ürünleri kullanıcının şirketi ve şuanda uzerinde çalıştığı projeye göre filitrelemeke gerekiyor.
-#     def get(self, request, *args, **kwargs):
-#         product_flows = ProductFlow.objects.values().all()
-#         product_flow_list = [
-#             [pf['id'], pf['date'], pf['product_code'], pf['provider_company'], pf['reciever_company'],
-#              pf['inflow_outflow'], pf['status'], pf['place_of_use'], pf['group'], pf['subgroup'],
-#              pf['brand'], pf['serial_number'], pf['model'], pf['description'], pf['unit'], pf['amount']] for pf in product_flows
-#         ]
-#         return JsonResponse(product_flow_list, safe=False, status=200)
 
 
 class EditProductInflowView(APIView):
@@ -990,12 +977,13 @@ class EditProductInflowView(APIView):
             data = request.data
 
             old_id = data.get('old_id')
-            product_inflow = ProductInflow.objects.get(id=old_id)
+            product_inflow = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).get(id=old_id)
+            inflow_fields = product_inflow.get_dirty_fields()
 
             # Check if new product_code value is unique
             new_product_code = data.get('new_product_code')
             if new_product_code and new_product_code != product_inflow.product.product_code:
-                product = Products.objects.filter(product_code=new_product_code).first()
+                product = Products.objects.filter(product_code=new_product_code, company=request.user.company, project=request.user.current_project).first()
                 if not product:
                     return JsonResponse({'error': _("The Product Code '%s' does not exist in the database.") % new_product_code}, status=400)
                 product_inflow.product = product
@@ -1003,7 +991,7 @@ class EditProductInflowView(APIView):
             # Update supplier_company
             new_supplier_tax_code = data.get('new_supplier_tax_code')
             if new_supplier_tax_code:
-                supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code).first()
+                supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company, project=request.user.current_project).first()
                 if not supplier_company:
                     return JsonResponse({'error': _("The Supplier with tax code '%s' does not exist in the database.") % new_supplier_tax_code}, status=400)
                 product_inflow.supplier_company = supplier_company
@@ -1011,19 +999,20 @@ class EditProductInflowView(APIView):
             # Update receiver_company
             new_receiver_tax_code = data.get('new_receiver_tax_code')
             if new_receiver_tax_code:
-                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code).first()
+                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company, project=request.user.current_project).first()
                 if not receiver_company:
                     return JsonResponse({'error': _("The Receiver with tax code '%s' does not exist in the database.") % new_receiver_tax_code}, status=400)
                 product_inflow.receiver_company = receiver_company
 
             # Update other product inflow fields
-            for field in ['new_date', 'new_status', 'new_place_of_use', 'new_amount', 'new_barcode']:
-                value = data.get(field)
+            for field in ['date', 'status', 'place_of_use', 'amount', 'barcode']:
+                value = data.get('new_' + field)
                 if value is not None and value != '':
-                    updated_field = field[4:]  # Remove the "new_" prefix
-                    setattr(product_inflow, updated_field, value)
+                    old_value = inflow_fields.get(field)
+                    if old_value != value:  # If the field has changed
+                        setattr(product_inflow, field, value)
                 else:
-                    return JsonResponse({'error': _("The field '%s' cannot be empty.") % field}, status=400)
+                    return JsonResponse({'error': _("The field 'new_{field}' cannot be empty.")}, status=400)
 
             product_inflow.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
@@ -1036,6 +1025,7 @@ class EditProductInflowView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
 
 
 #! Ambar girişi silineceği zaman kullanıcıya silmeden önce, muhasebe kaydının da silineceği ile alakalı uyarı verilmeli. 
@@ -1120,7 +1110,7 @@ class ProductOutflowView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        product_outflows = ProductOutflow.objects.select_related('product').all()
+        product_outflows = ProductOutflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').all()
 
         product_outflow_list = [
             [
@@ -1251,7 +1241,7 @@ class CreateProductOutflowReceiptView(APIView):
             items = [product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
             # For example:
             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
-            title = _("Ambar Malzeme Cikis Fisi")
+            title = _("Warehouse Material Exit Receipt")
             logo_path = "path/to/your/logo.png"  # Update this to the path where your logo is store
 
             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement

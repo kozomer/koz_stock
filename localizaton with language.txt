@@ -1,19 +1,22 @@
+gettext yükledikten sonra bu komut çalıştırılmalı:
+    set PATH=%PATH%;C:\Program Files\gettext-iconv\bin
+
 every request from frontend should include header like that:
 
-Accept-Language ----> user.language(i.e. "tr")
+    Accept-Language ----> user.language(i.e. "tr")
 
 after every changes, run this command to update .po file:
 
-python manage.py makemessages -l tr ( for turkish translation)
+    python manage.py makemessages -l tr ( for turkish translation)
 
 and then to update .mo file, run this command:
 
-python manage.py compilemessages    
+    python manage.py compilemessages    
 
 
 also views.py file should include this definition: 
 
-def set_language(request):
-    user_language = 'tr'  # replace with the user's preferred language
-    translation.activate(user_language)
-    request.session[translation.LANGUAGE_SESSION_KEY] = user_language
+    def set_language(request):
+        user_language = 'tr'  # replace with the user's preferred language
+        translation.activate(user_language)
+        request.session[translation.LANGUAGE_SESSION_KEY] = user_language
