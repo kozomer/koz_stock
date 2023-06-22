@@ -125,6 +125,10 @@ class CreateProjectView(APIView):
         for user in CustomUser.objects.filter(company=request.user.company):
             user.projects.add(project)
             user.save()
+        
+        for group in ProductGroups.objects.filter(company=request.user.company):
+            group.projects.add(project)
+            group.save()
 
         return JsonResponse({'message': _('Project created and assigned to all users successfully')})
 
@@ -157,18 +161,14 @@ class SetCurrentProjectView(APIView):
         # print(project_id)
         data = json.loads(request.body)
         project_id = data.get('project_id')
-        print(project_id)
         try:
-            print(request.user.company)
             project = Project.objects.get(id=project_id, company=request.user.company)
             # print(project)
             # print(request.user.current_project)
             request.user.current_project = project
-            print(request.user.current_project)
             request.user.save()
             return JsonResponse({'status': 'Project set successfully'})
         except ObjectDoesNotExist:
-            print("erro")
             return JsonResponse({'error': _('Project not found or does not belong to your company')}, status=400, safe=False)
 
 
@@ -334,8 +334,8 @@ class AddProductsView(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            groups = ProductGroups.objects.filter(company=request.user.company, project=request.user.current_project)
-            subgroups = ProductSubgroups.objects.filter(company=request.user.company, project=request.user.current_project)
+            groups = ProductGroups.objects.filter(company=request.user.company)
+            subgroups = ProductSubgroups.objects.filter(group__company=request.user.company)
 
             group_names = list(groups.values_list('group_name', flat=True))
             subgroup_names = list(subgroups.values_list('subgroup_name', flat=True))
@@ -357,8 +357,8 @@ class AddProductsView(APIView):
 
             # Fetch group and subgroup objects using their names
             try:
-                group = ProductGroups.objects.get(group_name=group_name, company=request.user.company, project=request.user.current_project)
-                subgroup = ProductSubgroups.objects.get(subgroup_name=subgroup_name, group=group, company=request.user.company, project=request.user.current_project)
+                group = ProductGroups.objects.get(group_name=group_name, company=request.user.company)
+                subgroup = ProductSubgroups.objects.get(subgroup_name=subgroup_name, group=group, group__company=request.user.company)
             except (ProductGroups.DoesNotExist, ProductSubgroups.DoesNotExist):
                 error_message = _("The specified group or subgroup does not exist.")
                 return JsonResponse({'error': error_message}, status=400)
@@ -380,7 +380,7 @@ class AddProductsView(APIView):
                     error_message = _("The field '{%s}' cannot be empty.") % field
                     return JsonResponse({'error': error_message}, status=400)
 
-            new_product = Products.objects.create(product_code=product_code, group=group, subgroup=subgroup, company=request.user.company, project=request.user.current_project, **new_product_data)
+            new_product = Products.objects.create(product_code=product_code, group=group, subgroup=subgroup, company=request.user.company, **new_product_data)
 
             message = _("New product '{%s}' has been successfully created.") % new_product.product_code
             return JsonResponse({'message': message}, status=201)
@@ -434,7 +434,7 @@ class EditProductsView(APIView):
             new_group_name = data.get('group')
             if new_group_name:
                 try:
-                    group = ProductGroups.objects.get(group_name=new_group_name, company=request.user.company, project=request.user.current_project)
+                    group = ProductGroups.objects.get(group_name=new_group_name, company=request.user.company)
                     product.group = group
                 except ProductGroups.DoesNotExist:
                     return JsonResponse({'error': _("Group with name '%s' does not exist.") % new_group_name}, status=400)
@@ -442,7 +442,7 @@ class EditProductsView(APIView):
             new_subgroup_name = data.get('subgroup')
             if new_subgroup_name:
                 try:
-                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name, company=request.user.company, project=request.user.current_project)
+                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name, group__company=request.user.company)
                     product.subgroup = subgroup
                 except ProductSubgroups.DoesNotExist:
                     return JsonResponse({'error': _("Subgroup with name '%s' does not exist.") % new_subgroup_name}, status=400)
@@ -705,18 +705,22 @@ class DeleteConsumerView(APIView):
 # region ProductGroups
 
 class CreateProductGroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         group_name = request.data.get('group_name')
+
+         # Check if group name already exists
+        if ProductGroups.objects.filter(group_name=group_name, company=request.user.company).exists():
+            return JsonResponse({'error': _('A product group with this name already exists.')}, status=400)
 
         # Retry the operation up to 5 times
         for i in range(5):
             try:
                 with transaction.atomic():
                     # Get the current maximum group code
-                    max_group_code = ProductGroups.objects.filter(company=request.user.company, project=request.user.current_project).aggregate(Max('group_code'))['group_code__max']
+                    max_group_code = ProductGroups.objects.filter(company=request.user.company).aggregate(Max('group_code'))['group_code__max']
 
                     if max_group_code is None:
                         # If no group codes exist, start at 1
@@ -729,7 +733,7 @@ class CreateProductGroupView(APIView):
                     padded_group_code = str(new_group_code).zfill(3)
 
                     # Create the new product group
-                    product_group = ProductGroups(group_code=padded_group_code, group_name=group_name, company=request.user.company, project=request.user.current_project)
+                    product_group = ProductGroups(group_code=padded_group_code, group_name=group_name, company=request.user.company)
                     product_group.save()
 
                 # If we reach this point, the operation was successful
@@ -744,11 +748,11 @@ class CreateProductGroupView(APIView):
         return JsonResponse({'error': _('Could not create product group. Please try again.')}, status=500)
 
 class ProductGroupsView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request):
-        product_groups = ProductGroups.objects.filter(company=request.user.company, project=request.user.current_project)
+        product_groups = ProductGroups.objects.filter(company=request.user.company)
 
         # Create a list of lists where each sublist is [group_code, group_name]
         product_groups_list = [[group.group_code, group.group_name] for group in product_groups]
@@ -756,7 +760,7 @@ class ProductGroupsView(APIView):
         return JsonResponse(product_groups_list, safe= False)
 
 class EditProductGroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -767,7 +771,7 @@ class EditProductGroupView(APIView):
             return JsonResponse({'error': _('Both group_code and new_group_name must be provided')}, status=400)
 
         try:
-            product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
+            product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company)
         except ProductGroups.DoesNotExist:
             return JsonResponse({'error': _('Product group not found')}, status=404)
 
@@ -778,7 +782,7 @@ class EditProductGroupView(APIView):
     
 #! Bu view kontrol edilmeli, tam olarak düzgün çalışmıyor olabilir.
 class DeleteProductGroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -788,14 +792,14 @@ class DeleteProductGroupView(APIView):
             return JsonResponse({'error': _('group_code must be provided')}, status=400)
 
         try:
-            product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
+            product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company)
         except ProductGroups.DoesNotExist:
             return JsonResponse({'error': _('Product group not found')}, status=404)
 
         product_group.delete()
 
         # Decrement group_code of subsequent product groups
-        ProductGroups.objects.filter(group_code__gt=group_code, company=request.user.company, project=request.user.current_project).update(group_code=F('group_code') - 1)
+        ProductGroups.objects.filter(group_code__gt=group_code, company=request.user.company).update(group_code=F('group_code') - 1)
 
         return JsonResponse({'message': _('Product group deleted successfully')})
 
@@ -804,20 +808,22 @@ class DeleteProductGroupView(APIView):
 # region ProductSubgroups
 
 class CreateProductSubgroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff )
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         
         subgroup_name = request.data.get('subgroup_name')
         group_code = request.data.get('group_code')
-        print(group_code)
-        print(subgroup_name)
+
+        if ProductSubgroups.objects.filter(subgroup_name=subgroup_name, group__group_code=group_code, group__company=request.user.company).exists():
+            return JsonResponse({'error': _('A product subgroup with this name already exists.')}, status=400)
+
         # Retry the operation up to 5 times
         for i in range(5):
             try:
                 with transaction.atomic():
-                    group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
+                    group = ProductGroups.objects.get(group_code=group_code, company=request.user.company)
                     max_subgroup_code = ProductSubgroups.objects.filter(group=group).aggregate(Max('subgroup_code'))['subgroup_code__max']
 
                     if max_subgroup_code is None:
@@ -839,12 +845,12 @@ class CreateProductSubgroupView(APIView):
 
 
 class ProductSubgroupsView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request):
         group_code = request.data.get('group_code')
-        group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)
+        group = ProductGroups.objects.get(group_code=group_code, company=request.user.company)
         product_subgroups = ProductSubgroups.objects.filter(group=group)
 
         product_subgroups_list = [[subgroup.subgroup_code, subgroup.subgroup_name] for subgroup in product_subgroups]
@@ -853,18 +859,22 @@ class ProductSubgroupsView(APIView):
 
 
 class EditProductSubgroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         subgroup_code = request.data.get('subgroup_code')
         new_subgroup_name = request.data.get('new_subgroup_name')
+        group_code = request.data.get('group_code')
 
+        subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code,group__group_code=group_code, group__company=request.user.company)
         if not subgroup_code or not new_subgroup_name:
             return JsonResponse({'error': _('Both subgroup_code and new_subgroup_name must be provided')}, status=400)
 
+        if ProductSubgroups.objects.filter(subgroup_name=new_subgroup_name, group__group_code=group_code, group__company=request.user.company).exists():
+            return JsonResponse({'error': _('A product subgroup with this name already exists.')}, status=400)
         try:
-            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__company=request.user.company, group__project=request.user.current_project)
+            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__group_code=group_code, group__company=request.user.company)
         except ProductSubgroups.DoesNotExist:
             return JsonResponse({'error': _('Product subgroup not found')}, status=404)
 
@@ -875,17 +885,18 @@ class EditProductSubgroupView(APIView):
 
 
 class DeleteProductSubgroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
         subgroup_code = request.data.get('subgroup_code')
+        group_code = request.data.get('group_code')
 
         if not subgroup_code:
             return JsonResponse({'error': _('subgroup_code must be provided')}, status=400)
 
         try:
-            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__company=request.user.company, group__project=request.user.current_project)
+            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__group_code=group_code, group__company=request.user.company)
         except ProductSubgroups.DoesNotExist:
             return JsonResponse({'error': _('Product subgroup not found')}, status=404)
 
@@ -914,16 +925,13 @@ class AddProductInflowView(APIView):
             status = request.data.get('status')
             place_of_use = request.data.get('place_of_use')
             amount = request.data.get('amount')
-            #! company ve project id'ler user üzerinden çekilecek.
-            company_id = request.data.get('company_id')
-            project_id = request.data.get('project_id')
+            company = request.user.company
+            project = request.user.current_project
             
             # Fetch the product using the product code
-            product = Products.objects.get(product_code=product_code,company=request.user.company, project=request.user.current_project)
-            provider_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company, project=request.user.current_project)
-            receiver_company = Suppliers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company, project=request.user.current_project)
-            company = Company.objects.get(id=company_id)
-            project = Project.objects.get(id=project_id)
+            product = Products.objects.get(product_code=product_code,company=request.user.company)
+            provider_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
+            receiver_company = Suppliers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company)
 
             # Create the ProductInflow object
             product_inflow = ProductInflow.objects.create(
@@ -938,6 +946,10 @@ class AddProductInflowView(APIView):
                 company=company, 
                 project=project
             )
+            # Add project to product, consumer, and supplier projects fields
+            product.projects.add(project)
+            provider_company.projects.add(project)
+            receiver_company.projects.add(project)
 
             return JsonResponse({'message': _('ProductInflow created successfully')}, status=201)
         except Products.DoesNotExist:
@@ -1002,7 +1014,7 @@ class EditProductInflowView(APIView):
             # Check if new product_code value is unique
             new_product_code = data.get('new_product_code')
             if new_product_code and new_product_code != product_inflow.product.product_code:
-                product = Products.objects.filter(product_code=new_product_code, company=request.user.company, project=request.user.current_project).first()
+                product = Products.objects.filter(product_code=new_product_code, company=request.user.company).first()
                 if not product:
                     return JsonResponse({'error': _("The Product Code '%s' does not exist in the database.") % new_product_code}, status=400)
                 product_inflow.product = product
@@ -1010,7 +1022,7 @@ class EditProductInflowView(APIView):
             # Update supplier_company
             new_supplier_tax_code = data.get('new_supplier_tax_code')
             if new_supplier_tax_code:
-                supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company, project=request.user.current_project).first()
+                supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company).first()
                 if not supplier_company:
                     return JsonResponse({'error': _("The Supplier with tax code '%s' does not exist in the database.") % new_supplier_tax_code}, status=400)
                 product_inflow.supplier_company = supplier_company
@@ -1018,7 +1030,7 @@ class EditProductInflowView(APIView):
             # Update receiver_company
             new_receiver_tax_code = data.get('new_receiver_tax_code')
             if new_receiver_tax_code:
-                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company, project=request.user.current_project).first()
+                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company).first()
                 if not receiver_company:
                     return JsonResponse({'error': _("The Receiver with tax code '%s' does not exist in the database.") % new_receiver_tax_code}, status=400)
                 product_inflow.receiver_company = receiver_company
@@ -1115,6 +1127,10 @@ class AddProductOutflowView(APIView):
                 company=request.user.company,
                 project=request.user.current_project
             )
+            # Add project to product, consumer, and supplier projects fields
+            product.projects.add(request.user.current_project)
+            provider_company.projects.add(request.user.current_project)
+            receiver_company.projects.add(request.user.current_project)
 
             return JsonResponse({'message': _('ProductOutflow created successfully')}, status=201)
         except Products.DoesNotExist:
@@ -1588,7 +1604,7 @@ class SupplierSearchView(APIView):
         if not product_code:
             return JsonResponse({'error': _('Missing product_code parameter')}, status=400)
 
-        suppliers = Suppliers.objects.filter(products__product_code=product_code, company=request.user.company, project=request.user.current_project)
+        suppliers = Suppliers.objects.filter(products__product_code=product_code, company=request.user.company)
         suppliers_data = [{'id': supplier.id, 'name': supplier.name, 'contact_name': supplier.contact_name, 'contact_no': supplier.contact_no} for supplier in suppliers]
         print(suppliers_data)
         return JsonResponse({'suppliers': suppliers_data})
@@ -1603,7 +1619,7 @@ class ConsumerSearchView(APIView):
         if not product_code:
             return JsonResponse({'error': _('Missing product_code parameter')}, status=400)
 
-        consumers = Consumers.objects.filter(products__product_code=product_code, company=request.user.company, project=request.user.current_project)
+        consumers = Consumers.objects.filter(products__product_code=product_code, company=request.user.company)
         consumers_data = [{'id': consumer.id, 'name': consumer.name, 'contact_name': consumer.contact_name, 'contact_no': consumer.contact_no } for consumer in consumers]
 
         return JsonResponse({'consumers': consumers_data})

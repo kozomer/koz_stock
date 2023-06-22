@@ -27,7 +27,7 @@ class ProductGroups(models.Model, DirtyFieldsMixin):
     group_code = models.IntegerField(null=True)
     group_name = models.CharField(max_length=255)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    projects = models.ManyToManyField(Project, related_name="product_groups")
 
 class ProductSubgroups(models.Model, DirtyFieldsMixin):
     subgroup_code = models.IntegerField(null=True)
@@ -45,8 +45,7 @@ class Products(models.Model, DirtyFieldsMixin):
     description = models.CharField(max_length=255)
     unit = models.CharField(max_length=255)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    #! project kısmında foreign key yerine manytomany field kullanılabilir. böylece tedarikçi ve tüketiciler tek bir projeye bağlı kalmaz
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    projects = models.ManyToManyField(Project, related_name="products")
     pass
 
 
@@ -57,7 +56,7 @@ class Suppliers(models.Model, DirtyFieldsMixin):
     contact_name = models.CharField(max_length=255)
     contact_no = models.CharField(max_length=255)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    projects = models.ManyToManyField(Project, related_name="suppliers")
     products = models.ManyToManyField(Products)
     pass
 
@@ -67,7 +66,7 @@ class Consumers(models.Model, DirtyFieldsMixin):
     contact_name = models.CharField(max_length=255)
     contact_no = models.CharField(max_length=255)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+    projects = models.ManyToManyField(Project, related_name="consumers")
     products = models.ManyToManyField(Products)
     pass
 
