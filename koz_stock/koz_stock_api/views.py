@@ -705,7 +705,7 @@ class DeleteConsumerView(APIView):
 # region ProductGroups
 
 class CreateProductGroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -748,7 +748,7 @@ class CreateProductGroupView(APIView):
         return JsonResponse({'error': _('Could not create product group. Please try again.')}, status=500)
 
 class ProductGroupsView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request):
@@ -760,7 +760,7 @@ class ProductGroupsView(APIView):
         return JsonResponse(product_groups_list, safe= False)
 
 class EditProductGroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -782,7 +782,7 @@ class EditProductGroupView(APIView):
     
 #! Bu view kontrol edilmeli, tam olarak düzgün çalışmıyor olabilir.
 class DeleteProductGroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -808,7 +808,7 @@ class DeleteProductGroupView(APIView):
 # region ProductSubgroups
 
 class CreateProductSubgroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff )
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -844,7 +844,7 @@ class CreateProductSubgroupView(APIView):
 
 
 class ProductSubgroupsView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request):
@@ -858,7 +858,7 @@ class ProductSubgroupsView(APIView):
 
 
 class EditProductSubgroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
@@ -884,7 +884,7 @@ class EditProductSubgroupView(APIView):
 
 
 class DeleteProductSubgroupView(APIView):
-    permission_classes = (IsAuthenticated,)
+    permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
