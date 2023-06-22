@@ -712,7 +712,7 @@ class CreateProductGroupView(APIView):
         group_name = request.data.get('group_name')
 
         # Retry the operation up to 5 times
-        for _ in range(5):
+        for i in range(5):
             try:
                 with transaction.atomic():
                     # Get the current maximum group code
@@ -723,7 +723,7 @@ class CreateProductGroupView(APIView):
                         new_group_code = 1
                     else:
                         # Else, increment the highest group code by 1
-                        new_group_code = max_group_code + 1
+                        new_group_code = int(max_group_code) + 1
 
                     # Pad the group code with leading zeros to be 3 digits long
                     padded_group_code = str(new_group_code).zfill(3)
@@ -733,7 +733,7 @@ class CreateProductGroupView(APIView):
                     product_group.save()
 
                 # If we reach this point, the operation was successful
-                return JsonResponse({'message': _('Product group created successfully')})
+                return JsonResponse({'message': _('Product group created successfully')}, status=200)
 
             except IntegrityError:
                 # If an IntegrityError is raised, this means another transaction created a product group with the same code.
@@ -752,7 +752,7 @@ class ProductGroupsView(APIView):
 
         # Create a list of lists where each sublist is [group_code, group_name]
         product_groups_list = [[group.group_code, group.group_name] for group in product_groups]
-
+        print(product_groups_list)
         return JsonResponse(product_groups_list, safe= False)
 
 class EditProductGroupView(APIView):
@@ -808,11 +808,13 @@ class CreateProductSubgroupView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def post(self, request, *args, **kwargs):
+        
         subgroup_name = request.data.get('subgroup_name')
         group_code = request.data.get('group_code')
-
+        print(group_code)
+        print(subgroup_name)
         # Retry the operation up to 5 times
-        for _ in range(5):
+        for i in range(5):
             try:
                 with transaction.atomic():
                     group = ProductGroups.objects.get(group_code=group_code, company=request.user.company, project=request.user.current_project)

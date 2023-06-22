@@ -22,8 +22,8 @@ const DataTable = () => {
   //Edit Variables
   const [productCode, setProductCode] = useState(null);
   const [barcode, setBarcode] = useState(null);
-  const [group, setGroup] = useState(null);
-  const [subgroup, setSubgroup] = useState(null);
+  const [groups, setGroups] = useState([]);
+    const [subgroups, setSubgroups] = useState([]);
   const [brand, setBrand] = useState(null);
   const [serialNumber, setSerialNumber] = useState(null);
   const [model, setModel] = useState(null);
@@ -31,6 +31,16 @@ const DataTable = () => {
   const [unit, setUnit] = useState(null);
   const [supplier, setSupplier] = useState(null);
   const [supplierContact, setSupplierContact] = useState(null);
+ 
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [selectedSubgroup, setSelectedSubgroup] = useState(null);
+  const [product, setProduct] = useState({
+    brand: "",
+    serial_number: "",
+    model: "",
+    description: "",
+    unit: ""
+});
 
   const [oldData, setOldData] = useState(null);
 
@@ -53,6 +63,7 @@ const DataTable = () => {
         },
       });
       const data = await response.json();
+      console.log(data)
       setDataTable(data);
       setDataChanged(false);
       setRenderEdit(false)
@@ -70,6 +81,30 @@ const DataTable = () => {
    
     
   }
+
+  useEffect(() => {
+    // Fetch the groups when the component mounts
+    fetch("http://127.0.0.1:8000/api/add_products/") // Change this to your actual API endpoint
+        .then(response => response.json())
+        .then(data => setGroups(data.group_names));
+}, []);
+
+useEffect(() => {
+    if (selectedGroup) {
+        // Fetch the subgroups when a group is selected
+        fetch(`http://127.0.0.1:8000/api/add_products/?group=${selectedGroup}`) // Change this to your actual API endpoint
+            .then(response => response.json())
+            .then(data => setSubgroups(data.subgroup_names));
+    }
+}, [selectedGroup]);
+
+const handleInputChange = (event) => {
+    setProduct({
+        ...product,
+        [event.target.name]: event.target.value
+    });
+};
+
   const handleUploadClick = async () => {
     setIsLoading(true);
     const formData = new FormData();
@@ -278,53 +313,32 @@ const DataTable = () => {
     };
 
 
-    const handleSubmit = async (e) => {
-      e.preventDefault();
+    const handleSubmit = async(event) => {
+      const access_token =  await localforage.getItem('access_token'); 
+      event.preventDefault();
       
-      const access_token = await localforage.getItem('access_token'); 
-    
-      const newProductData = {
-        product_code: productCode,
-        barcode: barcode,
-        group: group,
-        subgroup: subgroup,
-        brand: brand,
-        serial_number: serialNumber,
-        model: model,
-        description: description,
-        unit: unit,
-        supplier: supplier,
-        supplier_contact: supplierContact
-      };
-    
-      console.log(newProductData)
-      
-      fetch('http://127.0.0.1:8000/api/add_products/', {
-        method: 'POST',
-        body: JSON.stringify(newProductData),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer '+ String(access_token)
-        }
-      })
-      .then((response) => {
-        if (!response.ok) {
-          return response.json().then(data => {
-            console.log(data.error)
-            errorUpload(data.error);
-          });
-        }
-        else {
-          return response.json().then(data => {
-            setEditData(newProductData);
-            successEdit(data.message);
+      fetch(`http://127.0.0.1:8000/api/add_products/`, { // Change this to your actual API endpoint
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              'Authorization': 'Bearer '+ String(access_token)
+          },
+          body: JSON.stringify({
+              group: selectedGroup,
+              subgroup: selectedSubgroup,
+              ...product
           })
-        }
       })
-      .catch((error) => {
-        console.error('Error:', error);
+      .then(response => response.json())
+      .then(data => {
+          if (response.ok) {
+              console.log("Product added successfully");
+          } else {
+              console.log("Failed to add product", data.error);
+          }
       });
-    };
+  };
+
     
 
     const handleCancel = () => {
@@ -402,49 +416,26 @@ const DataTable = () => {
             <Form onSubmit={handleSubmit}>
               <div>
                 <div className="form-group-col">
-                  <label>Malzeme Kodu</label>
-                  <FormGroup>
-                    <Input
-                      name="product_code"
-                      type="number"
-                      defaultValue={productCode}
-                      onChange={(e) => setProductCode(e.target.value)}
-                    />
-                  </FormGroup>
+                <select onChange={(event) => setSelectedGroup(event.target.value)}>
+                {groups.map(group => <option value={group}>{group}</option>)}
+            </select>
 
-                  <label>Barkod</label>
-                  <FormGroup>
-                    <Input
-                      type="text"
-                      defaultValue={barcode}
-                      onChange={(e) => setBarcode(e.target.value)}
-                    />
-                  </FormGroup>
+            <select onChange={(event) => setSelectedSubgroup(event.target.value)}>
+                {subgroups.map(subgroup => <option value={subgroup}>{subgroup}</option>)}
+            </select>
+                  
 
-                  <label>Grup</label>
-                  <FormGroup>
-                    <Input
-                      type="text"
-                      defaultValue={group}
-                      onChange={(e) => setGroup(e.target.value)}
-                    />
-                  </FormGroup>
-
-                  <label>Alt Grup</label>
-                  <FormGroup>
-                    <Input
-                      type="text"
-                      defaultValue={subgroup}
-                      onChange={(e) => setSubgroup(e.target.value)}
-                    />
-                  </FormGroup>
+                
+                
 
                   <label>Marka</label>
                   <FormGroup>
                     <Input
+                      name="brand"
                       type="text"
-                      defaultValue={brand}
-                      onChange={(e) => setBrand(e.target.value)}
+                      value={product.brand}
+                      onChange={handleInputChange}
+                      placeholder="Brand"
                     />
                   </FormGroup>
 
@@ -452,8 +443,10 @@ const DataTable = () => {
                   <FormGroup>
                     <Input
                       type="text"
-                      defaultValue={serialNumber}
-                      onChange={(e) => setSerialNumber(e.target.value)}
+                      name="serial_number" 
+                      value={product.serial_number}
+                       onChange={handleInputChange} 
+                       placeholder="Serial Number"
                     />
                   </FormGroup>
                 </div>
@@ -463,8 +456,9 @@ const DataTable = () => {
                   <FormGroup>
                     <Input
                       type="text"
-                      defaultValue={model}
-                      onChange={(e) => setModel(e.target.value)}
+                      name="model" value={product.model}
+                       onChange={handleInputChange} 
+                       placeholder="Model" 
                     />
                   </FormGroup>
 
@@ -472,8 +466,10 @@ const DataTable = () => {
                   <FormGroup>
                     <Input
                       type="text"
-                      defaultValue={description}
-                      onChange={(e) => setDescription(e.target.value)}
+                      name="description"
+                       value={product.description}
+                        onChange={handleInputChange}
+                         placeholder="Description"
                     />
                   </FormGroup>
 
@@ -481,28 +477,13 @@ const DataTable = () => {
                   <FormGroup>
                     <Input
                       type="text"
-                      defaultValue={unit}
-                      onChange={(e) => setUnit(e.target.value)}
+                      name="unit"
+                       value={product.unit}
+                        onChange={handleInputChange}
+                         placeholder="Unit"
                     />
                   </FormGroup>
 
-                  <label>Satıcı</label>
-                  <FormGroup>
-                    <Input
-                      type="text"
-                      defaultValue={supplier}
-                      onChange={(e) => setSupplier(e.target.value)}
-                    />
-                  </FormGroup>
-
-                  <label>Satıcı İletişim</label>
-                  <FormGroup>
-                    <Input
-                      type="text"
-                      defaultValue={supplierContact}
-                      onChange={(e) => setSupplierContact(e.target.value)}
-                    />
-                  </FormGroup>
                 </div>
               </div>
             </Form>

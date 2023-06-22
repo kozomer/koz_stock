@@ -47,6 +47,7 @@ import StockAccount from "views/tables/StockAccount";
 import Consumers from "views/tables/Consumers";
 import Deneme from "views/tables/Deneme";
 import Search from "views/tables/Seach";
+import CreateGroups from "views/tables/CreateGroups";
 import Register from "views/pages/Register.js";
 import RegularForms from "views/forms/RegularForms.js";
 import RegularTables from "views/tables/RegularTables.js";
@@ -203,6 +204,15 @@ const routes = [
     name: "Sorgulama",
     icon: "nc-icon nc-bus-front-12",
     component: Search,
+    layout: "/admin",
+   
+  },
+
+  {
+    path: "/create-groups",
+    name: "Grup Oluşturma",
+    icon: "nc-icon nc-bus-front-12",
+    component: CreateGroups,
     layout: "/admin",
    
   },
