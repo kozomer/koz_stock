@@ -331,6 +331,22 @@ class AddProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
 
+    def get(self, request, *args, **kwargs):
+        try:
+            groups = ProductGroups.objects.filter(company=request.user.company, project=request.user.current_project)
+            subgroups = ProductSubgroups.objects.filter(company=request.user.company, project=request.user.current_project)
+
+            group_names = list(groups.values_list('group_name', flat=True))
+            subgroup_names = list(subgroups.values_list('subgroup_name', flat=True))
+
+            return JsonResponse({
+                'group_names': group_names,
+                'subgroup_names': subgroup_names
+            }, status=200)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
