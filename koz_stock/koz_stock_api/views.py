@@ -32,6 +32,7 @@ from django.utils.translation import gettext as _
 import os
 import tempfile
 from django.http import FileResponse, Http404
+import urllib.parse
 
 
 
@@ -1244,17 +1245,15 @@ class DeleteProductOutflowView(APIView):
 
         return JsonResponse({'message': _("Product outflow object has been successfully deleted.")}, status=200)
 
-
 class CreateProductOutflowReceiptView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
-
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         try:
             id = request.data.get('id')
             product_outflow = ProductOutflow.objects.get(id=id)  # Get the ProductOutflow object
             product_code = product_outflow.product.product_code
-            items = [product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
+            items = [(product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit)]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
             # For example:
             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
             title = _("Warehouse Material Exit Receipt")
@@ -1267,15 +1266,12 @@ class CreateProductOutflowReceiptView(APIView):
             # Create a temporary file for the PDF
             fd, temp_pdf_filename = tempfile.mkstemp()
             os.close(fd)
-
             # Create the PDF
             create_receipt_pdf(temp_pdf_filename, title, items, logo_path, product_code, sequence_number)
-
             # Generate serial number
             product_code_str = product_code.replace(".", "")
             date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
             serial_number = f"{product_code_str}-{date_str_serial}-{sequence_number:04}"
-
             # Set filename to be serial_number
             filename = f'{serial_number}.pdf'
 
@@ -1289,7 +1285,7 @@ class CreateProductOutflowReceiptView(APIView):
             return JsonResponse({'filename': filename, 'content': base64_content})
 
         except ProductOutflow.DoesNotExist:
-            return JsonResponse({'error': _("Product Outflow not found.")}, status=400)
+            return JsonResponse({'error': "Product Outflow not found."}, status=400)
 
 # endregion
 

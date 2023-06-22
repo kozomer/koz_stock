@@ -94,7 +94,7 @@ const DataTable = () => {
   };
 
   const handleAddFileClick = () => {
-    setShowUploadDiv(true);
+    setShowPopup(true);
   }
   const handleUploadClick = async () => {
     setIsLoading(true);
@@ -490,11 +490,11 @@ const DataTable = () => {
       <div className='content'>
       {alert}
       {/* Pop Up */}
-      {showPopup && isUpdated &&(
+      {showPopup && (
        <div className="popup">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Muhasebe Girişi Düzenle</CardTitle>
+              <CardTitle tag="h4">Muhasebe Girişi Ekle</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleSubmit}>
@@ -758,7 +758,7 @@ const DataTable = () => {
         <div className="d-flex justify-content-between align-items-center">
           <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
             <i className="fa fa-plus-circle mr-1"></i>
-            Dosya Ekle
+            MUHASEBE GİRİŞİ EKLE
           </Button>
           <Button className="my-button-class" color="primary" onClick={handleExportClick}>
             <i className="fa fa-download mr-1"></i>
