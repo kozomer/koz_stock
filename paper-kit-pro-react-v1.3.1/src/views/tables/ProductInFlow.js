@@ -482,7 +482,7 @@ const [uploadedFile, setUploadedFile] = useState(null);
        <div className="popup-sales">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Ambar Giriş Düzenle</CardTitle>
+              <CardTitle tag="h4">Ambar Giriş Ekle</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleSubmit}>

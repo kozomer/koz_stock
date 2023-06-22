@@ -79,7 +79,7 @@ const [amount, setAmount] = useState(null);
   };
   const handleAddFileClick = () => {
     clearTimeout(timeoutId); // Clear any existing timeout
-    setTimeoutId(setTimeout(() => setShowUploadDiv(true), 500));
+    setTimeoutId(setTimeout(() => setShowPopup(true), 500));
    
     
   }
@@ -254,74 +254,77 @@ const [amount, setAmount] = useState(null);
     }, [deleteConfirm]);
   
 
-    const handleClick = (row) => {
-     
-      setEditData(row);
-      setOldData(row);
+    const handleClick = async (row) => {
+      console.log(row[0]);
+      const access_token = await localforage.getItem('access_token');
+  
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/create_product_outflow_receipt_pdf/`, {
+          method: 'POST',
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer '+ String(access_token),
+          },
+          body: JSON.stringify({
+              id: row[0],
+          }),
+      });
+      if (!response.ok) {
+        // Handle non-successful responses here
+        console.error("An error occurred while fetching the PDF");
+        return;
+    }
 
-      setId(row.id);
-      setDate(row.date);
-      setProductCode(row.product_code);
-      setBarcode(row.barcode);
-      setProviderCompanyTaxCode(row.supplier_company_tax_code);
-      setProviderCompanyName(row.supplier_company_name);
-      setRecieverCompanyTaxCode(row.receiver_company_tax_code);
-      setRecieverCompanyName(row.receiver_company_name);
-      
-      setStatus(row.status);
-      setPlaceOfUse(row.place_of_use);
-      setGroup(row.group);
-      setSubgroup(row.subgroup);
-      setBrand(row.brand);
-      setSerialNumber(row.serial_number);
-      setModel(row.model);
-      setDescription(row.description);
-      setUnit(row.unit);
-      setAmount(row.amount);
-      setShowPopup(!showPopup);
-      setIsUpdated(true);
+    const { filename, content } = await response.json();
 
+    // Decode base64 data
+    const pdfData = atob(content);
+
+    // Convert decoded base64 to Blob
+    const blob = new Blob([pdfData], {type: 'application/pdf'});
+
+    // Create object URL
+    const url = URL.createObjectURL(blob);
+
+    // Create a link and click it to start download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  const handleSubmit = async (e) => {
+    e.preventDefault();  // To prevent the page from reloading when the form is submitted
+    const access_token =  await localforage.getItem('access_token'); 
+    
+    const updatedData = {
+      id: id,
+      date: date,
+      product_code: productCode,
+      barcode: barcode,
+      provider_company_tax_code: providerCompanyTaxCode,
+      provider_company_name: providerCompanyName,
+      receiver_company_tax_code: recieverCompanyTaxCode,
+      receiver_company_name: recieverCompanyName,
+      status: status,
+      place_of_use: placeOfUse,
+      group: group,
+      subgroup: subgroup,
+      brand: brand,
+      serial_number: serialNumber,
+      model: model,
+      description: description,
+      unit: unit,
+      amount: amount,
+      // assuming the company and project id is defined and passed from somewhere
+      company_id: companyId,
+      project_id: projectId,
     };
-
-    const handleSubmit = async (e) => {
-      const access_token =  await localforage.getItem('access_token');
-      const updatedData = {
-        new_id: id,
-        new_date: date,
-        new_product_code: productCode,
-        new_provider_company: providerCompany,
-        new_reciever_company: recieverCompany,
-        new_outflow_outflow: outflowOutflow,
-        new_status: status,
-        new_place_of_use: placeOfUse,
-        new_group: group,
-        new_subgroup: subgroup,
-        new_brand: brand,
-        new_serial_number: serialNumber,
-        new_model: model,
-        new_description: description,
-        new_unit: unit,
-        new_amount: amount,
-
-        old_id: oldData[0],
-        old_date: oldData[1],
-        old_product_code: oldData[2],
-        old_provider_company: oldData[3],
-        old_reciever_company: oldData[4],
-        old_outflow_outflow: oldData[5],
-        old_status: oldData[6],
-        old_place_of_use: oldData[7],
-        old_group: oldData[8],
-        old_subgroup: oldData[9],
-        old_brand: oldData[10],
-        old_serial_number: oldData[11],
-        old_model: oldData[12],
-        old_description: oldData[13],
-        old_unit: oldData[14],
-        old_amount: oldData[15],
-      };
-      
-      fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_flow/`, {
+  
+    console.log(updatedData)
+  
+    fetch('http://127.0.0.1:8000/api/add_product_outflow/', {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -333,22 +336,21 @@ const [amount, setAmount] = useState(null);
     .then((response) => {
       if (!response.ok) {
         return response.json().then(data => {
-
-          setIsLoading(false);
+          console.log(data.error)
           errorUpload(data.error);
         });
       }
+     
       else{
         return response.json().then(data => {
-
-         setEditData(updatedData);
-          successEdit()
-        });
-      }
-
-      // Call your Django API to send the updated values here
-    });
-  };
+          setEditData(updatedData);
+          successEdit(data.message);
+        })
+    
+        }
+      })
+  }
+  
 
     const handleCancel = () => {
       setShowPopup(false);
@@ -445,7 +447,7 @@ const [amount, setAmount] = useState(null);
           <Col
           >
             {/* Pop Up */}
-      {showPopup && isUpdated &&(
+      {showPopup  &&(
        <div className="popup-sales">
       <Card>
             <CardHeader>
@@ -510,6 +512,9 @@ const [amount, setAmount] = useState(null);
             onChange={(e) => setProviderCompanyName(e.target.value)}
           />
         </FormGroup>
+        </div>
+
+        <div className="form-group-col-sales">
 
         <label>Alıcı Vergi No</label>
         <FormGroup>
@@ -564,7 +569,9 @@ const [amount, setAmount] = useState(null);
             onChange={(e) => setSubgroup(e.target.value)}
           />
         </FormGroup>
+        </div>
 
+        <div className="form-group-col-sales">
         <label>Marka</label>
         <FormGroup>
           <Input
@@ -645,7 +652,7 @@ const [amount, setAmount] = useState(null);
         <div className="d-flex justify-content-between align-items-center">
           <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
             <i className="fa fa-plus-circle mr-1"></i>
-            Dosya Ekle
+            Çıkış Ekle
           </Button>
           <Button className="my-button-class" color="primary" onClick={handleExportClick}>
             <i className="fa fa-download mr-1"></i>

@@ -25,7 +25,7 @@ class CustomUser(AbstractUser):
 
 
 class Products(models.Model, DirtyFieldsMixin):
-    product_code = models.IntegerField(unique= True)
+    product_code = models.CharField(max_length=255)
     group = models.CharField(max_length=255)
     subgroup = models.CharField(max_length=255)
     brand = models.CharField(max_length=255)

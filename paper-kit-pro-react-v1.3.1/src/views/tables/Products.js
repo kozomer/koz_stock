@@ -66,7 +66,7 @@ const DataTable = () => {
   };
   const handleAddFileClick = () => {
     clearTimeout(timeoutId); // Clear any existing timeout
-    setTimeoutId(setTimeout(() => setShowUploadDiv(true), 500));
+    setTimeoutId(setTimeout(() =>  setShowPopup(true), 500));
    
     
   }
@@ -278,64 +278,54 @@ const DataTable = () => {
     };
 
 
-    const handleSubmit =async (e) => {
-      const access_token =  await localforage.getItem('access_token'); 
+    const handleSubmit = async (e) => {
+      e.preventDefault();
       
-      const updatedData = {
-        new_product_code: productCode,
-        new_barcode: barcode,
-        new_group: group,
-        new_subgroup: subgroup,
-        new_brand: brand,
-        new_serial_number: serialNumber,
-        new_model: model,
-        new_description: description,
-        new_unit: unit,
-        new_supplier: supplier,
-        new_supplier_contact: supplierContact,
+      const access_token = await localforage.getItem('access_token'); 
     
-        old_product_code: oldData[0],
-        old_barcode: oldData[1],
-        old_group: oldData[2],
-        old_subgroup: oldData[3],
-        old_brand: oldData[4],
-        old_serial_number: oldData[5],
-        old_model: oldData[6],
-        old_description: oldData[7],
-        old_unit: oldData[8],
-        old_supplier: oldData[9],
-        old_supplier_contact: oldData[10],
-    };
+      const newProductData = {
+        product_code: productCode,
+        barcode: barcode,
+        group: group,
+        subgroup: subgroup,
+        brand: brand,
+        serial_number: serialNumber,
+        model: model,
+        description: description,
+        unit: unit,
+        supplier: supplier,
+        supplier_contact: supplierContact
+      };
     
-      console.log(updatedData)
-      fetch('http://127.0.0.1:8000/api/edit_products/', {
-      method: 'POST',
-      body: JSON.stringify(updatedData),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+ String(access_token)
-      },
+      console.log(newProductData)
       
-    })
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then(data => {
-          console.log(data.error)
-          
-          errorUpload(data.error);
-        });
-      }
-     
-      else{
-        return response.json().then(data => {
-          setEditData(updatedData);
-          successEdit(data.message);
-        })
-    
+      fetch('http://127.0.0.1:8000/api/add_products/', {
+        method: 'POST',
+        body: JSON.stringify(newProductData),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer '+ String(access_token)
         }
       })
-      // Call your Django API to send the updated values here
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then(data => {
+            console.log(data.error)
+            errorUpload(data.error);
+          });
+        }
+        else {
+          return response.json().then(data => {
+            setEditData(newProductData);
+            successEdit(data.message);
+          })
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error);
+      });
     };
+    
 
     const handleCancel = () => {
       setShowPopup(false);
@@ -402,11 +392,11 @@ const DataTable = () => {
       {alert}
 
     {/* Pop Up */}
-      {showPopup && isUpdated &&(
+      {showPopup &&(
        <div className="popup">
               <Card>
           <CardHeader>
-            <CardTitle tag="h4">Edit Product</CardTitle>
+            <CardTitle tag="h4">Malzeme Ekle</CardTitle>
           </CardHeader>
           <CardBody>
             <Form onSubmit={handleSubmit}>

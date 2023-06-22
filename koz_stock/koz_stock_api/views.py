@@ -33,6 +33,7 @@ from django.utils.translation import gettext as _
 import os
 import tempfile
 from django.http import FileResponse, Http404
+import urllib.parse
 
 
 
@@ -980,21 +981,68 @@ class DeleteProductOutflowView(APIView):
 
         return JsonResponse({'message': _("Product outflow object has been successfully deleted.")}, status=200)
 
+# class CreateProductOutflowReceiptView(APIView):
+#     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+#     authentication_classes = (JWTAuthentication,)
+
+#     def post(self, request, *args, **kwargs):
+#         try:
+#             id = request.data.get('id')
+#             product_outflow = ProductOutflow.objects.get(id=id)  # Get the ProductOutflow object
+#             product_code = product_outflow.product.product_code
+#             items = [(product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit)]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
+#             # For example:
+#             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
+#             title = _("Ambar Malzeme Cikis Fisi")
+#             logo_path = "C://Users//yasin//OneDrive//Masaüstü//koz_stock//paper-kit-pro-react-v1.3.1//src//assets//img//koz_logo.png"  #! Update this to the path where your logo is store
+
+#             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
+#             sequence_number = sequence_number_obj.number
+#             sequence_number_obj.number += 1
+#             sequence_number_obj.save()
+#             # Create a temporary file for the PDF
+#             fd, temp_pdf_filename = tempfile.mkstemp()
+#             os.close(fd)
+
+#             # Create the PDF
+#             create_receipt_pdf(temp_pdf_filename, title, items, logo_path, product_code, sequence_number)
+
+#             # Read the temporary PDF file
+#             with open(temp_pdf_filename, 'rb') as f:
+#                 pdf = f.read()
+
+#             # Remove the temporary file
+#             os.remove(temp_pdf_filename)
+
+#             # Generate serial number
+#             product_code_str = product_code.replace(".", "")
+#             date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
+#             serial_number = f"{product_code_str}-{date_str_serial}-{sequence_number:04}"
+
+#             # Set filename to be serial_number
+#             filename = f'{serial_number}.pdf'
+#             print(filename)
+#             encoded_filename = urllib.parse.quote(filename)
+
+#             response = FileResponse(pdf, as_attachment=True)
+#             response['Content-Disposition'] = f'attachment; filename*=UTF-8\'\'{encoded_filename}'
+#             return response
+
+#         except ProductOutflow.DoesNotExist:
+#             return JsonResponse({'error': _("Product Outflow not found.")}, status=400)
 class CreateProductOutflowReceiptView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
     authentication_classes = (JWTAuthentication,)
-
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         try:
             id = request.data.get('id')
             product_outflow = ProductOutflow.objects.get(id=id)  # Get the ProductOutflow object
             product_code = product_outflow.product.product_code
-            items = [product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
+            items = [(product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit)]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
             # For example:
             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
             title = _("Ambar Malzeme Cikis Fisi")
-            logo_path = "path/to/your/logo.png"  # Update this to the path where your logo is store
-
+            logo_path = "C://Users//yasin//OneDrive//Masaüstü//koz_stock//paper-kit-pro-react-v1.3.1//src//assets//img//koz_logo.png"  # Update this to the path where your logo is store
             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
             sequence_number = sequence_number_obj.number
             sequence_number_obj.number += 1
@@ -1002,30 +1050,22 @@ class CreateProductOutflowReceiptView(APIView):
             # Create a temporary file for the PDF
             fd, temp_pdf_filename = tempfile.mkstemp()
             os.close(fd)
-
             # Create the PDF
             create_receipt_pdf(temp_pdf_filename, title, items, logo_path, product_code, sequence_number)
-
-            # Read the temporary PDF file
-            with open(temp_pdf_filename, 'rb') as f:
-                pdf = f.read()
-
-            # Remove the temporary file
-            os.remove(temp_pdf_filename)
-
             # Generate serial number
             product_code_str = product_code.replace(".", "")
             date_str_serial = datetime.datetime.now().strftime("%d%m%Y")
             serial_number = f"{product_code_str}-{date_str_serial}-{sequence_number:04}"
-
             # Set filename to be serial_number
             filename = f'{serial_number}.pdf'
-
-            response = FileResponse(pdf, as_attachment=True, filename=filename)
-            return response
-
+            with open(temp_pdf_filename, 'rb') as f:
+                pdf = f.read()
+                base64_content = base64.b64encode(pdf).decode()
+            # Remove the temporary file
+            os.remove(temp_pdf_filename)
+            return JsonResponse({'filename': filename, 'content': base64_content})
         except ProductOutflow.DoesNotExist:
-            return JsonResponse({'error': _("Product Outflow not found.")}, status=400)
+            return JsonResponse({'error': "Product Outflow not found."}, status=400)
 
 # endregion
 
