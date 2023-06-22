@@ -37,13 +37,8 @@ class ProductSubgroups(models.Model, DirtyFieldsMixin):
 
 class Products(models.Model, DirtyFieldsMixin):
     product_code = models.CharField(max_length=255)
-<<<<<<< HEAD
-    group = models.CharField(max_length=255)
-    subgroup = models.CharField(max_length=255)
-=======
     group = models.ForeignKey(ProductGroups, on_delete=models.PROTECT)
     subgroup = models.ForeignKey(ProductSubgroups, on_delete=models.PROTECT)
->>>>>>> 21dff2f77a7d3ed0db9232a0ba730ee34e01f714
     brand = models.CharField(max_length=255)
     serial_number = models.CharField(max_length=255)
     model = models.CharField(max_length=255)
