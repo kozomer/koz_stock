@@ -20,7 +20,9 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                     StockView,  AddProductOutflowView, ProductOutflowView, EditProductOutflowView, DeleteProductOutflowView,
                                     AccountingView, EditAccountingView, 
                                     SetCurrentProjectView, GetProjectsView, CreateProjectView,
-                                    CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, CreateProductOutflowReceiptView)
+                                    CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, ProductGroupsView, EditProductGroupView, DeleteProductGroupView,
+                                     CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
+                                     AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView )
 # from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
 #                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
 #                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
@@ -82,6 +84,25 @@ urlpatterns = [
     path('api/consumer_search/', ConsumerSearchView.as_view(), name='consumer_search'),
     path('api/supplier_search/', SupplierSearchView.as_view(), name='supplier_search'),
 
+    path('api/create_product_group/', CreateProductGroupView.as_view(), name='create_product_group'),
+    path('api/product_groups/', ProductGroupsView.as_view(), name='product_groups'),
+    path('api/edit_product_group/', EditProductGroupView.as_view(), name='edit_product_group'),
+    path('api/delete_product_group/', DeleteProductGroupView.as_view(), name='delete_product_group'),
+    
+    path('api/create_product_subgroup/', CreateProductSubgroupView.as_view(), name='create_product_subgroup'),
+    path('api/product_subgroups/', ProductSubgroupsView.as_view(), name='product_subgroups'),
+    path('api/edit_product_subgroup/', EditProductSubgroupView.as_view(), name='edit_product_subgroup'),
+    path('api/delete_product_subgroup/', DeleteProductSubgroupView.as_view(), name='delete_product_subgroup'),
+
+    path('api/add_consumer/', AddConsumersView.as_view(), name='add_consumer'),
+    path('api/consumers/', ConsumersView.as_view(), name='consumers'),
+    path('api/edit_consumer/', EditConsumersView.as_view(), name='edit_consumer'),
+    path('api/delete_consumer/', DeleteConsumerView.as_view(), name='delete_consumer'),
+    
+    path('api/add_supplier/', AddSuppliersView.as_view(), name='add_supplier'),
+    path('api/suppliers/', SuppliersView.as_view(), name='suppliers'),
+    path('api/edit_supplier/', EditSuppliersView.as_view(), name='edit_supplier'),
+    path('api/delete_supplier/', DeleteSupplierView.as_view(), name='delete_supplier'),
     # path('api/add_customers/', AddCustomersView.as_view(), name='add_customers'),
     # path('api/add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),
     # path('api/add_sales/', AddSalesView.as_view(), name='add_sales'),
