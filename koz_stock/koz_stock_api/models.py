@@ -45,7 +45,6 @@ class Products(models.Model, DirtyFieldsMixin):
     description = models.CharField(max_length=255)
     unit = models.CharField(max_length=255)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    #! project kısmında foreign key yerine manytomany field kullanılabilir. böylece tedarikçi ve tüketiciler tek bir projeye bağlı kalmaz
     projects = models.ManyToManyField(Project, related_name="products")
     pass
 

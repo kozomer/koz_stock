@@ -912,7 +912,6 @@ class AddProductInflowView(APIView):
             status = request.data.get('status')
             place_of_use = request.data.get('place_of_use')
             amount = request.data.get('amount')
-            #! company ve project id'ler user üzerinden çekilecek.
             company = request.user.company
             project = request.user.current_project
             
