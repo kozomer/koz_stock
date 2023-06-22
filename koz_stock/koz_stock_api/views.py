@@ -711,6 +711,10 @@ class CreateProductGroupView(APIView):
     def post(self, request, *args, **kwargs):
         group_name = request.data.get('group_name')
 
+         # Check if group name already exists
+        if ProductGroups.objects.filter(group_name=group_name, company=request.user.company).exists():
+            return JsonResponse({'error': _('A product group with this name already exists.')}, status=400)
+
         # Retry the operation up to 5 times
         for _ in range(5):
             try:
@@ -811,6 +815,9 @@ class CreateProductSubgroupView(APIView):
         subgroup_name = request.data.get('subgroup_name')
         group_code = request.data.get('group_code')
 
+        if ProductSubgroups.objects.filter(subgroup_name=subgroup_name, group__group_code=group_code, group__company=request.user.company).exists():
+            return JsonResponse({'error': _('A product subgroup with this name already exists.')}, status=400)
+
         # Retry the operation up to 5 times
         for _ in range(5):
             try:
@@ -857,12 +864,16 @@ class EditProductSubgroupView(APIView):
     def post(self, request, *args, **kwargs):
         subgroup_code = request.data.get('subgroup_code')
         new_subgroup_name = request.data.get('new_subgroup_name')
+        group_code = request.data.get('group_code')
 
+        subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code,group__group_code=group_code, group__company=request.user.company)
         if not subgroup_code or not new_subgroup_name:
             return JsonResponse({'error': _('Both subgroup_code and new_subgroup_name must be provided')}, status=400)
 
+        if ProductSubgroups.objects.filter(subgroup_name=new_subgroup_name, group__group_code=group_code, group__company=request.user.company).exists():
+            return JsonResponse({'error': _('A product subgroup with this name already exists.')}, status=400)
         try:
-            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__company=request.user.company)
+            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__group_code=group_code, group__company=request.user.company)
         except ProductSubgroups.DoesNotExist:
             return JsonResponse({'error': _('Product subgroup not found')}, status=404)
 
@@ -878,12 +889,13 @@ class DeleteProductSubgroupView(APIView):
 
     def post(self, request, *args, **kwargs):
         subgroup_code = request.data.get('subgroup_code')
+        group_code = request.data.get('group_code')
 
         if not subgroup_code:
             return JsonResponse({'error': _('subgroup_code must be provided')}, status=400)
 
         try:
-            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__company=request.user.company)
+            product_subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group__group_code=group_code, group__company=request.user.company)
         except ProductSubgroups.DoesNotExist:
             return JsonResponse({'error': _('Product subgroup not found')}, status=404)
 
