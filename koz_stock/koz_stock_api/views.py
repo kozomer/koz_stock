@@ -351,14 +351,17 @@ class AddProductsView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-
-            group_name = data.get('group')
-            subgroup_name = data.get('subgroup')
+            group_code = data.get('group_code')
+            subgroup_code = str(data.get('subgroup_code'))
+            print(group_code)
+            print(subgroup_code)
+            
 
             # Fetch group and subgroup objects using their names
             try:
-                group = ProductGroups.objects.get(group_name=group_name, company=request.user.company)
-                subgroup = ProductSubgroups.objects.get(subgroup_name=subgroup_name, group=group, group__company=request.user.company)
+                group = ProductGroups.objects.get(group_code=group_code, company=request.user.company)
+                print(group)
+                subgroup = ProductSubgroups.objects.get(subgroup_code=subgroup_code, group=group, group__company=request.user.company)
             except (ProductGroups.DoesNotExist, ProductSubgroups.DoesNotExist):
                 error_message = _("The specified group or subgroup does not exist.")
                 return JsonResponse({'error': error_message}, status=400)
@@ -381,6 +384,16 @@ class AddProductsView(APIView):
                     return JsonResponse({'error': error_message}, status=400)
 
             new_product = Products.objects.create(product_code=product_code, group=group, subgroup=subgroup, company=request.user.company, **new_product_data)
+            # Create a new Stock object for the current user's current project
+            Stock.objects.create(
+                product=new_product,
+                warehouse=None,
+                inflow=0,
+                outflow=0,
+                stock=0,
+                company=request.user.company,
+                project=request.user.current_project
+            )
 
             message = _("New product '{%s}' has been successfully created.") % new_product.product_code
             return JsonResponse({'message': message}, status=201)
@@ -848,7 +861,7 @@ class ProductSubgroupsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
     authentication_classes = (JWTAuthentication,)
 
-    def get(self, request):
+    def post(self, request):
         group_code = request.data.get('group_code')
         group = ProductGroups.objects.get(group_code=group_code, company=request.user.company)
         product_subgroups = ProductSubgroups.objects.filter(group=group)
@@ -1309,18 +1322,18 @@ class CreateProductOutflowReceiptView(APIView):
 
 # region Stock
 
-@receiver(post_save, sender=Products)
-def create_stock(sender, instance, created, **kwargs):
-    if created:
-        Stock.objects.create(
-            product=instance,
-            warehouse=None,
-            inflow=0,
-            outflow=0,
-            stock=0,
-            company=instance.company,
-            project=instance.project
-        )
+# @receiver(post_save, sender=Products)
+# def create_stock(sender, instance, created, **kwargs):
+#     if created:
+#         Stock.objects.create(
+#             product=instance,
+#             warehouse=None,
+#             inflow=0,
+#             outflow=0,
+#             stock=0,
+#             company=instance.company,
+#             project=instance.project
+#         )
 
 
 @receiver(post_save, sender=ProductInflow)
@@ -1428,8 +1441,8 @@ class StockView(APIView):
             [
                 stock.id,
                 stock.product.product_code, 
-                stock.product.group, 
-                stock.product.subgroup,
+                stock.product.group.group_name, 
+                stock.product.subgroup.subgroup_name,
                 stock.product.brand, 
                 stock.product.serial_number, 
                 stock.product.model, 
@@ -1443,6 +1456,7 @@ class StockView(APIView):
             ] 
             for stock in stocks
         ]
+        print(stock_list)
         return JsonResponse(stock_list, safe=False, status=200)
 
 #! Kullanıcı stock üzerinde edit yapamasın diye bu view kapatıldı.

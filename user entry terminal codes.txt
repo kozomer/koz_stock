@@ -2,7 +2,7 @@ from koz_stock_api.models import CustomUser
 
 # Replace the values with the desired user data
 user = CustomUser(
-    username='kozstocksuperuser',
+    username='emik',
     email='new_user@example.com',
     is_superstaff=True  # Set to True if you want to create a Super Staff user
 )

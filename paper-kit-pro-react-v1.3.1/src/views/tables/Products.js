@@ -83,20 +83,48 @@ const DataTable = () => {
   }
 
   useEffect(() => {
-    // Fetch the groups when the component mounts
-    fetch("http://127.0.0.1:8000/api/add_products/") // Change this to your actual API endpoint
-        .then(response => response.json())
-        .then(data => setGroups(data.group_names));
+    async function fetchGroups() {
+      const access_token = await localforage.getItem('access_token');
+      
+      const response = await fetch('http://127.0.0.1:8000/api/product_groups/', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer '+ String(access_token)
+        },
+      });
+
+      const data = await response.json();
+      console.log(data)
+      setGroups(data);
+    }
+    fetchGroups();
 }, []);
 
 useEffect(() => {
-    if (selectedGroup) {
-        // Fetch the subgroups when a group is selected
-        fetch(`http://127.0.0.1:8000/api/add_products/?group=${selectedGroup}`) // Change this to your actual API endpoint
-            .then(response => response.json())
-            .then(data => setSubgroups(data.subgroup_names));
-    }
+  async function fetchSubgroups() {
+      if (selectedGroup) {
+          const access_token = await localforage.getItem('access_token');
+          
+          const response = await fetch(`http://127.0.0.1:8000/api/product_subgroups/`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + String(access_token)
+              },
+              body: JSON.stringify({group_code: selectedGroup})
+          });
+
+          const data = await response.json();
+          console.log(data);
+          setSubgroups(data);
+      }
+  }
+  fetchSubgroups();
 }, [selectedGroup]);
+
+useEffect(() => {
+  console.log(selectedSubgroup);
+}, [selectedSubgroup]);
 
 const handleInputChange = (event) => {
     setProduct({
@@ -313,31 +341,38 @@ const handleInputChange = (event) => {
     };
 
 
-    const handleSubmit = async(event) => {
-      const access_token =  await localforage.getItem('access_token'); 
+    const handleSubmit = async (event) => {
+      const access_token = await localforage.getItem('access_token'); 
       event.preventDefault();
-      
-      fetch(`http://127.0.0.1:8000/api/add_products/`, { // Change this to your actual API endpoint
-          method: "POST",
-          headers: {
-              "Content-Type": "application/json",
-              'Authorization': 'Bearer '+ String(access_token)
-          },
-          body: JSON.stringify({
-              group: selectedGroup,
-              subgroup: selectedSubgroup,
-              ...product
-          })
+      console.log(selectedSubgroup);
+      fetch(`http://127.0.0.1:8000/api/add_products/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({
+          group_code: selectedGroup,
+          subgroup_code: selectedSubgroup,
+          ...product
+        })
       })
-      .then(response => response.json())
-      .then(data => {
-          if (response.ok) {
-              console.log("Product added successfully");
-          } else {
-              console.log("Failed to add product", data.error);
-          }
+      .then(response => response.json().then(data => ({status: response.status, body: data})))
+      .then(({status, body}) => {
+        if (status === 201) { // Assuming 201 is the success status code
+          console.log("Product added successfully");
+          successUpload(body.message);
+        } else {
+          console.log("Failed to add product", body.error);
+          errorUpload(body.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        errorUpload(error.message);
       });
-  };
+    };
+    
 
     
 
@@ -416,14 +451,23 @@ const handleInputChange = (event) => {
             <Form onSubmit={handleSubmit}>
               <div>
                 <div className="form-group-col">
-                <select onChange={(event) => setSelectedGroup(event.target.value)}>
-                {groups.map(group => <option value={group}>{group}</option>)}
-            </select>
+                <FormGroup>
+                <Label for="groupSelect">Grup</Label>
+                <Input type="select" name="groupSelect" id="groupSelect" onChange={(event) => setSelectedGroup(event.target.value)}>
+                {groups?.map(group => <option value={group[0]}>{group[1]}</option>)}
 
-            <select onChange={(event) => setSelectedSubgroup(event.target.value)}>
-                {subgroups.map(subgroup => <option value={subgroup}>{subgroup}</option>)}
-            </select>
-                  
+
+                </Input>
+              </FormGroup>
+
+              <FormGroup>
+    <Label for="subgroupSelect">Alt Grup</Label>
+    <Input type="select" name="subgroupSelect" id="subgroupSelect" onChange={(event) => setSelectedSubgroup(event.target.value)}>
+    {subgroups?.map((subgroup, index) => <option key={index} value={subgroup[0]}>{subgroup[1]}</option>)}
+</Input>
+
+
+</FormGroup>
 
                 
                 
@@ -552,129 +596,130 @@ const handleInputChange = (event) => {
               <CardBody >
 
             
-                <ReactTable
-                  data={dataTable.map((row,index) => ({
-                    id: row.id,
-                    product_code: row[0],
-                    barcode: row[1],
-                    group: row[2],
-                    subgroup: row[3],
-                    brand: row[4],
-                    serial_number: row[5],
-                    model: row[6],
-                    description: row[7],
-                    unit: row[8],
-                    supplier: row[9],
-                    supplier_contact: row[10],
+              <ReactTable
+  data={(dataTable || []).map((row,index) => ({
+    id: row.id,
+    product_code: row[0],
+    barcode: row[1],
+    group: row[2],
+    subgroup: row[3],
+    brand: row[4],
+    serial_number: row[5],
+    model: row[6],
+    description: row[7],
+    unit: row[8],
+    supplier: row[9],
+    supplier_contact: row[10],
 
-                    actions: (
-                      <div className='actions-left'>
-                       
-                         <Button
-                          disabled={showPopup}
-                          onClick={() => {
-                            // Enable edit mode
-                            
-                           {handleClick(row)}
-                           
-                          
-                          }}
-                          
-                          color='warning'
-                          size='sm'
-                          className='btn-icon btn-link edit'
-                        >
-                          <i className='fa fa-edit' />
-                        </Button>{' '}
-                        
-                        <>
-    
-    
-                          <Button
-                            disabled={showPopup}
-                            onClick={() => {
-                              
-                               warningWithConfirmAndCancelMessage() 
-                               const rowToDelete = {...row};
-                               const data = {
-                                product_code: rowToDelete[0],
-
-                              };
-                              setDeleteData(data);
-                              console.log(deleteConfirm)
+    actions: (
+      <div className='actions-left'>
+       
+         <Button
+          disabled={showPopup}
+          onClick={() => {
+            // Enable edit mode
+            
+           {handleClick(row)}
+           
+          
+          }}
+          
+          color='warning'
+          size='sm'
+          className='btn-icon btn-link edit'
+        >
+          <i className='fa fa-edit' />
+        </Button>{' '}
+        
+        <>
 
 
-                            }
-                            }
-                            color="danger"
-                            size="sm"
-                            className="btn-icon btn-link remove"
-                          >
-                            <i className="fa fa-times" />
-                          </Button>
-    
-  </>
+          <Button
+            disabled={showPopup}
+            onClick={() => {
+              
+               warningWithConfirmAndCancelMessage() 
+               const rowToDelete = {...row};
+               const data = {
+                product_code: rowToDelete[0],
+
+              };
+              setDeleteData(data);
+              console.log(deleteConfirm)
 
 
-                      </div>
-                    ),
-                  }))}
-                  columns={[
-                    {
-                      Header: 'Malzeme Kodu',
-                      accessor: 'product_code',
-                    },
-                    {
-                      Header: 'Barkod',
-                      accessor: 'barcode',
-                    },
-                    {
-                      Header: 'Grup',
-                      accessor: 'group',
-                    },
-                    {
-                      Header: 'Alt Grup',
-                      accessor: 'subgroup',
-                    },
-                    {
-                      Header: 'Marka',
-                      accessor: 'brand',
-                    },
-                    {
-                      Header: 'Seri Numarası',
-                      accessor: 'serial_number',
-                    },
-                    {
-                      Header: 'Model',
-                      accessor: 'model',
-                    },
-                    {
-                      Header: 'Açıklama',
-                      accessor: 'description',
-                    },
-                    {
-                      Header: 'Birim',
-                      accessor: 'unit',
-                    },
-                    {
-                      Header: 'Satıcı',
-                      accessor: 'supplier',
-                    },
-                    {
-                      Header: 'Satıcı İletişim',
-                      accessor: 'supplier_contact',
-                    },
-                    {
-                      Header: 'İşlem',
-                      accessor: 'actions',
-                      sortable: false,
-                      filterable: false,
-                    },
-                  ]}
-                  
-                  defaultPageSize={10}
-                  className='-striped -highlight'
-                />
+            }
+            }
+            color="danger"
+            size="sm"
+            className="btn-icon btn-link remove"
+          >
+            <i className="fa fa-times" />
+          </Button>
+
+</>
+
+
+      </div>
+    ),
+  }))}
+  columns={[
+    {
+      Header: 'Malzeme Kodu',
+      accessor: 'product_code',
+    },
+    {
+      Header: 'Barkod',
+      accessor: 'barcode',
+    },
+    {
+      Header: 'Grup',
+      accessor: 'group',
+    },
+    {
+      Header: 'Alt Grup',
+      accessor: 'subgroup',
+    },
+    {
+      Header: 'Marka',
+      accessor: 'brand',
+    },
+    {
+      Header: 'Seri Numarası',
+      accessor: 'serial_number',
+    },
+    {
+      Header: 'Model',
+      accessor: 'model',
+    },
+    {
+      Header: 'Açıklama',
+      accessor: 'description',
+    },
+    {
+      Header: 'Birim',
+      accessor: 'unit',
+    },
+    {
+      Header: 'Satıcı',
+      accessor: 'supplier',
+    },
+    {
+      Header: 'Satıcı İletişim',
+      accessor: 'supplier_contact',
+    },
+    {
+      Header: 'İşlem',
+      accessor: 'actions',
+      sortable: false,
+      filterable: false,
+    },
+  ]}
+  
+  defaultPageSize={10}
+  className='-striped -highlight'
+/>
+
               </CardBody>
             </Card>
           </Col>
