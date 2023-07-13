@@ -5,6 +5,8 @@ import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import localforage from 'localforage';
 import { FaFileUpload } from 'react-icons/fa';
+import Modal from 'react-bootstrap/Modal';
+
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
@@ -39,8 +41,14 @@ const [model, setModel] = useState(null);
 const [description, setDescription] = useState(null);
 const [unit, setUnit] = useState(null);
 const [amount, setAmount] = useState(null);
-const [selectedFile, setSelectedFile] = useState(null);
+const [selectedFiles, setSelectedFiles] = useState(null);
 const [uploadedFile, setUploadedFile] = useState(null);
+
+const [showModal, setShowModal] = useState(false);
+const [currentFiles, setCurrentFiles] = useState([]);
+
+
+
 
 
   React.useEffect(() => {
@@ -405,7 +413,7 @@ const [uploadedFile, setUploadedFile] = useState(null);
     };
 
     const handleFileChange = (event) => {
-      setSelectedFile(event.target.files[0]);
+      setSelectedFile(event.target.files);
     };
   
     const handleUpload = (event) => {
@@ -418,7 +426,7 @@ const [uploadedFile, setUploadedFile] = useState(null);
   
       // Simulating the response with a timeout
       setTimeout(() => {
-        setUploadedFile(selectedFile);
+        setUploadedFile(selectedFiles);
       }, 2000);
     };
   
@@ -435,6 +443,18 @@ const [uploadedFile, setUploadedFile] = useState(null);
         URL.revokeObjectURL(downloadUrl);
       }
     };
+
+    // Function to handle showing the modal
+const handleShowModal = (files) => {
+  setCurrentFiles(files);
+  setShowModal(true);
+};
+
+// Function to handle hiding the modal
+const handleHideModal = () => {
+  setCurrentFiles([]);
+  setShowModal(false);
+};
 
     async function handleExportClick() {
       // Retrieve the access token from localForage
@@ -472,14 +492,17 @@ const [uploadedFile, setUploadedFile] = useState(null);
   return (
     <>
       <div className='content'>
+
       {alert}
 
+     
         <Row>
+          
           <Col
           >
             {/* Pop Up */}
       {showPopup && (
-       <div className="popup-sales">
+       <div className="popup">
       <Card>
             <CardHeader>
               <CardTitle tag="h4">Ambar Giriş Ekle</CardTitle>
@@ -487,18 +510,9 @@ const [uploadedFile, setUploadedFile] = useState(null);
             <CardBody>
               <Form onSubmit={handleSubmit}>
               <div>
-        <div className="form-group-col-sales">
+        <div className="form-group-col">
 
-        <label>No</label>
-        <FormGroup>
-          <Input
-            name="id"
-            type="number"
-            defaultValue={id}
-            onChange={(e) => setId(e.target.value)}
-          />
-        </FormGroup>
-        
+               
         <label>Tarih</label>
         <FormGroup>
           <Input
@@ -535,16 +549,8 @@ const [uploadedFile, setUploadedFile] = useState(null);
           />
         </FormGroup>
 
-        <label>Tedarikçi Adı</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={providerCompanyName}
-            onChange={(e) => setProviderCompanyName(e.target.value)}
-          />
-          </FormGroup>
           </div>
-          <div className="form-group-col-sales">
+          <div className="form-group-col">
         <label>Alıcı Vergi No</label>
         <FormGroup>
           <Input
@@ -554,14 +560,6 @@ const [uploadedFile, setUploadedFile] = useState(null);
           />
         </FormGroup>
 
-        <label>Alıcı Adı</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={recieverCompanyName}
-            onChange={(e) => setRecieverCompanyName(e.target.value)}
-          />
-        </FormGroup>
 
         <label>Durum</label>
         <FormGroup>
@@ -581,71 +579,6 @@ const [uploadedFile, setUploadedFile] = useState(null);
           />
         </FormGroup>
 
-        <label>Grup</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={group}
-            onChange={(e) => setGroup(e.target.value)}
-          />
-        </FormGroup>
-
-        <label>Alt Grup</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={subgroup}
-            onChange={(e) => setSubgroup(e.target.value)}
-          />
-        </FormGroup>
-        </div>
-
-        <div className="form-group-col-sales">
-        <label>Marka</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={brand}
-            onChange={(e) => setBrand(e.target.value)}
-          />
-        </FormGroup>
-
-        <label>Seri Numarası</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={serialNumber}
-            onChange={(e) => setSerialNumber(e.target.value)}
-          />
-        </FormGroup>
-
-        <label>Model</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={model}
-            onChange={(e) => setModel(e.target.value)}
-          />
-        </FormGroup>
-
-        <label>Açıklama</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </FormGroup>
-
-        <label>Birim</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={unit}
-            onChange={(e) => setUnit(e.target.value)}
-          />
-        </FormGroup>
-
         <label>Miktar</label>
         <FormGroup>
           <Input
@@ -654,11 +587,12 @@ const [uploadedFile, setUploadedFile] = useState(null);
             onChange={(e) => setAmount(e.target.value)}
           />
         </FormGroup>
+        </div>
 
-          </div>
+        
           {/* Photo upload section */}
           <div className="photo-upload-section">
-                <input type="file" onChange={handleFileChange} />
+                <input type="file" onChange={handleFileChange} multiple />
                 <button className="upload-button" onClick={handleUpload}>
                   <FaFileUpload /> Upload
                 </button>
@@ -904,6 +838,14 @@ const [uploadedFile, setUploadedFile] = useState(null);
                       Header: 'Miktar',
                       accessor: 'amount'
                   },
+
+                  {
+                    Header: 'Uploaded Files',
+                    accessor: 'uploaded_files',
+                    Cell: ({ cell: { value } }) => (
+                      <button onClick={() => handleShowModal(value)}>Show Files</button>
+                    ),
+                  },
                     {
                       Header: 'İşlem',
                       accessor: 'actions',
@@ -920,6 +862,8 @@ const [uploadedFile, setUploadedFile] = useState(null);
             </Card>
           </Col>
         </Row>
+
+
       </div>
     </>
     
