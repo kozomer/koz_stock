@@ -27,7 +27,7 @@ import base64
 from io import BytesIO
 import numpy as np
 from django.db import transaction, IntegrityError
-from .permissions import IsSuperStaff, IsAccountingStaff, IsStockStaff
+from .permissions import IsSuperStaff, IsAccountingStaff, IsStockStaff, IsSuperStaffOrStockStaff, IsSuperStaffOrAccountingStaff
 from django.utils.translation import gettext as _
 import os
 import tempfile
@@ -47,6 +47,7 @@ from django.db.utils import OperationalError
 from rest_framework.exceptions import ValidationError
 import filetype
 from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.exceptions import NotAuthenticated, PermissionDenied
 
 from django.http import JsonResponse
 from rest_framework.views import APIView
@@ -93,6 +94,7 @@ class LoginView(TokenObtainPairView):
 class LogoutView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
     def post(self, request):
         try:
             refresh_token = request.POST.get('refresh_token')
@@ -111,6 +113,12 @@ class LogoutView(APIView):
 class CreateProjectView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         name = request.data.get('name')
@@ -136,6 +144,12 @@ class GetProjectsView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
     def get(self, request):
         # Get the projects that belong to the user's company and the user is associated with
         projects = request.user.projects.filter(company=request.user.company)
@@ -155,6 +169,12 @@ class GetProjectsView(APIView):
 class SetCurrentProjectView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request):
         # project_id=request.data.get('project_id')
@@ -179,6 +199,12 @@ class SetCurrentProjectView(APIView):
 class CreateUserView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         # Extract the data from the request
@@ -218,6 +244,12 @@ class CreateUserView(APIView):
 class EditUserView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         # Extract the data from the request
@@ -260,6 +292,12 @@ class EditUserView(APIView):
 class CollapsedUserView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
     
     def get(self, request, *args, **kwargs):
         active_users = CustomUser.objects.filter(is_active=True)
@@ -273,6 +311,12 @@ class CollapsedUserView(APIView):
 class UserCardView(APIView):
     permission_classes = (IsAuthenticated,) 
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
     
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -305,6 +349,12 @@ class DeleteUserView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
     def post(self, request, *args, **kwargs):
         user_id = request.data.get('user_id')
         try:
@@ -329,8 +379,14 @@ class DeleteUserView(APIView):
 #? Mesela şuan bir product'ın ismini değiştirirsek bundan önce o product ile girilmiş ambar giriş çıkışlarında o productın ismi değişmiyor.
 
 class AddProductsView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
         try:
@@ -407,8 +463,14 @@ class AddProductsView(APIView):
 
 
 class ProductsView(APIView):
-    permission_classes = (IsAuthenticated, IsStockStaff, IsSuperStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
         company = request.user.company
@@ -424,8 +486,14 @@ class ProductsView(APIView):
 
 
 class EditProductsView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -486,6 +554,12 @@ class EditProductsView(APIView):
 class DeleteProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
     
     def post(self, request, *args, **kwargs):
         try:
@@ -503,8 +577,14 @@ class DeleteProductsView(APIView):
 # region suppliers
 
 class AddSuppliersView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -542,8 +622,14 @@ class AddSuppliersView(APIView):
 
 
 class SuppliersView(APIView):
-    permission_classes = (IsAuthenticated, IsStockStaff, IsSuperStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
         suppliers = Suppliers.objects.values().all()
@@ -552,8 +638,14 @@ class SuppliersView(APIView):
 
 #! EditSuppliersView2ın doğru çalışıp çalışmadığını kontrol et.
 class EditSuppliersView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -597,6 +689,12 @@ class DeleteSupplierView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
@@ -611,8 +709,14 @@ class DeleteSupplierView(APIView):
 # region Consumers
 
 class AddConsumersView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -649,8 +753,14 @@ class AddConsumersView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
 class ConsumersView(APIView):
-    permission_classes = (IsAuthenticated, IsStockStaff, IsSuperStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
         consumers = Consumers.objects.values().all()
@@ -658,8 +768,14 @@ class ConsumersView(APIView):
         return JsonResponse(consumer_list, safe=False, status=200)
 
 class EditConsumersView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -703,6 +819,12 @@ class DeleteConsumerView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
@@ -718,8 +840,14 @@ class DeleteConsumerView(APIView):
 # region ProductGroups
 
 class CreateProductGroupView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         group_name = request.data.get('group_name')
@@ -761,8 +889,14 @@ class CreateProductGroupView(APIView):
         return JsonResponse({'error': _('Could not create product group. Please try again.')}, status=500)
 
 class ProductGroupsView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def get(self, request):
         product_groups = ProductGroups.objects.filter(company=request.user.company)
@@ -773,8 +907,14 @@ class ProductGroupsView(APIView):
         return JsonResponse(product_groups_list, safe= False)
 
 class EditProductGroupView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         group_code = request.data.get('group_code')
@@ -797,6 +937,12 @@ class EditProductGroupView(APIView):
 class DeleteProductGroupView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         group_code = request.data.get('group_code')
@@ -821,8 +967,14 @@ class DeleteProductGroupView(APIView):
 # region ProductSubgroups
 
 class CreateProductSubgroupView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff )
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff )
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         
@@ -858,8 +1010,14 @@ class CreateProductSubgroupView(APIView):
 
 
 class ProductSubgroupsView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request):
         group_code = request.data.get('group_code')
@@ -872,8 +1030,14 @@ class ProductSubgroupsView(APIView):
 
 
 class EditProductSubgroupView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         subgroup_code = request.data.get('subgroup_code')
@@ -901,6 +1065,12 @@ class DeleteProductSubgroupView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
     def post(self, request, *args, **kwargs):
         subgroup_code = request.data.get('subgroup_code')
         group_code = request.data.get('group_code')
@@ -925,8 +1095,14 @@ class DeleteProductSubgroupView(APIView):
 # region ProductInflow
 
 class AddProductInflowView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -977,8 +1153,14 @@ class AddProductInflowView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
 class ProductInflowView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
         product_inflows = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').all()
@@ -1015,6 +1197,12 @@ class ProductInflowView(APIView):
 class EditProductInflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -1077,6 +1265,12 @@ class DeleteProductInflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
     def post(self, request, *args, **kwargs):
         try:
             id = request.data.get('id')
@@ -1102,8 +1296,14 @@ class DeleteProductInflowView(APIView):
 # region ProductOutflow
 
 class AddProductOutflowView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -1154,8 +1354,14 @@ class AddProductOutflowView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
 class ProductOutflowView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
         product_outflows = ProductOutflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').all()
@@ -1189,6 +1395,12 @@ class ProductOutflowView(APIView):
 class EditProductOutflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -1259,6 +1471,12 @@ class DeleteProductOutflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
     def post(self, request, *args, **kwargs):
         try:
             id = request.data.get('id')
@@ -1277,8 +1495,14 @@ class DeleteProductOutflowView(APIView):
         return JsonResponse({'message': _("Product outflow object has been successfully deleted.")}, status=200)
 
 class CreateProductOutflowReceiptView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsStockStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
     def post(self, request, *args, **kwargs):
         try:
             id = request.data.get('id')
@@ -1435,6 +1659,12 @@ class StockView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
     def get(self, request, *args, **kwargs):
         stocks = Stock.objects.filter(company=request.user.company, project=request.user.current_project)
         stock_list = [
@@ -1463,6 +1693,12 @@ class StockView(APIView):
 # class EditStockView(APIView):
 #     permission_classes = (IsAuthenticated, IsSuperStaff)
 #     authentication_classes = (JWTAuthentication,)
+
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -1496,6 +1732,12 @@ class StockView(APIView):
 # class DeleteStockView(APIView):
 #     permission_classes = (IsAuthenticated, IsSuperStaff)
 #     authentication_classes = (JWTAuthentication,)
+
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -1533,8 +1775,14 @@ def create_accounting(sender, instance, created, **kwargs):
 
 
 class AccountingView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrAccountingStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
         accountings = Accounting.objects.all(company=request.user.company, project=request.user.current_project)
@@ -1553,6 +1801,12 @@ class AccountingView(APIView):
 class EditAccountingView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
@@ -1595,6 +1849,12 @@ class EditAccountingView(APIView):
 #     permission_classes = (IsAuthenticated, IsSuperStaff)
 #     authentication_classes = (JWTAuthentication,)
 
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
+
 #     def post(self, request, *args, **kwargs):
 #         try:
 #             id = request.POST.get('id')
@@ -1608,8 +1868,14 @@ class EditAccountingView(APIView):
 # region Search Supplier and Consumer
 
 class SupplierSearchView(APIView):
-    permission_classes = (IsAuthenticated,IsSuperStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated, IsSuperStaffOrAccountingStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -1624,8 +1890,14 @@ class SupplierSearchView(APIView):
         return JsonResponse({'suppliers': suppliers_data})
 
 class ConsumerSearchView(APIView):
-    permission_classes = (IsAuthenticated, IsSuperStaff, IsAccountingStaff)
+    permission_classes = (IsAuthenticated,  IsSuperStaffOrAccountingStaff)
     authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
@@ -1646,6 +1918,12 @@ class ConsumerSearchView(APIView):
 # class AddCustomersView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
     
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -1680,6 +1958,12 @@ class ConsumerSearchView(APIView):
 # class ViewCustomersView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
 #     def get(self,request,*args, **kwargs):
 #          customers = Customers.objects.values().all()
 #          customer_list = [[customer['customer_code'], customer['description'], customer['quantity'],
@@ -1690,6 +1974,12 @@ class ConsumerSearchView(APIView):
 # class DeleteCustomerView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         try:
 #             customer_code = request.POST.get('customer_code')
@@ -1702,6 +1992,12 @@ class ConsumerSearchView(APIView):
 # class EditCustomerView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -1752,6 +2048,12 @@ class ConsumerSearchView(APIView):
 # class ExportCustomersView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
 
 #     def get(self, request, *args, **kwargs):
 #         def set_column_widths(worksheet):
@@ -1821,6 +2123,12 @@ class ConsumerSearchView(APIView):
 # class AddSalesView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+    # def handle_exception(self, exc):
+    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+    #     return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -1988,6 +2296,12 @@ class ConsumerSearchView(APIView):
 # class DeleteSaleView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         try:
 #             no = request.POST.get('no', None)
@@ -2007,6 +2321,12 @@ class ConsumerSearchView(APIView):
 # class EditSaleView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -2124,6 +2444,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def get(self, request, *args, **kwargs):
 #         def set_column_widths(worksheet):
 #             for column_cells in worksheet.columns:
@@ -2204,6 +2530,12 @@ class ConsumerSearchView(APIView):
 # class AddWarehouseView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
     
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -2242,6 +2574,12 @@ class ConsumerSearchView(APIView):
 # class ViewWarehouseView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def get(self, request, *args, **kwargs):
 #         # if not request.user.is_authenticated:
 #         #     return HttpResponse(status=401)
@@ -2252,6 +2590,12 @@ class ConsumerSearchView(APIView):
 # class DeleteWarehouseView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         try:
 #             product_code = request.POST.get('product_code')
@@ -2264,6 +2608,12 @@ class ConsumerSearchView(APIView):
 # class EditWarehouseView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -2316,6 +2666,12 @@ class ConsumerSearchView(APIView):
 # class ExportWarehouseView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def get(self, request, *args, **kwargs):
 #         def set_column_widths(worksheet):
@@ -2382,6 +2738,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def post(self, request, *args, **kwargs):
 #         try:
 #             if 'file' not in request.FILES:
@@ -2430,6 +2792,12 @@ class ConsumerSearchView(APIView):
 # class ViewProductsView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def get(self, request, *args, **kwargs):
 #         products = Products.objects.values().all()
 #         product_list = [[p['group'], p['subgroup'], p['feature'], p['product_code_ir'], p['product_code_tr'],
@@ -2439,6 +2807,12 @@ class ConsumerSearchView(APIView):
 # class DeleteProductView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         try:
 #             product_code_ir = request.POST.get('product_code_ir')
@@ -2450,6 +2824,12 @@ class ConsumerSearchView(APIView):
 # class EditProductView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -2492,6 +2872,12 @@ class ConsumerSearchView(APIView):
 # class ExportProductsView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def get(self, request, *args, **kwargs):
 #         def set_column_widths(worksheet):
@@ -2561,6 +2947,12 @@ class ConsumerSearchView(APIView):
 # class ChartView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         #start_date = request.POST.get('start_date')
 #         #end_date = request.POST.get('end_date')
@@ -2577,6 +2969,12 @@ class ConsumerSearchView(APIView):
 # class ItemListView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def get(self, request, *args, **kwargs):
 #         product_codes = Products.objects.values_list('product_code_ir', flat=True)
 #         return JsonResponse(list(product_codes), safe=False)
@@ -2608,6 +3006,12 @@ class ConsumerSearchView(APIView):
 # class AddSalerView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -2662,6 +3066,12 @@ class ConsumerSearchView(APIView):
 # class EditSalerView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -2758,6 +3168,12 @@ class ConsumerSearchView(APIView):
 # class CollapsedSalerView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
     
 #     def get(self, request, *args, **kwargs):
 #         active_salers = Salers.objects.filter(is_deleted=False, is_active_saler=True)
@@ -2775,6 +3191,12 @@ class ConsumerSearchView(APIView):
 # class SalerCardView(APIView):
 #     permission_classes = (IsAuthenticated,) 
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         data = json.loads(request.body)
 #         id = data.get('id')
@@ -2805,6 +3227,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def get(self, request, *args, **kwargs):
 #         salers = Salers.objects.filter(is_deleted=False).values()
 #         saler_list = [[s['id'], s['name'], s['job_start_date'].strftime('%Y-%m-%d'), s['manager_performance_rating'],
@@ -2816,6 +3244,12 @@ class ConsumerSearchView(APIView):
 # class DeleteSalerView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         try:    
 #             data = json.loads(request.body)
@@ -2930,6 +3364,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def get(self, request, *args, **kwargs):
 #         saler_performances = SalerPerformance.objects.values().all()
 #         saler_performance_list = [[performance['name'], performance['year'], performance['month'],
@@ -3022,6 +3462,12 @@ class ConsumerSearchView(APIView):
 # class SalesReportView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         data = json.loads(request.body)
 
@@ -3235,6 +3681,12 @@ class ConsumerSearchView(APIView):
 # class TopCustomersView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         data = json.loads(request.body)
 
@@ -3363,6 +3815,12 @@ class ConsumerSearchView(APIView):
 # class TopProductsView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         data = json.loads(request.body)
 
@@ -3427,6 +3885,12 @@ class ConsumerSearchView(APIView):
 # class ExchangeRateAPIView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def get(self, request):
 #         try:
 #             exchange_rate = get_exchange_rate()
@@ -3445,6 +3909,12 @@ class ConsumerSearchView(APIView):
 # class SalerDataView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def get(self, request, *args, **kwargs):
 #         jalali_date_now = current_jalali_date()
@@ -3511,6 +3981,12 @@ class ConsumerSearchView(APIView):
 # class TotalDataView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def get(self, request, *args, **kwargs):
 #         jalali_date_now = current_jalali_date()
 #         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
@@ -3555,6 +4031,12 @@ class ConsumerSearchView(APIView):
 # class TotalDataByMonthlyView(View):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def get(self, request, *args, **kwargs):
 #         jalali_date_now = current_jalali_date()
 #         jalali_date_now_str = jalali_date_now.strftime('%Y-%m-%d')
@@ -3599,6 +4081,12 @@ class ConsumerSearchView(APIView):
 # class CustomerAreaPieChartView(View):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         data = json.loads(request.body)
         
@@ -3949,6 +4437,12 @@ class ConsumerSearchView(APIView):
 # class ROPView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         data = json.loads(request.body)
 #         print(data)
@@ -4150,6 +4644,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def get(self, request, *args, **kwargs):
 #         order_lists = OrderList.objects.filter(is_active = True).values() #! False True olacak
 #         order_list_data = [
@@ -4161,6 +4661,12 @@ class ConsumerSearchView(APIView):
 # class EditOrderListView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 #     def post(self, request, *args, **kwargs):
 #         # Expecting the updated data to be sent as a list of dictionaries
 #         updated_order_list_data = json.loads(request.body)
@@ -4212,6 +4718,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def get(self, request, *args, **kwargs):
 #         goods_on_road = GoodsOnRoad.objects.filter(is_terminated=False).values()
 #         goods_on_road_data = [
@@ -4223,6 +4735,12 @@ class ConsumerSearchView(APIView):
 # class ApproveProductsToOrderView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -4258,6 +4776,12 @@ class ConsumerSearchView(APIView):
 # class AddTruckView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -4298,6 +4822,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def get(self, request, *args, **kwargs):
 #         waiting_trucks = Trucks.objects.filter(is_waiting=True).values_list('truck_name', flat=True)
 #         goods_on_road = GoodsOnRoad.objects.filter(is_on_truck=True).values()
@@ -4318,6 +4848,12 @@ class ConsumerSearchView(APIView):
 # class ApproveWaitingTruckView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -4351,6 +4887,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def get(self, request, *args, **kwargs):
 #         trucks_on_road = Trucks.objects.filter(is_ordered=True).values_list('truck_name', flat=True)
 #         goods_on_road = GoodsOnRoad.objects.filter(is_on_road = True).values()
@@ -4367,6 +4909,12 @@ class ConsumerSearchView(APIView):
 # class EditGoodsOnRoadView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -4399,6 +4947,12 @@ class ConsumerSearchView(APIView):
 # class ApproveArrivedTruckView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
@@ -4459,6 +5013,12 @@ class ConsumerSearchView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
+
 #     def get(self, request, *args, **kwargs):
 #         notifications = NotificationsOrderList.objects.filter(is_active=True).values()
 #         notification_data = [
@@ -4470,6 +5030,12 @@ class ConsumerSearchView(APIView):
 # class DeleteNotificationView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
+
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         notification_id = request.data.get('id')
