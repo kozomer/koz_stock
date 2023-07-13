@@ -117,6 +117,9 @@ useEffect(() => {
           const data = await response.json();
           console.log(data);
           setSubgroups(data);
+          if (data.length > 0) {
+            setSelectedSubgroup(data[0][0]);
+          }
       }
   }
   fetchSubgroups();
@@ -283,12 +286,16 @@ const handleInputChange = (event) => {
   };
 
   const successUpload = (s) => {
+    
+
     setAlert(
       <ReactBSAlert
         success
         style={{ display: "block", marginTop: "-100px" }}
         title="Uploaded!"
-        onConfirm={() => hideAlert()}
+        onConfirm={() => { 
+          hideAlert()
+        setShowPopup(!showPopup)}}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
@@ -362,6 +369,8 @@ const handleInputChange = (event) => {
         if (status === 201) { // Assuming 201 is the success status code
           console.log("Product added successfully");
           successUpload(body.message);
+          setDataChanged(true);
+           
         } else {
           console.log("Failed to add product", body.error);
           errorUpload(body.error);
@@ -599,8 +608,7 @@ const handleInputChange = (event) => {
               <ReactTable
   data={(dataTable || []).map((row,index) => ({
     id: row.id,
-    product_code: row[0],
-    barcode: row[1],
+    product_code: row[1],
     group: row[2],
     subgroup: row[3],
     brand: row[4],
@@ -608,9 +616,7 @@ const handleInputChange = (event) => {
     model: row[6],
     description: row[7],
     unit: row[8],
-    supplier: row[9],
-    supplier_contact: row[10],
-
+  
     actions: (
       <div className='actions-left'>
        
@@ -669,10 +675,6 @@ const handleInputChange = (event) => {
       accessor: 'product_code',
     },
     {
-      Header: 'Barkod',
-      accessor: 'barcode',
-    },
-    {
       Header: 'Grup',
       accessor: 'group',
     },
@@ -700,14 +702,7 @@ const handleInputChange = (event) => {
       Header: 'Birim',
       accessor: 'unit',
     },
-    {
-      Header: 'Satıcı',
-      accessor: 'supplier',
-    },
-    {
-      Header: 'Satıcı İletişim',
-      accessor: 'supplier_contact',
-    },
+    
     {
       Header: 'İşlem',
       accessor: 'actions',
