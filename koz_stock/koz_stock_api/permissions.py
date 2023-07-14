@@ -11,3 +11,11 @@ class IsStockStaff(BasePermission):
 class IsAccountingStaff(BasePermission):
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_accountingstaff)
+
+class IsSuperStaffOrAccountingStaff(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_superstaff or request.user.is_accountingstaff
+
+class IsSuperStaffOrStockStaff(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_superstaff or request.user.is_stockstaff
