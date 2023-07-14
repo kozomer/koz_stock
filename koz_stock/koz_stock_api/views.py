@@ -510,7 +510,7 @@ class AddSuppliersView(APIView):
         try:
             user = request.user
             data = json.loads(request.body)
-
+            print(data)
             tax_code = data.get('tax_code')
             if not tax_code:
                 return JsonResponse({'error': _("Tax Code cannot be empty!")}, status=400)
@@ -528,8 +528,7 @@ class AddSuppliersView(APIView):
                     error_message = _("The field '{%s}' cannot be empty.") % field
                     return JsonResponse({'error': error_message}, status=400)
 
-            new_supplier = Suppliers.objects.create(tax_code=tax_code, company=user.company, 
-                                                    project=user.current_project, **new_supplier_data)
+            new_supplier = Suppliers.objects.create(tax_code=tax_code, company=user.company, **new_supplier_data)
 
             message = _("New supplier '{%s}' has been successfully created.") % new_supplier.name
             return JsonResponse({'message': message}, status=201)
@@ -636,8 +635,7 @@ class AddConsumersView(APIView):
                     error_message = _("The field '{%s}' cannot be empty.") % field
                     return JsonResponse({'error': error_message}, status=400)
 
-            new_consumer = Consumers.objects.create(tax_code=tax_code, company=user.company, 
-                                                    project=user.current_project, **new_consumer_data)
+            new_consumer = Consumers.objects.create(tax_code=tax_code, company=user.company, **new_consumer_data)
 
             message = _("New consumer '{%s}' has been successfully created.") % new_consumer.name
             return JsonResponse({'message': message}, status=201)
@@ -930,6 +928,7 @@ class AddProductInflowView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
+            print(request.data)
             product_code = request.data.get('product_code')
             date = request.data.get('date')
             barcode = request.data.get('barcode')
@@ -940,18 +939,23 @@ class AddProductInflowView(APIView):
             amount = request.data.get('amount')
             company = request.user.company
             project = request.user.current_project
+
+            try:
+                from datetime import datetime
+                date = datetime.strptime(date, '%Y-%m-%d').date()
+            except ValueError:
+                return JsonResponse({'error': _('Invalid date format. Use YYYY-MM-DD.')}, status=400)
             
             # Fetch the product using the product code
             product = Products.objects.get(product_code=product_code,company=request.user.company)
-            provider_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
-            receiver_company = Suppliers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company)
-
+            supplier_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
+            receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company)
             # Create the ProductInflow object
             product_inflow = ProductInflow.objects.create(
                 product=product,
                 date=date,
                 barcode=barcode,
-                provider_company=provider_company, 
+                supplier_company=supplier_company, 
                 receiver_company=receiver_company, 
                 status=status,
                 place_of_use=place_of_use, 
@@ -961,7 +965,7 @@ class AddProductInflowView(APIView):
             )
             # Add project to product, consumer, and supplier projects fields
             product.projects.add(project)
-            provider_company.projects.add(project)
+            supplier_company.projects.add(project)
             receiver_company.projects.add(project)
 
             return JsonResponse({'message': _('ProductInflow created successfully')}, status=201)
@@ -974,6 +978,7 @@ class AddProductInflowView(APIView):
         except Project.DoesNotExist:
             return JsonResponse({'error': _('Project with the provided project id does not exist.')}, status=400)
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 class ProductInflowView(APIView):
@@ -981,33 +986,38 @@ class ProductInflowView(APIView):
     authentication_classes = (JWTAuthentication,)
 
     def get(self, request, *args, **kwargs):
-        product_inflows = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').all()
+        try:
+            product_inflows = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').all()
 
-        product_inflow_list = [
-            [
-                pf.id, 
-                pf.date, 
-                pf.product.product_code,
-                pf.barcode, 
-                pf.supplier_company.tax_code,
-                pf.supplier_company.name, 
-                pf.receiver_company.tax_code,
-                pf.receiver_company.name,  
-                pf.status, 
-                pf.place_of_use,
-                pf.product.group,
-                pf.product.subgroup,
-                pf.product.brand,
-                pf.product.serial_number,
-                pf.product.model,
-                pf.product.description,
-                pf.product.unit,
-                pf.amount
-            ] 
-            for pf in product_inflows
-        ]
+            product_inflow_list = [
+                [
+                    pf.id, 
+                    pf.date, 
+                    pf.product.product_code,
+                    pf.barcode, 
+                    pf.supplier_company.tax_code,
+                    pf.supplier_company.name, 
+                    pf.receiver_company.tax_code,
+                    pf.receiver_company.name,  
+                    pf.status, 
+                    pf.place_of_use,
+                    pf.product.group.group_name,
+                    pf.product.subgroup.subgroup_name,
+                    pf.product.brand,
+                    pf.product.serial_number,
+                    pf.product.model,
+                    pf.product.description,
+                    pf.product.unit,
+                    pf.amount
+                ] 
+                for pf in product_inflows
+            ]
 
-        return JsonResponse(product_inflow_list, safe=False, status=200)
+            return JsonResponse(product_inflow_list, safe=False, status=200)
+        
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
 
 
 
@@ -1118,13 +1128,14 @@ class AddProductOutflowView(APIView):
 
             # Check if the date is in correct format
             try:
+                from datetime import datetime
                 date = datetime.strptime(date, '%Y-%m-%d').date()
             except ValueError:
                 return JsonResponse({'error': _('Invalid date format. Use YYYY-MM-DD.')}, status=400)
 
             # Fetch the product using the product code
             product = Products.objects.get(product_code=product_code, company=request.user.company)
-            provider_company = Consumers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
+            supplier_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
             receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company)
 
             # Create the ProductOutflow object
@@ -1132,7 +1143,7 @@ class AddProductOutflowView(APIView):
                 product=product,
                 date=date,
                 barcode=barcode,
-                provider_company=provider_company,
+                supplier_company=supplier_company,
                 receiver_company=receiver_company,
                 status=status,
                 place_of_use=place_of_use,
@@ -1142,7 +1153,7 @@ class AddProductOutflowView(APIView):
             )
             # Add project to product, consumer, and supplier projects fields
             product.projects.add(request.user.current_project)
-            provider_company.projects.add(request.user.current_project)
+            supplier_company.projects.add(request.user.current_project)
             receiver_company.projects.add(request.user.current_project)
 
             return JsonResponse({'message': _('ProductOutflow created successfully')}, status=201)
@@ -1151,6 +1162,7 @@ class AddProductOutflowView(APIView):
         except Consumers.DoesNotExist:
             return JsonResponse({'error': _('Consumer with the provided tax code does not exist or doesnt belong to your company.')}, status=400)
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 class ProductOutflowView(APIView):
@@ -1164,16 +1176,16 @@ class ProductOutflowView(APIView):
             [
                 pf.id, 
                 pf.date,
-                pf.barcode, 
                 pf.product.product_code, 
+                pf.barcode, 
                 pf.supplier_company.tax_code, 
                 pf.supplier_company.name, 
                 pf.receiver_company.tax_code, 
                 pf.receiver_company.name, 
                 pf.status, 
                 pf.place_of_use,
-                pf.product.group,
-                pf.product.subgroup,
+                pf.product.group.group_name,
+                pf.product.subgroup.subgroup_name,
                 pf.product.brand,
                 pf.product.serial_number,
                 pf.product.model,
@@ -1288,7 +1300,7 @@ class CreateProductOutflowReceiptView(APIView):
             # For example:
             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
             title = _("Warehouse Material Exit Receipt")
-            logo_path = "path/to/your/logo.png"  # Update this to the path where your logo is store
+            logo_path = "C://Users/yasin/OneDrive/Masaüstü/koz_stock/paper-kit-pro-react-v1.3.1/src/assets/img/koz_logo.png"  # Update this to the path where your logo is store
 
             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
             sequence_number = sequence_number_obj.number
@@ -1317,12 +1329,16 @@ class CreateProductOutflowReceiptView(APIView):
 
         except ProductOutflow.DoesNotExist:
             return JsonResponse({'error': "Product Outflow not found."}, status=400)
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+        
 
 # endregion
 
 # region Stock
 
-# @receiver(post_save, sender=Products)
+# @receiver(pre_save, sender=Products)
 # def create_stock(sender, instance, created, **kwargs):
 #     if created:
 #         Stock.objects.create(
@@ -1336,7 +1352,7 @@ class CreateProductOutflowReceiptView(APIView):
 #         )
 
 
-@receiver(post_save, sender=ProductInflow)
+@receiver(pre_save, sender=ProductInflow)
 def update_stock_inflow(sender, instance, created, **kwargs):
     dirty_fields = instance.get_dirty_fields()
 
@@ -1359,7 +1375,7 @@ def update_stock_inflow(sender, instance, created, **kwargs):
     if created:
         # Add product to supplier
         instance.supplier_company.products.add(instance.product)
-        stock.inflow += instance.amount
+        stock.inflow += float(instance.amount)
     else:
         old_amount = dirty_fields.get('amount')
         if old_amount is not None:
@@ -1383,7 +1399,7 @@ def update_stock_inflow_on_delete(sender, instance, **kwargs):
         return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
-@receiver(post_save, sender=ProductOutflow)
+@receiver(pre_save, sender=ProductOutflow)
 def update_stock_outflow(sender, instance, created, **kwargs):
     dirty_fields = instance.get_dirty_fields()
 
@@ -1405,7 +1421,7 @@ def update_stock_outflow(sender, instance, created, **kwargs):
 
     if created:
         instance.receiver_company.products.add(instance.product)
-        stock.outflow += instance.amount
+        stock.outflow += float(instance.amount)
     else:
         old_amount = dirty_fields.get('amount')
         if old_amount is not None:
@@ -1510,14 +1526,13 @@ class StockView(APIView):
 
 # region Accounting
 
-@receiver(post_save, sender=ProductInflow)
+@receiver(pre_save, sender=ProductInflow)
 def create_accounting(sender, instance, created, **kwargs):
     if created:
-        user = instance.user
         Accounting.objects.create(
             product_inflow=instance,
-            company=user.company,
-            project=user.current_project,
+            company=instance.company,
+            project=instance.project,
             unit_price=0,
             discount_rate=0,
             discount_amount=0,
@@ -2862,7 +2877,7 @@ class ConsumerSearchView(APIView):
 
 # # region SalerPerformance
 
-# @receiver(post_save, sender=Sales)
+# @receiver(pre_save, sender=Sales)
 # def update_saler_performance_with_add_sale(sender, instance, created, **kwargs):
 #     # Get or create the SalerPerformance object
 #     saler_performance, _ = SalerPerformance.objects.get_or_create(
@@ -2943,7 +2958,7 @@ class ConsumerSearchView(APIView):
 
 # # region SaleSummary
 
-# @receiver(post_save, sender=Sales)
+# @receiver(pre_save, sender=Sales)
 # def update_sale_summary_with_add_sale(sender, instance, created, **kwargs):
 #     find_month = instance.date.month
 #     find_year = instance.date.year
@@ -3085,7 +3100,7 @@ class ConsumerSearchView(APIView):
 
 # # region MonthlyProductSales
 
-# @receiver(post_save, sender=Sales)
+# @receiver(pre_save, sender=Sales)
 # def update_monthly_product_sales_with_add_sale(sender, instance, created, **kwargs):
 #     # Get or create the MonthlyProductSales object
 #     monthly_sale, _ = MonthlyProductSales.objects.get_or_create(
@@ -3155,7 +3170,7 @@ class ConsumerSearchView(APIView):
 
 # # region Customer Performance
 
-# @receiver(post_save, sender=Sales)
+# @receiver(pre_save, sender=Sales)
 # def update_customer_performance_with_add_sale(sender, instance, created, **kwargs):
 #     # Get or create the CustomerPerformance object
 #     find_month = instance.date.month
@@ -3297,7 +3312,7 @@ class ConsumerSearchView(APIView):
 
 # # region Product Performance
 
-# @receiver(post_save, sender=Sales)
+# @receiver(pre_save, sender=Sales)
 # def update_product_performance_with_add_sale(sender, instance, created, **kwargs):
 #     # Get or create the ProductPerformance object
 #     find_month = instance.date.month
@@ -3629,7 +3644,7 @@ class ConsumerSearchView(APIView):
 # # endregion #!DASHBOARD PAGE END
 
 # # region ROP
-# @receiver(post_save, sender=Warehouse)
+# @receiver(pre_save, sender=Warehouse)
 # def create_rop_for_warehouse(sender, instance, created, **kwargs):
 #     if created:
 #         try:
@@ -3692,7 +3707,7 @@ class ConsumerSearchView(APIView):
 #         except Exception as e:
 #             return JsonResponse({'error': str(e)})
 
-# @receiver(post_save, sender=Sales)
+# @receiver(pre_save, sender=Sales)
 # def update_rop_for_sales_add_or_edit(sender, instance, created, **kwargs):
 #         try:
 #             product = Products.objects.get(product_code_ir = instance.product_code)
@@ -4068,7 +4083,7 @@ class ConsumerSearchView(APIView):
 
 # # region OrderList
 
-# @receiver(post_save, sender=Sales)
+# @receiver(pre_save, sender=Sales)
 # def create_sales_signal(sender, instance, created, **kwargs):
 #     if created:
 #         models = ['average', 'holt', 'exp']
@@ -4194,7 +4209,7 @@ class ConsumerSearchView(APIView):
 
 # # region GoodsOnRoad
 
-# @receiver(post_save, sender=OrderList)
+# @receiver(pre_save, sender=OrderList)
 # def update_goods_on_road(sender, instance, created, **kwargs):
 #     if not created and instance.is_ordered:
 #         product = Products.objects.get(product_code_ir=instance.product_code)
@@ -4443,7 +4458,7 @@ class ConsumerSearchView(APIView):
 
 # # region Notifications
 
-# @receiver(post_save, sender=OrderList)
+# @receiver(pre_save, sender=OrderList)
 # def create_notification_order_list(sender, instance, created, **kwargs):
 #     notification_order_list = NotificationsOrderList(
 #         current_date=instance.current_date,

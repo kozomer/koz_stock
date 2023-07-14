@@ -2,6 +2,7 @@ from django.db import models
 from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
 
+#! Şirket ve proje için ayrı olmalı
 class SequenceNumber(models.Model):
     number = models.IntegerField(default=1)
 
@@ -76,7 +77,7 @@ class ProductInflow(models.Model, DirtyFieldsMixin):
     product = models.ForeignKey(Products, on_delete=models.PROTECT)
     barcode = models.CharField(max_length=100)
     supplier_company = models.ForeignKey(Suppliers, on_delete=models.PROTECT, related_name='supplier_inflows')
-    receiver_company = models.ForeignKey(Suppliers, on_delete=models.PROTECT, related_name='receiver_inflows')
+    receiver_company = models.ForeignKey(Consumers, on_delete=models.PROTECT, related_name='receiver_inflows')
     status = models.CharField(max_length=255)
     place_of_use = models.CharField(max_length=255)
     amount = models.FloatField(null= True)
@@ -87,7 +88,7 @@ class ProductOutflow(models.Model, DirtyFieldsMixin):
     date = models.DateField()
     product = models.ForeignKey(Products, on_delete=models.PROTECT)
     barcode = models.CharField(max_length=100)
-    supplier_company = models.ForeignKey(Consumers, on_delete=models.PROTECT, related_name='supplier_outflows')
+    supplier_company = models.ForeignKey(Suppliers, on_delete=models.PROTECT, related_name='supplier_outflows')
     receiver_company = models.ForeignKey(Consumers, on_delete=models.PROTECT, related_name='receiver_outflows')
     status = models.CharField(max_length=255)
     place_of_use = models.CharField(max_length=255)
