@@ -14,7 +14,7 @@ from django.dispatch import receiver
 from .definitions import create_receipt_pdf
 from datetime import datetime
 import datetime
-from django.db.models import Sum, Avg, Max, F
+from django.db.models import Sum, Avg, Max, F, ProtectedError
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 import statistics
@@ -364,6 +364,10 @@ class DeleteUserView(APIView):
                 return JsonResponse({'message': _('User deleted successfully')})
             else:
                 return JsonResponse({'error': _('You do not have permission to delete this user')}, status=403)
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This User cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
         except CustomUser.DoesNotExist:
             return JsonResponse({'error': _('User not found')}, status=404)
 
@@ -479,7 +483,7 @@ class ProductsView(APIView):
             return JsonResponse({'error': _('Company not associated with user.')}, status=400)
 
         products = Products.objects.filter(company=company)
-        product_list = [[p.id, p.product_code, p.group.group_name, p.subgroup.subgroup_name, p.brand,
+        product_list = [[p.id, p.product_code, [p.group.group_code, p.group.group_name], [p.subgroup.subgroup_code, p.subgroup.subgroup_name], p.brand,
                          p.serial_number, p.model, p.description, p.unit] for p in products]
         
         return JsonResponse(product_list, safe=False, status=200)
@@ -523,7 +527,7 @@ class EditProductsView(APIView):
             new_subgroup_name = data.get('subgroup')
             if new_subgroup_name:
                 try:
-                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name, group__company=request.user.company)
+                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name, group=group,  group__company=request.user.company)
                     product.subgroup = subgroup
                 except ProductSubgroups.DoesNotExist:
                     return JsonResponse({'error': _("Subgroup with name '%s' does not exist.") % new_subgroup_name}, status=400)
@@ -541,7 +545,7 @@ class EditProductsView(APIView):
             product.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
-        except Products.DoesNotExist:
+        except Products.DoesNotExist: 
             return JsonResponse({'error': _("Product not found.")}, status=400)
 
         except ValueError as e:
@@ -566,6 +570,10 @@ class DeleteProductsView(APIView):
             data = json.loads(request.body)
             id = data.get('id')
             Products.objects.get(id=id).delete()
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This product cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
         return JsonResponse({'message': _("Product object has been successfully deleted")}, status=200)
@@ -700,6 +708,10 @@ class DeleteSupplierView(APIView):
             data = json.loads(request.body)
             id = data.get('id')
             Suppliers.objects.get(id=id).delete()
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This Supplier cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
         return JsonResponse({'message': _("Supplier object has been successfully deleted")}, status=200)
@@ -830,6 +842,10 @@ class DeleteConsumerView(APIView):
             data = json.loads(request.body)
             id = data.get('id')
             Consumers.objects.get(id=id).delete()
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This Consumer cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
         return JsonResponse({'message': _("Consumer object has been successfully deleted")}, status=200)
@@ -954,13 +970,19 @@ class DeleteProductGroupView(APIView):
             product_group = ProductGroups.objects.get(group_code=group_code, company=request.user.company)
         except ProductGroups.DoesNotExist:
             return JsonResponse({'error': _('Product group not found')}, status=404)
-
-        product_group.delete()
-
-        # Decrement group_code of subsequent product groups
-        ProductGroups.objects.filter(group_code__gt=group_code, company=request.user.company).update(group_code=F('group_code') - 1)
-
-        return JsonResponse({'message': _('Product group deleted successfully')})
+        try:
+            product_group.delete()
+        
+            #! Product grup kodlarını güncelleştirmek işlerde tutarsızlıklara yol açabilir.
+            # Decrement group_code of subsequent product groups
+            ProductGroups.objects.filter(group_code__gt=group_code, company=request.user.company).update(group_code=F('group_code') - 1)
+            return JsonResponse({'message': _('Product group deleted successfully')})
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This product group cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 # endregion
 
@@ -1083,12 +1105,19 @@ class DeleteProductSubgroupView(APIView):
         except ProductSubgroups.DoesNotExist:
             return JsonResponse({'error': _('Product subgroup not found')}, status=404)
 
-        product_subgroup.delete()
+        try:
+            product_subgroup.delete()
 
-        ProductSubgroups.objects.filter(subgroup_code__gt=subgroup_code, group=product_subgroup.group).update(subgroup_code=F('subgroup_code') - 1)
+            #! subgrup kodu güncellemek ilerde tutarsızlıklara yol açabilir.
+            ProductSubgroups.objects.filter(subgroup_code__gt=subgroup_code, group=product_subgroup.group).update(subgroup_code=F('subgroup_code') - 1)
 
-        return JsonResponse({'message': _('Product subgroup deleted successfully')})
-
+            return JsonResponse({'message': _('Product subgroup deleted successfully')})
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This product subgroup group cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 # endregion
 
@@ -1282,6 +1311,10 @@ class DeleteProductInflowView(APIView):
 
             product_inflow.delete()
 
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This product inflow cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
         except ProductInflow.DoesNotExist:
             return JsonResponse({'error': _('Product inflow object not found.')}, status=400)
 
@@ -1486,12 +1519,14 @@ class DeleteProductOutflowView(APIView):
 
             product_outflow.delete()
 
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This product outflow cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
         except ProductOutflow.DoesNotExist:
             return JsonResponse({'error': _("Product outflow object not found.")}, status=400)
-
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
-
         return JsonResponse({'message': _("Product outflow object has been successfully deleted.")}, status=200)
 
 class CreateProductOutflowReceiptView(APIView):
