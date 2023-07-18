@@ -528,7 +528,7 @@ class EditProductsView(APIView):
             new_subgroup_id = data.get('subgroup')
             if new_subgroup_id:
                 try:
-                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name, group=group,  group__company=request.user.company)
+                    subgroup = ProductSubgroups.objects.get(subgroup_code=new_subgroup_id, group=group,  group__company=request.user.company)
                     product.subgroup = subgroup
                 except ProductSubgroups.DoesNotExist:
                     traceback.print_exc()
@@ -646,8 +646,9 @@ class SuppliersView(APIView):
         return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
-        suppliers = Suppliers.objects.values().all()
-        supplier_list = [[s['id'],s['tax_code'], s['name'], s['contact_name'], s['contact_no']] for s in suppliers]
+        company = request.user.company
+        suppliers = Suppliers.objects.filter(company=company)
+        supplier_list = [[s.id, s.tax_code, s.name, s.contact_name, s.contact_no] for s in suppliers]
         return JsonResponse(supplier_list, safe=False, status=200)
 
 #! EditSuppliersView2ın doğru çalışıp çalışmadığını kontrol et.
@@ -780,8 +781,9 @@ class ConsumersView(APIView):
         return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
-        consumers = Consumers.objects.values().all()
-        consumer_list = [[c['id'], c['tax_code'], c['name'], c['contact_name'], c['contact_no']] for c in consumers]
+        company = request.user.company
+        consumers = Consumers.objects.filter(company=company)
+        consumer_list = [[c.id, c.tax_code, c.name, c.contact_name, c.contact_no] for c in consumers]
         return JsonResponse(consumer_list, safe=False, status=200)
 
 class EditConsumersView(APIView):
@@ -1966,6 +1968,38 @@ class ConsumerSearchView(APIView):
         consumers_data = [{'id': consumer.id, 'name': consumer.name, 'contact_name': consumer.contact_name, 'contact_no': consumer.contact_no } for consumer in consumers]
 
         return JsonResponse({'consumers': consumers_data})
+
+# endregion
+
+# region Filter and Search Models
+
+class SupplierConsumerProductSearchView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
+    def get(self, request, *args, **kwargs):
+        company = request.user.company
+
+        if not company:
+            return JsonResponse({'error': _('Company not associated with user.')}, status=400)
+
+        products = Products.objects.filter(company=company)
+        product_list = [[p.id, p.product_code, p.description] for p in products]
+
+        suppliers = Suppliers.objects.filter(company=company)
+        supplier_list = [[s.id, s.tax_code, s.name] for s in suppliers]
+
+        consumers = Consumers.objects.filter(company=company)
+        consumer_list = [[c.id, c.tax_code, c.name] for c in consumers]
+        
+        return JsonResponse(product_list, supplier_list, consumer_list, safe=False, status=200)
+
 
 # endregion
 

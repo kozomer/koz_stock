@@ -22,7 +22,7 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                     SetCurrentProjectView, GetProjectsView, CreateProjectView,
                                     CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, ProductGroupsView, EditProductGroupView, DeleteProductGroupView,
                                      CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
-                                     AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView )
+                                     AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView, SupplierConsumerProductSearchView )
 # from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
 #                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
 #                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
@@ -103,6 +103,8 @@ urlpatterns = [
     path('api/suppliers/', SuppliersView.as_view(), name='suppliers'),
     path('api/edit_supplier/', EditSuppliersView.as_view(), name='edit_supplier'),
     path('api/delete_supplier/', DeleteSupplierView.as_view(), name='delete_supplier'),
+    
+    path('api/search_supplier_consumer_product/', SupplierConsumerProductSearchView.as_view(), name='search_supplier_consumer_product'),
     # path('api/add_customers/', AddCustomersView.as_view(), name='add_customers'),
     # path('api/add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),
     # path('api/add_sales/', AddSalesView.as_view(), name='add_sales'),
