@@ -14,7 +14,7 @@ from django.dispatch import receiver
 from .definitions import create_receipt_pdf
 from datetime import datetime
 import datetime
-from django.db.models import Sum, Avg, Max, F
+from django.db.models import Sum, Avg, Max, F, ProtectedError
 from django.db.models.functions import Coalesce
 from django.views.decorators.csrf import csrf_exempt
 import statistics
@@ -498,46 +498,51 @@ class EditProductsView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-
+            print(data)
             id = data.get('id')
             product = Products.objects.get(id=id)
+            print(product)
 
             # Check if product belongs to the same company as the user
             if product.company != request.user.company:
                 return JsonResponse({'error': _("Product doesn't belong to your company!")}, status=400)
 
             # Update other product fields
-            for field in ['barcode', 'brand', 'serial_number', 'model', 'description', 'unit']:
+            for field in  ['brand', 'serial_number', 'model', 'description', 'unit']:
                 value = data.get(field)
                 if value is not None and value != '':
                     setattr(product, field, value)
 
-            new_group_name = data.get('group')
-            if new_group_name:
+            new_group_id = data.get('group')
+            if new_group_id:
                 try:
-                    group = ProductGroups.objects.get(group_name=new_group_name, company=request.user.company)
+                    group = ProductGroups.objects.get(group_code=new_group_id, company=request.user.company)
                     product.group = group
                 except ProductGroups.DoesNotExist:
-                    return JsonResponse({'error': _("Group with name '%s' does not exist.") % new_group_name}, status=400)
+                    return JsonResponse({'error': _("Group with name '%s' does not exist.") % new_group_id}, status=400)
 
-            new_subgroup_name = data.get('subgroup')
-            if new_subgroup_name:
+            new_subgroup_id = data.get('subgroup')
+            if new_subgroup_id:
                 try:
-                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name, group__company=request.user.company)
+                    subgroup = ProductSubgroups.objects.get(subgroup_code=new_subgroup_id, group=group,  group__company=request.user.company)
                     product.subgroup = subgroup
                 except ProductSubgroups.DoesNotExist:
-                    return JsonResponse({'error': _("Subgroup with name '%s' does not exist.") % new_subgroup_name}, status=400)
+                    traceback.print_exc()
+                    return JsonResponse({'error': _("Subgroup with name '%s' does not exist.") % new_subgroup_id}, status=400)
 
-            product.refresh_from_db()
-            dirty_fields = product.get_dirty_fields()
+            #product.refresh_from_db()
+            
+            dirty_fields = product.get_dirty_fields(check_relationship=True)
+            print(dirty_fields)
 
             if 'group' in dirty_fields or 'subgroup' in dirty_fields:
                 # Here, assign the new product code based on the new group and subgroup
+                print("omerrr")
                 new_product_code = f'{group.group_code}.{subgroup.subgroup_code}.{subgroup.sequence_number}'
                 product.product_code = new_product_code
                 subgroup.sequence_number += 1
                 subgroup.save()
-
+                
             product.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
@@ -564,9 +569,15 @@ class DeleteProductsView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
+            print(data)
             id = data.get('id')
             Products.objects.get(id=id).delete()
+        except ProtectedError:
+            return JsonResponse({
+                'error': _("This product cannot be deleted because it is being used elsewhere in the application.")
+            }, status=400)
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
         return JsonResponse({'message': _("Product object has been successfully deleted")}, status=200)
 

@@ -242,27 +242,41 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
     
   
     
-    useEffect(() => {
-      async function deleteFunc() {
+  useEffect(() => {
+    async function deleteFunc() {
       if (deleteConfirm) {
-       
-        const access_token =  await localforage.getItem('access_token');
-        fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_product_inflow/`, {
-          method: "POST",
-          body: new URLSearchParams(deleteData),
-          headers: {
-           
-            'Authorization': 'Bearer '+ String(access_token)
+        const access_token = await localforage.getItem('access_token');
+        
+        console.log(deleteData)
+        try {
+          const response = await fetch(`http://127.0.0.1:8000/api/delete_product_inflow/`, {
+            method: "POST",
+            body: JSON.stringify(deleteData),
+            headers: {
+              'Authorization': 'Bearer ' + String(access_token),
+              'Content-Type': 'application/json',
+            }
+          });
+  
+          const responseData = await response.json();  // Parse the response data
+  
+          if (!response.ok) {
+            errorUpload(responseData.error);
+          } else {
+            successUpload(responseData.message);
           }
-        })
-          setDataChanged(!dataChanged);
-       
+        } catch (e) {
+          // If the fetch itself fails, for example due to network errors
+          errorUpload(e.toString());
+        }
+        
+        setDataChanged(!dataChanged);
         setDeleteConfirm(false);
       }
     }
-    deleteFunc()
-    }, [deleteConfirm]);
   
+    deleteFunc();
+  }, [deleteConfirm]);
 
     const handleClick = (row) => {
      
@@ -792,8 +806,7 @@ const handleHideModal = () => {
                                const rowToDelete = {...row};
                                const data = {
                                 id: rowToDelete [0],
-                                product_code: rowToDelete [2],
-                                amount: rowToDelete [15]
+                               
                               };
                               
                               setDeleteData(data);

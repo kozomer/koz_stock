@@ -237,27 +237,41 @@ const DataTable = () => {
 
   //API CALL
     
-    useEffect(() => {
-      async function deleteFunc() {
+  useEffect(() => {
+    async function deleteFunc() {
       if (deleteConfirm) {
-       
-        const access_token =  await localforage.getItem('access_token'); 
-        fetch(`http://127.0.0.1:8000/api/delete_products/`, {
-          method: "POST",
-          body: new URLSearchParams(deleteData),
-          headers: {
-           
-            'Authorization': 'Bearer '+ String(access_token)
+        const access_token = await localforage.getItem('access_token');
+        
+        console.log(deleteData)
+        try {
+          const response = await fetch(`http://127.0.0.1:8000/api/delete_consumer/`, {
+            method: "POST",
+            body: JSON.stringify(deleteData),
+            headers: {
+              'Authorization': 'Bearer ' + String(access_token),
+              'Content-Type': 'application/json',
+            }
+          });
+  
+          const responseData = await response.json();  // Parse the response data
+  
+          if (!response.ok) {
+            errorUpload(responseData.error);
+          } else {
+            successUpload(responseData.message);
           }
-        })
-          setDataChanged(!dataChanged);
-       
+        } catch (e) {
+          // If the fetch itself fails, for example due to network errors
+          errorUpload(e.toString());
+        }
+        
+        setDataChanged(!dataChanged);
         setDeleteConfirm(false);
       }
     }
-    deleteFunc()
-    }, [deleteConfirm]);
-
+  
+    deleteFunc();
+  }, [deleteConfirm]);
 
     const handleClick = (row) => {
       setEditData(row);
@@ -558,11 +572,11 @@ const DataTable = () => {
             
                 <ReactTable
                   data={dataTable.map((row,index) => ({
-                    id: row.id,
-                    tax_code: row[0],
-                    name: row[1],
-                    contact_name: row[2],
-                    contact_no: row[3],
+                    id: row[0],
+                    tax_code: row[1],
+                    name: row[2],
+                    contact_name: row[3],
+                    contact_no: row[4],
                    
                     
 
@@ -596,7 +610,7 @@ const DataTable = () => {
                                warningWithConfirmAndCancelMessage() 
                                const rowToDelete = {...row};
                                const data = {
-                                tax_code: rowToDelete[0],
+                               id: rowToDelete[0],
 
                               };
                               setDeleteData(data);

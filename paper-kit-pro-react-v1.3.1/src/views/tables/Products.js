@@ -15,7 +15,11 @@ const DataTable = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
-  const [editData, setEditData] = useState(null);
+  const [showEditPopup, setShowEditPopup] = useState(false);
+  const [productData, setProductData] = useState(null);
+  const [updatedProductData, setUpdatedProductData] = useState(null);
+  
+  
   const [isUpdated, setIsUpdated] = useState(false);
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,16 +28,19 @@ const DataTable = () => {
   const [barcode, setBarcode] = useState(null);
   const [groups, setGroups] = useState([]);
     const [subgroups, setSubgroups] = useState([]);
-  const [brand, setBrand] = useState(null);
-  const [serialNumber, setSerialNumber] = useState(null);
-  const [model, setModel] = useState(null);
-  const [description, setDescription] = useState(null);
-  const [unit, setUnit] = useState(null);
-  const [supplier, setSupplier] = useState(null);
-  const [supplierContact, setSupplierContact] = useState(null);
- 
+    const [id, setID] = useState('');
+    const [brand, setBrand] = useState('');
+    const [serialNumber, setSerialNumber] = useState('');
+    const [model, setModel] = useState('');
+    const [description, setDescription] = useState('');
+    const [unit, setUnit] = useState('');
+    const [group, setGroup] = useState('');
+    const [subgroup, setSubgroup] = useState('');
+  
   const [selectedGroup, setSelectedGroup] = useState(null);
   const [selectedSubgroup, setSelectedSubgroup] = useState(null);
+  const [selectedEditGroup, setSelectedEditGroup] = useState(null);
+  const [selectedEditSubgroup, setSelectedEditSubgroup] = useState(null);
   const [product, setProduct] = useState({
     brand: "",
     serial_number: "",
@@ -55,7 +62,7 @@ const DataTable = () => {
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
-      
+      console.log("edit")
       const response = await fetch('http://127.0.0.1:8000/api/products/',{
         headers: {
           'Content-Type': 'application/json',
@@ -125,9 +132,41 @@ useEffect(() => {
   fetchSubgroups();
 }, [selectedGroup]);
 
+
+useEffect(() => {
+  async function fetchEditSubgroups() {
+      if (selectedEditGroup) {
+          const access_token = await localforage.getItem('access_token');
+          
+          const response = await fetch(`http://127.0.0.1:8000/api/product_subgroups/`, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + String(access_token)
+              },
+              body: JSON.stringify({group_code: selectedEditGroup})
+          });
+
+          const data = await response.json();
+          console.log(data);
+          setSubgroups(data);
+          if (data.length > 0) {
+            setSelectedEditSubgroup(data[0][0]);
+          }
+      }
+  }
+  fetchEditSubgroups();
+}, [selectedEditGroup]);
+
+useEffect(() => {
+  console.log(selectedSubgroup);
+}, [selectedEditSubgroup]);
+
+
 useEffect(() => {
   console.log(selectedSubgroup);
 }, [selectedSubgroup]);
+
 
 const handleInputChange = (event) => {
     setProduct({
@@ -143,12 +182,14 @@ const handleInputChange = (event) => {
     const access_token = await localforage.getItem('access_token');
     fetch('http://127.0.0.1:8000/api/add_products/', {
       method: 'POST',
-      body: formData,
+      
       
       headers: {
           
-        'Authorization': 'Bearer '+ String(access_token)
+        'Authorization': 'Bearer '+ String(access_token),
+        'Content-Type': 'application/json',
       },
+      body:  JSON.stringify(formData),
     })
     .then((response) => {
       if (!response.ok) {
@@ -295,7 +336,8 @@ const handleInputChange = (event) => {
         title="Uploaded!"
         onConfirm={() => { 
           hideAlert()
-        setShowPopup(!showPopup)}}
+        setShowPopup(false)
+      setShowEditPopup(false)}}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
@@ -307,46 +349,107 @@ const handleInputChange = (event) => {
 
   
     
-    useEffect(() => {
-      async function deleteFunc() {
+  useEffect(() => {
+    async function deleteFunc() {
       if (deleteConfirm) {
-       
-        const access_token =  await localforage.getItem('access_token'); 
-        fetch(`http://127.0.0.1:8000/api/delete_products/`, {
-          method: "POST",
-          body: new URLSearchParams(deleteData),
-          headers: {
-           
-            'Authorization': 'Bearer '+ String(access_token)
+        const access_token = await localforage.getItem('access_token');
+        
+        console.log(deleteData)
+        try {
+          const response = await fetch(`http://127.0.0.1:8000/api/delete_products/`, {
+            method: "POST",
+            body: JSON.stringify(deleteData),
+            headers: {
+              'Authorization': 'Bearer ' + String(access_token),
+              'Content-Type': 'application/json',
+            }
+          });
+  
+          const responseData = await response.json();  // Parse the response data
+  
+          if (!response.ok) {
+            errorUpload(responseData.error);
+          } else {
+            successUpload(responseData.message);
           }
-        })
-          setDataChanged(!dataChanged);
-       
+        } catch (e) {
+          // If the fetch itself fails, for example due to network errors
+          errorUpload(e.toString());
+        }
+        
+        setDataChanged(!dataChanged);
         setDeleteConfirm(false);
       }
     }
-    deleteFunc()
-    }, [deleteConfirm]);
+  
+    deleteFunc();
+  }, [deleteConfirm]);
+  
 
+  useEffect(() => {
+    if (productData) {
+      setSelectedEditGroup(productData[2])
+      setID(productData[0]);
+      setGroup(productData[2]);
+      setSubgroup(productData[3])
+      console.log(productData[3])
+      setBrand(productData[4]);
+      setSerialNumber(productData[5]);
+      setModel(productData[6]);
+      setDescription(productData[7]);
+      setUnit(productData[8]);
+    }
+  }, [productData]);
 
-    const handleClick = (row) => {
-      setEditData(row);
-      setOldData(row);
-      setProductCode(row.product_code);
-      setBarcode(row.barcode);
-      setGroup(row.group);
-      setSubgroup(row.subgroup);
-      setBrand(row.brand);
-      setSerialNumber(row.serial_number);
-      setModel(row.model);
-      setDescription(row.description);
-      setUnit(row.unit);
-      setSupplier(row.supplier);
-      setSupplierContact(row.supplier_contact);
-      setShowPopup(!showPopup);
-      console.log(row)
+  const handleClick = (row) => {
+    setProductData(row);
+    setShowEditPopup(true);
+  };
+
+  const handleEdit = async (event) => {
+    event.preventDefault();
+  
+    const access_token = await localforage.getItem('access_token'); 
+    const updatedData = {
+      id,
+      brand,
+      serial_number:serialNumber,
+      model,
+      description,
+      unit,
+      group:selectedEditGroup,
+      subgroup:selectedEditSubgroup,
     };
+  
+    fetch(`http://127.0.0.1:8000/api/edit_products/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+      body: JSON.stringify(updatedData)
+    })
+    .then(response => response.json().then(data => ({status: response.status, body: data})))
+    .then(({status, body}) => {
+      if (status === 200) { // Assuming 200 is the success status code
+        console.log("Product edited successfully");
+        successUpload(body.message);
+        setUpdatedProductData(updatedData);
 
+        setDataChanged(true);
+        setShowEditPopup(false);
+       
+         
+      } else {
+        console.log("Failed to edit product", body.error);
+        errorUpload(body.error);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      errorUpload(error.message);
+    });
+  };
 
     const handleSubmit = async (event) => {
       const access_token = await localforage.getItem('access_token'); 
@@ -387,27 +490,9 @@ const handleInputChange = (event) => {
 
     const handleCancel = () => {
       setShowPopup(false);
-      setEditData(null)
+      setShowEditPopup(false)
+      
     };
-
-    useEffect(() => {
-      console.log("useEffect called")
-      if (editData) {
-        setProductCode(editData[0]);
-        setBarcode(editData[1]);
-        setGroup(editData[2]);
-        setSubgroup(editData[3]);
-        setBrand(editData[4]);
-        setSerialNumber(editData[5]);
-        setModel(editData[6]);
-        setDescription(editData[7]);
-        setUnit(editData[8]);
-        setSupplier(editData[9]);
-        setSupplierContact(editData[10]);
-        setIsUpdated(true);
-    }
-    
-    }, [editData])
 
 
     async function handleExportClick() {
@@ -553,6 +638,113 @@ const handleInputChange = (event) => {
 
             </div>
 )}
+
+
+{showEditPopup && (
+       <div className="popup">
+              <Card>
+          <CardHeader>
+            <CardTitle tag="h4">Malzeme Düzenle</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <Form onSubmit={handleEdit}>
+              <div>
+                <div className="form-group-col">
+                
+
+                
+                <FormGroup>
+    <Label for="groupSelect">Grup</Label>
+    <Input type="select" name="groupSelect" id="groupSelect"  onChange={(event) => setSelectedEditGroup(event.target.value)}>
+        {groups?.map(group => <option key={group[0]} value={group[0]}>{group[1]}</option>)}
+    </Input>
+</FormGroup>
+
+<FormGroup>
+    <Label for="subgroupSelect">Alt Grup</Label>
+    <Input type="select" name="subgroupSelect" id="subgroupSelect"  onChange={(event) => setSelectedEditSubgroup(event.target.value)}>
+        {subgroups?.map((subgroup, index) => <option key={index} value={subgroup[0]}>{subgroup[1]}</option>)}
+    </Input>
+</FormGroup>
+
+
+                  <label>Marka</label>
+                  <FormGroup>
+                    <Input
+                      name="brand"
+                      type="text"
+                      defaultValue={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                     
+                    
+                      placeholder="Brand"
+                    />
+                  </FormGroup>
+
+                  <label>Seri Numarası</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      name="serial_number" 
+                      value={serialNumber}
+                      onChange={(e) => setSerialNumber(e.target.value)}
+                      
+                       placeholder="Serial Number"
+                    />
+                  </FormGroup>
+                </div>
+
+                <div className="form-group-col">
+                  <label>Model</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      name="model" 
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
+                       placeholder="Model" 
+                    />
+                  </FormGroup>
+
+                  <label>Açıklama</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      name="description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                         placeholder="Description"
+                    />
+                  </FormGroup>
+
+                  <label>Birim</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      name="unit"
+                      value={unit}
+                        onChange={(e) => setUnit(e.target.value)}
+                       
+                         placeholder="Unit"
+                    />
+                  </FormGroup>
+
+                </div>
+              </div>
+            </Form>
+          </CardBody>
+          <CardFooter>
+            <Button className="btn-round" color="success" type="submit" onClick={handleEdit}>
+              Onayla
+            </Button>
+            <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
+              İptal Et
+            </Button>
+          </CardFooter>
+        </Card>
+
+            </div>
+)}
 <Card>
   <CardHeader>
     <CardTitle tag='h4'>MALZEMELER</CardTitle>
@@ -646,8 +838,9 @@ const handleInputChange = (event) => {
               
                warningWithConfirmAndCancelMessage() 
                const rowToDelete = {...row};
+               console.log(rowToDelete[0])
                const data = {
-                product_code: rowToDelete[0],
+               id: rowToDelete[0],
 
               };
               setDeleteData(data);
