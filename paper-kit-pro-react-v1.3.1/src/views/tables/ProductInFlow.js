@@ -6,6 +6,7 @@ import ReactBSAlert from "react-bootstrap-sweetalert";
 import localforage from 'localforage';
 import { FaFileUpload } from 'react-icons/fa';
 import Modal from 'react-bootstrap/Modal';
+import Select from 'react-select';
 
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
@@ -25,16 +26,16 @@ const DataTable = () => {
   const [isLoading, setIsLoading] = useState(false);
 //Variable Set
 const [productData, setProductData] = useState(null);
-const [id, setId] = useState(null);
-const [date, setDate] = useState(null);
-const [productCode, setProductCode] = useState(null);
-const [barcode, setBarcode] = useState(null);
-const [providerCompanyTaxCode, setProviderCompanyTaxCode] = useState(null);
-const [providerCompanyName, setProviderCompanyName] = useState(null);
-const [recieverCompanyTaxCode, setRecieverCompanyTaxCode] = useState(null);
-const [recieverCompanyName, setRecieverCompanyName] = useState(null);
-const [status, setStatus] = useState(null);
-const [placeOfUse, setPlaceOfUse] = useState(null);
+const [id, setId] = useState('');
+const [date, setDate] = useState('');
+const [productCode, setProductCode] = useState('');
+const [barcode, setBarcode] = useState('');
+const [providerCompanyTaxCode, setProviderCompanyTaxCode] =useState('');
+const [providerCompanyName, setProviderCompanyName] = useState('');
+const [recieverCompanyTaxCode, setRecieverCompanyTaxCode] = useState('');
+const [recieverCompanyName, setRecieverCompanyName] = useState('');
+const [status, setStatus] = useState('');
+const [placeOfUse, setPlaceOfUse] = useState('');
 const [group, setGroup] = useState(null);
 const [subgroup, setSubgroup] = useState(null);
 const [brand, setBrand] = useState(null);
@@ -42,16 +43,17 @@ const [serialNumber, setSerialNumber] = useState(null);
 const [model, setModel] = useState(null);
 const [description, setDescription] = useState(null);
 const [unit, setUnit] = useState(null);
-const [amount, setAmount] = useState(null);
+const [amount, setAmount] = useState('');
 const [selectedFiles, setSelectedFiles] = useState(null);
-;
+const [productList, setProductList] = useState([]);
+const [supplierList, setSupplierList] = useState([]);
+const [consumerList, setConsumerList] = React.useState([]);
+const [updatedProductData, setUpdatedProductData] = useState(null);
 
 const [showModal, setShowModal] = useState(false);
 const [currentFiles, setCurrentFiles] = useState([]);
 const [uploadedFiles, setUploadedFiles] = useState([]);
 const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
-
-
 
   React.useEffect(() => {
     return function cleanup() {
@@ -72,6 +74,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         }
       });
       const data = await response.json();
+      console.log(data)
       setDataTable(data);
       
       setDataChanged(false);
@@ -282,16 +285,18 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
 
   useEffect(() => {
     if (productData) {
-      
+      console.log(productData[2])
       setId(productData[0]);
-      setGroup(productData[2]);
-      setSubgroup(productData[3])
-      console.log(productData[2][0])
-      setBrand(productData[4]);
-      setSerialNumber(productData[5]);
-      setModel(productData[6]);
-      setDescription(productData[7]);
-      setUnit(productData[8]);
+      setDate(productData[1]);
+      setProductCode(productData[2]);
+      setProviderCompanyTaxCode(productData[4]);
+      setRecieverCompanyTaxCode(productData[7])
+      setStatus(productData[8])
+      setBarcode(productData[3]);
+      setPlaceOfUse(productData[9]);
+      setAmount(productData[17]);
+      
+     
     }
   }, [productData]);
 
@@ -300,22 +305,71 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
     setShowEditPopup(true);
   };
 
+  useEffect(() => {
+    async function fetchOptions() {
+      try {
+        const access_token = await localforage.getItem('access_token');
+        
+        const response = await fetch('http://127.0.0.1:8000/api/search_supplier_consumer_product/', {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer '+ String(access_token)
+          },
+        });
+  
+        if (!response.ok) {
+          throw new Error("Response is not OK");
+        }
+  
+        const data = await response.json();
+        console.log(data)
+        setProductList(data[0]);
+        setSupplierList(data[1]);
+        setConsumerList(data[2]);
+  
+      } catch(e) {
+        errorUpload(e.message);
+      }
+    }
+  
+    fetchOptions();
+  }, []);
+  
+  const productOptions = productList.map((product) => ({
+    value: product[1] !== undefined ? String(product[1]) : '',
+    label: product[1] !== undefined && product[2] !== undefined ? `${product[1]} - ${product[2]}` : '',
+  }));
+  
+  const supplierOptions = supplierList.map((supplier) => ({
+    value: supplier[1] !== undefined ? String(supplier[1]) : '',
+    label: supplier[1] !== undefined && supplier[2] !== undefined ? `${supplier[1]} - ${supplier[2]}` : '',
+  }));
+  
+  const consumerOptions = consumerList.map((consumer) => ({
+    value: consumer[1] !== undefined ? String(consumer[1]) : '',
+    label: consumer[1] !== undefined && consumer[2] !== undefined ? `${consumer[1]} - ${consumer[2]}` : '',
+  }));
+  
+
   const handleEdit = async (event) => {
     event.preventDefault();
+
+    
   
     const access_token = await localforage.getItem('access_token'); 
     const updatedData = {
-      id,
-      brand,
-      serial_number:serialNumber,
-      model,
-      description,
-      unit,
-      group:selectedEditGroup,
-      subgroup:selectedEditSubgroup,
+      old_id: id,
+      new_product_code:productCode,
+      new_supplier_tax_code:providerCompanyTaxCode,
+      new_receiver_tax_code:recieverCompanyTaxCode,
+      date,
+      status,
+      place_of_use:placeOfUse,
+      amount,
+      barcode
     };
   
-    fetch(`http://127.0.0.1:8000/api/edit_products/`, {
+    fetch(`http://127.0.0.1:8000/api/edit_product_inflow/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -326,7 +380,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
     .then(response => response.json().then(data => ({status: response.status, body: data})))
     .then(({status, body}) => {
       if (status === 200) { // Assuming 200 is the success status code
-        console.log("Product edited successfully");
+        console.log("Inflow edited successfully");
         successUpload(body.message);
         setUpdatedProductData(updatedData);
 
@@ -335,7 +389,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
        
          
       } else {
-        console.log("Failed to edit product", body.error);
+        console.log("Failed to edit inflow", body.error);
         errorUpload(body.error);
       }
     })
@@ -388,7 +442,8 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
 
     const handleCancel = () => {
       setShowPopup(false);
-      setEditData(null)
+      setShowEditPopup(false)
+      
     };
 
     
@@ -533,7 +588,7 @@ const handleHideModal = () => {
               <CardTitle tag="h4">Ambar Giriş Ekle</CardTitle>
             </CardHeader>
             <CardBody>
-              <Form onSubmit={handleSubmit}>
+              <Form onSubmit={handleAdd}>
               <div>
         <div className="form-group-col">
 
@@ -666,21 +721,23 @@ const handleHideModal = () => {
               <div>
         <div className="form-group-col">
         <label>Malzeme Kodu</label>
-        <FormGroup>
-          <Input
-            name="product_code"
-            type="text"
-            defaultValue={productCode}
-            onChange={(e) => setProductCode(e.target.value)}
-          />
-        </FormGroup>
+      <FormGroup>
+        <Select
+          name="product_code"
+          
+          options={productOptions}
+          onChange={(selectedOption) => setProductCode(selectedOption.value)}
+        />
+      </FormGroup>
+
+
                
         <label>Tarih</label>
         <FormGroup>
           <Input
             name="date"
             type="text"
-            defaultValue={date}
+            value={date}
             onChange={(e) => setDate(e.target.value)}
           />
         </FormGroup>
@@ -689,7 +746,7 @@ const handleHideModal = () => {
         <FormGroup>
           <Input
             type="text"
-            defaultValue={status}
+            value={status}
             onChange={(e) => setStatus(e.target.value)}
           />
         </FormGroup>
@@ -698,30 +755,33 @@ const handleHideModal = () => {
         <FormGroup>
           <Input
             type="text"
-            defaultValue={barcode}
+            value={barcode}
             onChange={(e) => setBarcode(e.target.value)}
           />
         </FormGroup>
+
         <label>Tedarikçi Vergi No</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={providerCompanyTaxCode}
-            onChange={(e) => setProviderCompanyTaxCode(e.target.value)}
-          />
-        </FormGroup>
+      <FormGroup>
+      <Select
+  name="provider_tax_code"
+  
+  options={supplierOptions}
+  onChange={(selectedOption) => setProviderCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+/>
+
+      </FormGroup>
 
           </div>
           <div className="form-group-col">
-        <label>Alıcı Vergi No</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={recieverCompanyTaxCode}
-            onChange={(e) => setRecieverCompanyTaxCode(e.target.value)}
-          />
-        </FormGroup>
-
+          <label>Alıcı Vergi No</label>
+      <FormGroup>
+      <Select
+  name="receiver_tax_code"
+  
+  options={consumerOptions}
+  onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+/>
+      </FormGroup>
 
       
         <label>Kullanım Yeri</label>
@@ -737,7 +797,7 @@ const handleHideModal = () => {
         <FormGroup>
           <Input
             type="text"
-            defaultValue={amount}
+            value={amount}
             onChange={(e) => setAmount(e.target.value)}
           />
         </FormGroup>
@@ -919,6 +979,10 @@ const handleHideModal = () => {
                       Header: 'Tarih',
                       accessor: 'date'
                   },
+                  {
+                    Header: 'Malzeme Kodu',
+                    accessor: 'product_code'
+                },
                   {
                     Header: 'Barkod',
                     accessor: 'barcode'

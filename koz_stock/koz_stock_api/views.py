@@ -1255,7 +1255,7 @@ class EditProductInflowView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = request.data
-
+            print(data)
             old_id = data.get('old_id')
             product_inflow = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).get(id=old_id)
             inflow_fields = product_inflow.get_dirty_fields()
@@ -1286,13 +1286,13 @@ class EditProductInflowView(APIView):
 
             # Update other product inflow fields
             for field in ['date', 'status', 'place_of_use', 'amount', 'barcode']:
-                value = data.get('new_' + field)
+                value = data.get(field)
                 if value is not None and value != '':
                     old_value = inflow_fields.get(field)
                     if old_value != value:  # If the field has changed
                         setattr(product_inflow, field, value)
                 else:
-                    return JsonResponse({'error': _("The field 'new_{field}' cannot be empty.")}, status=400)
+                    return JsonResponse({'error': _("The field '{field}' cannot be empty.")}, status=400)
 
             product_inflow.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
@@ -1304,6 +1304,7 @@ class EditProductInflowView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -1367,7 +1368,7 @@ class AddProductOutflowView(APIView):
             status = request.data.get('status')
             place_of_use = request.data.get('place_of_use')
             amount = request.data.get('amount')
-
+            print(request.data)
             # Check if the date is in correct format
             try:
                 from datetime import datetime
@@ -1379,7 +1380,11 @@ class AddProductOutflowView(APIView):
             product = Products.objects.get(product_code=product_code, company=request.user.company)
             supplier_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
             receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company)
-
+            print(product)
+            print(supplier_company)
+            print(receiver_company)
+            print(request.user.company)
+            print(request.user.current_project)
             # Create the ProductOutflow object
             product_outflow = ProductOutflow.objects.create(
                 product=product,
@@ -1620,7 +1625,7 @@ class CreateProductOutflowReceiptView(APIView):
 #         )
 
 
-@receiver(pre_save, sender=ProductInflow)
+@receiver(post_save, sender=ProductInflow)
 def update_stock_inflow(sender, instance, created, **kwargs):
     dirty_fields = instance.get_dirty_fields()
 
@@ -1647,7 +1652,7 @@ def update_stock_inflow(sender, instance, created, **kwargs):
     else:
         old_amount = dirty_fields.get('amount')
         if old_amount is not None:
-            stock.inflow = (stock.inflow or 0) - old_amount + instance.amount
+            stock.inflow = (float(stock.inflow) or 0) - float(old_amount) + float(instance.amount)
 
     stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
     stock.save()
@@ -1667,7 +1672,7 @@ def update_stock_inflow_on_delete(sender, instance, **kwargs):
         return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
-@receiver(pre_save, sender=ProductOutflow)
+@receiver(post_save, sender=ProductOutflow)
 def update_stock_outflow(sender, instance, created, **kwargs):
     dirty_fields = instance.get_dirty_fields()
 
@@ -1812,7 +1817,7 @@ class StockView(APIView):
 
 # region Accounting
 
-@receiver(pre_save, sender=ProductInflow)
+@receiver(post_save, sender=ProductInflow)
 def create_accounting(sender, instance, created, **kwargs):
     if created:
         Accounting.objects.create(
@@ -1998,7 +2003,7 @@ class SupplierConsumerProductSearchView(APIView):
         consumers = Consumers.objects.filter(company=company)
         consumer_list = [[c.id, c.tax_code, c.name] for c in consumers]
         
-        return JsonResponse(product_list, supplier_list, consumer_list, safe=False, status=200)
+        return JsonResponse([product_list, supplier_list, consumer_list], safe=False, status=200)
 
 
 # endregion

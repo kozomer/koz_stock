@@ -4,6 +4,7 @@ import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import localforage from 'localforage';
+import Select from 'react-select';
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
@@ -14,6 +15,7 @@ const DataTable = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [showEditPopup, setShowEditPopup] = useState(false);
   const [editData, setEditData] = useState(null);
   const [isUpdated, setIsUpdated] = useState(false);
   const [renderEdit, setRenderEdit] = useState(false);
@@ -39,7 +41,10 @@ const [description, setDescription] = useState(null);
 const [unit, setUnit] = useState(null);
 const [amount, setAmount] = useState(null);
 
-
+const [productData, setProductData] = useState(null);
+const [productList, setProductList] = useState([]);
+const [supplierList, setSupplierList] = useState([]);
+const [consumerList, setConsumerList] = React.useState([]);
 
   React.useEffect(() => {
     return function cleanup() {
@@ -269,7 +274,7 @@ const [amount, setAmount] = useState(null);
   }, [deleteConfirm]);
   
 
-    const handleClick = async (row) => {
+    const handlePDF = async (row) => {
       console.log(row[0]);
       const access_token = await localforage.getItem('access_token');
   
@@ -406,35 +411,76 @@ const [amount, setAmount] = useState(null);
   };
     const handleCancel = () => {
       setShowPopup(false);
-      setEditData(null)
+      setShowEditPopup(false);
     };
 
+
     useEffect(() => {
-      
-      if(editData){
-        setId(editData[0]);
-        setDate(editData[1]);
-        setProductCode(editData[2]);
-        setBarcode(editData[3]);
-        setProviderCompanyTaxCode(editData[4]);
-        setProviderCompanyName(editData[5]);
-        setRecieverCompanyTaxCode(editData[6]);
-        setRecieverCompanyName(editData[7]);
-       
-        setStatus(editData[8]);
-        setPlaceOfUse(editData[9]);
-        setGroup(editData[10]);
-        setSubgroup(editData[11]);
-        setBrand(editData[12]);
-        setSerialNumber(editData[13]);
-        setModel(editData[14]);
-        setDescription(editData[15]);
-        setUnit(editData[16]);
-        setAmount(editData[17]);
-        setIsUpdated(true)
-      }
-    }, [editData])
+      async function fetchOptions() {
+        try {
+          const access_token = await localforage.getItem('access_token');
+          
+          const response = await fetch('http://127.0.0.1:8000/api/search_supplier_consumer_product/', {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer '+ String(access_token)
+            },
+          });
     
+          if (!response.ok) {
+            throw new Error("Response is not OK");
+          }
+    
+          const data = await response.json();
+          console.log(data)
+          setProductList(data[0]);
+          setSupplierList(data[1]);
+          setConsumerList(data[2]);
+    
+        } catch(e) {
+          errorUpload(e.message);
+        }
+      }
+    
+      fetchOptions();
+    }, []);
+    
+    const productOptions = productList.map((product) => ({
+      value: product[1] !== undefined ? String(product[1]) : '',
+      label: product[1] !== undefined && product[2] !== undefined ? `${product[1]} - ${product[2]}` : '',
+    }));
+    
+    const supplierOptions = supplierList.map((supplier) => ({
+      value: supplier[1] !== undefined ? String(supplier[1]) : '',
+      label: supplier[1] !== undefined && supplier[2] !== undefined ? `${supplier[1]} - ${supplier[2]}` : '',
+    }));
+    
+    const consumerOptions = consumerList.map((consumer) => ({
+      value: consumer[1] !== undefined ? String(consumer[1]) : '',
+      label: consumer[1] !== undefined && consumer[2] !== undefined ? `${consumer[1]} - ${consumer[2]}` : '',
+    }));
+
+    useEffect(() => {
+      if (productData) {
+        console.log(productData[2])
+        setId(productData[0]);
+        setDate(productData[1]);
+        setProductCode(productData[2]);
+        setProviderCompanyTaxCode(productData[4]);
+        setRecieverCompanyTaxCode(productData[7])
+        setStatus(productData[8])
+        setBarcode(productData[3]);
+        setPlaceOfUse(productData[9]);
+        setAmount(productData[17]);
+        
+       
+      }
+    }, [productData]);
+  
+    const handleClick = (row) => {
+      setProductData(row);
+      setShowEditPopup(true);
+    };
 
     const successEdit = () => {
       setAlert(
@@ -503,7 +549,129 @@ const [amount, setAmount] = useState(null);
        <div className="popup">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Ambar Çıkış Düzenle</CardTitle>
+              <CardTitle tag="h4">Ambar Çıkış Ekle</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Form onSubmit={handleAdd}>
+              <div>
+        <div className="form-group-col">
+
+        
+        <label>Tarih</label>
+        <FormGroup>
+          <Input
+            name="date"
+            type="text"
+           
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </FormGroup>
+
+
+        <label>Barkod</label>
+        <FormGroup>
+          <Input
+            type="text"
+           
+            onChange={(e) => setBarcode(e.target.value)}
+          />
+        </FormGroup>
+        <label>Tedarikçi Vergi No</label>
+      <FormGroup>
+      <Select
+  name="provider_tax_code"
+  
+  options={supplierOptions}
+  onChange={(selectedOption) => setProviderCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+/>
+
+      </FormGroup>
+
+        <label>Miktar</label>
+        <FormGroup>
+          <Input
+            type="text"
+           
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </FormGroup>
+      
+        </div>
+
+        <div className="form-group-col">
+
+        <label>Alıcı Vergi No</label>
+      <FormGroup>
+      <Select
+  name="receiver_tax_code"
+  
+  options={consumerOptions}
+  onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+/>
+      </FormGroup>
+
+       
+
+        <label>Durum</label>
+        <FormGroup>
+          <Input
+            type="text"
+           
+            onChange={(e) => setStatus(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Kullanım Yeri</label>
+        <FormGroup>
+          <Input
+            type="text"
+          
+            onChange={(e) => setPlaceOfUse(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Malzeme Kodu</label>
+      <FormGroup>
+        <Select
+          name="product_code"
+          
+          options={productOptions}
+          onChange={(selectedOption) => setProductCode(selectedOption.value)}
+        />
+      </FormGroup>
+        </div>
+
+        
+       
+
+      
+
+  
+       
+
+         
+        </div>
+        
+              </Form>
+            </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="success" type="submit" onClick={handleAdd}>
+                  Onayla
+                </Button>
+                <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
+                  İptal Et
+                </Button>
+              </CardFooter>
+            </Card>
+            </div>
+)}
+
+
+{showEditPopup  &&(
+       <div className="popup">
+      <Card>
+            <CardHeader>
+              <CardTitle tag="h4">Ambar Çıkış Ekle</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleAdd}>
