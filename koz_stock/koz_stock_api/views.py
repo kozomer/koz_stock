@@ -528,7 +528,7 @@ class EditProductsView(APIView):
             new_subgroup_id = data.get('subgroup')
             if new_subgroup_id:
                 try:
-                    subgroup = ProductSubgroups.objects.get(subgroup_name=new_subgroup_name, group=group,  group__company=request.user.company)
+                    subgroup = ProductSubgroups.objects.get(subgroup_code=new_subgroup_id, group=group,  group__company=request.user.company)
                     product.subgroup = subgroup
                 except ProductSubgroups.DoesNotExist:
                     traceback.print_exc()

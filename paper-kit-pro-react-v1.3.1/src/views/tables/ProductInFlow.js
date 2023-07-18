@@ -17,12 +17,14 @@ const DataTable = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleteData, setDeleteData] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
+  const [showEditPopup, setShowEditPopup] = useState(false);
   const [editData, setEditData] = useState(null);
   const [isUpdated, setIsUpdated] = useState(false);
   const [renderEdit, setRenderEdit] = useState(false);
   const [oldData, setOldData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 //Variable Set
+const [productData, setProductData] = useState(null);
 const [id, setId] = useState(null);
 const [date, setDate] = useState(null);
 const [productCode, setProductCode] = useState(null);
@@ -278,101 +280,72 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
     deleteFunc();
   }, [deleteConfirm]);
 
-    const handleClick = (row) => {
-     
-      setEditData(row);
-      setOldData(row);
-
-      setId(row.id);
-      setDate(row.date);
-      setProductCode(row.product_code);
-      setBarcode(row.barcode);
-      setProviderCompanyTaxCode(row.supplier_company_tax_code);
-      setProviderCompanyName(row.supplier_company_name);
-      setRecieverCompanyTaxCode(row.receiver_company_tax_code);
-      setRecieverCompanyName(row.receiver_company_name);
+  useEffect(() => {
+    if (productData) {
       
-      setStatus(row.status);
-      setPlaceOfUse(row.place_of_use);
-      setGroup(row.group);
-      setSubgroup(row.subgroup);
-      setBrand(row.brand);
-      setSerialNumber(row.serial_number);
-      setModel(row.model);
-      setDescription(row.description);
-      setUnit(row.unit);
-      setAmount(row.amount);
-      setShowPopup(!showPopup);
-      setIsUpdated(true);
+      setId(productData[0]);
+      setGroup(productData[2]);
+      setSubgroup(productData[3])
+      console.log(productData[2][0])
+      setBrand(productData[4]);
+      setSerialNumber(productData[5]);
+      setModel(productData[6]);
+      setDescription(productData[7]);
+      setUnit(productData[8]);
+    }
+  }, [productData]);
 
+  const handleClick = (row) => {
+    setProductData(row);
+    setShowEditPopup(true);
+  };
+
+  const handleEdit = async (event) => {
+    event.preventDefault();
+  
+    const access_token = await localforage.getItem('access_token'); 
+    const updatedData = {
+      id,
+      brand,
+      serial_number:serialNumber,
+      model,
+      description,
+      unit,
+      group:selectedEditGroup,
+      subgroup:selectedEditSubgroup,
     };
-
-    const handleSubmit = async (e) => {
-      const access_token =  await localforage.getItem('access_token');
-      const updatedData = {
-        new_id: id,
-        new_date: date,
-        new_product_code: productCode,
-        
-        new_inflow_outflow: inflowOutflow,
-        new_status: status,
-        new_place_of_use: placeOfUse,
-        new_group: group,
-        new_subgroup: subgroup,
-        new_brand: brand,
-        new_serial_number: serialNumber,
-        new_model: model,
-        new_description: description,
-        new_unit: unit,
-        new_amount: amount,
-
-        old_id: oldData[0],
-        old_date: oldData[1],
-        old_product_code: oldData[2],
-        old_provider_company: oldData[3],
-        old_reciever_company: oldData[4],
-        old_inflow_outflow: oldData[5],
-        old_status: oldData[6],
-        old_place_of_use: oldData[7],
-        old_group: oldData[8],
-        old_subgroup: oldData[9],
-        old_brand: oldData[10],
-        old_serial_number: oldData[11],
-        old_model: oldData[12],
-        old_description: oldData[13],
-        old_unit: oldData[14],
-        old_amount: oldData[15],
-      };
-      
-      fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_flow/`, {
-      method: 'POST',
-      body: JSON.stringify(updatedData),
+  
+    fetch(`http://127.0.0.1:8000/api/edit_products/`, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+ String(access_token)
+        "Content-Type": "application/json",
+        'Authorization': 'Bearer ' + String(access_token)
       },
-      
+      body: JSON.stringify(updatedData)
     })
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then(data => {
+    .then(response => response.json().then(data => ({status: response.status, body: data})))
+    .then(({status, body}) => {
+      if (status === 200) { // Assuming 200 is the success status code
+        console.log("Product edited successfully");
+        successUpload(body.message);
+        setUpdatedProductData(updatedData);
 
-          setIsLoading(false);
-          errorUpload(data.error);
-        });
+        setDataChanged(true);
+        setShowEditPopup(false);
+       
+         
+      } else {
+        console.log("Failed to edit product", body.error);
+        errorUpload(body.error);
       }
-      else{
-        return response.json().then(data => {
-
-         setEditData(updatedData);
-          successEdit()
-        });
-      }
-
-      // Call your Django API to send the updated values here
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      errorUpload(error.message);
     });
   };
 
+  
 
   const handleAdd = async (event) => {
     const access_token = await localforage.getItem('access_token');
@@ -418,31 +391,6 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       setEditData(null)
     };
 
-    useEffect(() => {
-      
-      if(editData){
-        setId(editData[0]);
-        setDate(editData[1]);
-        setProductCode(editData[2]);
-        setBarcode(editData[3]);
-        setProviderCompanyTaxCode(editData[4]);
-        setProviderCompanyName(editData[5]);
-        setRecieverCompanyTaxCode(editData[6]);
-        setRecieverCompanyName(editData[7]);
-       
-        setStatus(editData[8]);
-        setPlaceOfUse(editData[9]);
-        setGroup(editData[10]);
-        setSubgroup(editData[11]);
-        setBrand(editData[12]);
-        setSerialNumber(editData[13]);
-        setModel(editData[14]);
-        setDescription(editData[15]);
-        setUnit(editData[16]);
-        setAmount(editData[17]);
-        setIsUpdated(true)
-      }
-    }, [editData])
     
 
     const successEdit = () => {
@@ -697,6 +645,114 @@ const handleHideModal = () => {
             </CardBody>
               <CardFooter>
                 <Button className="btn-round" color="success" type="submit" onClick={handleAdd}>
+                  Onayla
+                </Button>
+                <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
+                  İptal Et
+                </Button>
+              </CardFooter>
+            </Card>
+            </div>
+)}
+
+{showEditPopup && (
+       <div className="popup">
+      <Card>
+            <CardHeader>
+              <CardTitle tag="h4">Ambar Giriş Düzenle</CardTitle>
+            </CardHeader>
+            <CardBody>
+              <Form onSubmit={handleEdit}>
+              <div>
+        <div className="form-group-col">
+        <label>Malzeme Kodu</label>
+        <FormGroup>
+          <Input
+            name="product_code"
+            type="text"
+            defaultValue={productCode}
+            onChange={(e) => setProductCode(e.target.value)}
+          />
+        </FormGroup>
+               
+        <label>Tarih</label>
+        <FormGroup>
+          <Input
+            name="date"
+            type="text"
+            defaultValue={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Durum</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={status}
+            onChange={(e) => setStatus(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Barkod</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+          />
+        </FormGroup>
+        <label>Tedarikçi Vergi No</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={providerCompanyTaxCode}
+            onChange={(e) => setProviderCompanyTaxCode(e.target.value)}
+          />
+        </FormGroup>
+
+          </div>
+          <div className="form-group-col">
+        <label>Alıcı Vergi No</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={recieverCompanyTaxCode}
+            onChange={(e) => setRecieverCompanyTaxCode(e.target.value)}
+          />
+        </FormGroup>
+
+
+      
+        <label>Kullanım Yeri</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={placeOfUse}
+            onChange={(e) => setPlaceOfUse(e.target.value)}
+          />
+        </FormGroup>
+
+        <label>Miktar</label>
+        <FormGroup>
+          <Input
+            type="text"
+            defaultValue={amount}
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </FormGroup>
+        </div>
+
+        
+          
+      
+
+        </div>
+        
+              </Form>
+            </CardBody>
+              <CardFooter>
+                <Button className="btn-round" color="success" type="submit" onClick={handleEdit}>
                   Onayla
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>

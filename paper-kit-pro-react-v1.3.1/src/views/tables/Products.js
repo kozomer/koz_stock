@@ -150,9 +150,7 @@ useEffect(() => {
           const data = await response.json();
           console.log(data);
           setSubgroups(data);
-          if (data.length > 0) {
-            setSelectedEditSubgroup(data[0][0]);
-          }
+          
       }
   }
   fetchEditSubgroups();
@@ -388,11 +386,12 @@ const handleInputChange = (event) => {
 
   useEffect(() => {
     if (productData) {
-      setSelectedEditGroup(productData[2])
+      setSelectedEditGroup(productData[2][0])
+      setSelectedEditSubgroup(productData[3][0])
       setID(productData[0]);
       setGroup(productData[2]);
       setSubgroup(productData[3])
-      console.log(productData[3])
+      console.log(productData[2][0])
       setBrand(productData[4]);
       setSerialNumber(productData[5]);
       setModel(productData[6]);
@@ -655,14 +654,14 @@ const handleInputChange = (event) => {
                 
                 <FormGroup>
     <Label for="groupSelect">Grup</Label>
-    <Input type="select" name="groupSelect" id="groupSelect"  onChange={(event) => setSelectedEditGroup(event.target.value)}>
+    <Input type="select" name="groupSelect" id="groupSelect" value={selectedEditGroup} onChange={(event) => setSelectedEditGroup(event.target.value)}>
         {groups?.map(group => <option key={group[0]} value={group[0]}>{group[1]}</option>)}
     </Input>
 </FormGroup>
 
 <FormGroup>
     <Label for="subgroupSelect">Alt Grup</Label>
-    <Input type="select" name="subgroupSelect" id="subgroupSelect"  onChange={(event) => setSelectedEditSubgroup(event.target.value)}>
+    <Input type="select" name="subgroupSelect" id="subgroupSelect" value={selectedEditSubgroup}  onChange={(event) => setSelectedEditSubgroup(event.target.value)}>
         {subgroups?.map((subgroup, index) => <option key={index} value={subgroup[0]}>{subgroup[1]}</option>)}
     </Input>
 </FormGroup>
@@ -801,8 +800,8 @@ const handleInputChange = (event) => {
   data={(dataTable || []).map((row,index) => ({
     id: row.id,
     product_code: row[1],
-    group: row[2],
-    subgroup: row[3],
+    group: row[2][1],
+    subgroup: row[3][1],
     brand: row[4],
     serial_number: row[5],
     model: row[6],
