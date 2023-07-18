@@ -352,6 +352,43 @@ const [amount, setAmount] = useState(null);
   }
   
 
+  const handleAdd = async (event) => {
+    const access_token = await localforage.getItem('access_token');
+    event.preventDefault();
+  
+    fetch(`http://127.0.0.1:8000/api/add_product_outflow/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+      body: JSON.stringify({
+        date: date,
+        product_code: productCode,
+        barcode: barcode,
+        provider_company_tax_code: providerCompanyTaxCode,
+        receiver_company_tax_code: recieverCompanyTaxCode,
+        status: status,
+        place_of_use: placeOfUse,
+        amount: amount
+      })
+    })
+    .then(response => response.json().then(data => ({status: response.status, body: data})))
+    .then(({status, body}) => {
+      if (status === 201) { // Assuming 201 is the success status code
+        console.log("Product inflow added successfully");
+        successUpload(body.message);
+        setDataChanged(true);
+      } else {
+        console.log("Failed to add product inflow", body.error);
+        errorUpload(body.error);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      errorUpload(error.message);
+    });
+  };
     const handleCancel = () => {
       setShowPopup(false);
       setEditData(null)
@@ -448,25 +485,16 @@ const [amount, setAmount] = useState(null);
           >
             {/* Pop Up */}
       {showPopup  &&(
-       <div className="popup-sales">
+       <div className="popup">
       <Card>
             <CardHeader>
               <CardTitle tag="h4">Ambar Çıkış Düzenle</CardTitle>
             </CardHeader>
             <CardBody>
-              <Form onSubmit={handleSubmit}>
+              <Form onSubmit={handleAdd}>
               <div>
-        <div className="form-group-col-sales">
+        <div className="form-group-col">
 
-        <label>No</label>
-        <FormGroup>
-          <Input
-            name="id"
-            type="number"
-            defaultValue={id}
-            onChange={(e) => setId(e.target.value)}
-          />
-        </FormGroup>
         
         <label>Tarih</label>
         <FormGroup>
@@ -478,14 +506,6 @@ const [amount, setAmount] = useState(null);
           />
         </FormGroup>
 
-        <label>Malzeme Kodu</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={productCode}
-            onChange={(e) => setProductCode(e.target.value)}
-          />
-        </FormGroup>
 
         <label>Barkod</label>
         <FormGroup>
@@ -504,17 +524,18 @@ const [amount, setAmount] = useState(null);
           />
         </FormGroup>
 
-        <label>Tedarikçi Adı</label>
+        <label>Miktar</label>
         <FormGroup>
           <Input
             type="text"
-            defaultValue={providerCompanyName}
-            onChange={(e) => setProviderCompanyName(e.target.value)}
+            defaultValue={amount}
+            onChange={(e) => setAmount(e.target.value)}
           />
         </FormGroup>
+      
         </div>
 
-        <div className="form-group-col-sales">
+        <div className="form-group-col">
 
         <label>Alıcı Vergi No</label>
         <FormGroup>
@@ -525,14 +546,7 @@ const [amount, setAmount] = useState(null);
           />
         </FormGroup>
 
-        <label>Alıcı Adı</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={recieverCompanyName}
-            onChange={(e) => setRecieverCompanyName(e.target.value)}
-          />
-        </FormGroup>
+       
 
         <label>Durum</label>
         <FormGroup>
@@ -552,87 +566,31 @@ const [amount, setAmount] = useState(null);
           />
         </FormGroup>
 
-        <label>Grup</label>
+        <label>Malzeme Kodu</label>
         <FormGroup>
           <Input
             type="text"
-            defaultValue={group}
-            onChange={(e) => setGroup(e.target.value)}
-          />
-        </FormGroup>
-
-        <label>Alt Grup</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={subgroup}
-            onChange={(e) => setSubgroup(e.target.value)}
+            defaultValue={productCode}
+            onChange={(e) => setProductCode(e.target.value)}
           />
         </FormGroup>
         </div>
 
-        <div className="form-group-col-sales">
-        <label>Marka</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={brand}
-            onChange={(e) => setBrand(e.target.value)}
-          />
-        </FormGroup>
+        
+       
 
-        <label>Seri Numarası</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={serialNumber}
-            onChange={(e) => setSerialNumber(e.target.value)}
-          />
-        </FormGroup>
+      
 
-        <label>Model</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={model}
-            onChange={(e) => setModel(e.target.value)}
-          />
-        </FormGroup>
+  
+       
 
-        <label>Açıklama</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </FormGroup>
-
-        <label>Birim</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={unit}
-            onChange={(e) => setUnit(e.target.value)}
-          />
-        </FormGroup>
-
-        <label>Miktar</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </FormGroup>
-
-          </div>
+         
         </div>
         
               </Form>
             </CardBody>
               <CardFooter>
-                <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
+                <Button className="btn-round" color="success" type="submit" onClick={handleAdd}>
                   Onayla
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
@@ -696,6 +654,8 @@ const [amount, setAmount] = useState(null);
                     date: row[1],
                     product_code : row[2],
                     barcode: row[3],
+                   
+                    
                     supplier_company_tax_code : row[4],
                     supplier_company_name : row[5],
                     receiver_company_tax_code : row[6],
@@ -796,10 +756,15 @@ const [amount, setAmount] = useState(null);
                       Header: 'No',
                       accessor: 'id'
                   },
-                    {
-                      Header: 'Tarih',
-                      accessor: 'date'
-                  },
+                  {
+                    Header: 'Tarih',
+                    accessor: 'date'
+                },
+                  {
+                    Header: 'Malzeme Kodu',
+                    accessor: 'product_code'
+                },
+                    
                   {
                     Header: 'Barkod',
                     accessor: 'barcode'

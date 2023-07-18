@@ -44,7 +44,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch('http://127.0.0.1:8000/api/products/',{
+      const response = await fetch('http://127.0.0.1:8000/api/suppliers/',{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -64,11 +64,10 @@ const DataTable = () => {
   };
   const handleAddFileClick = () => {
     clearTimeout(timeoutId); // Clear any existing timeout
-    setTimeoutId(setTimeout(() => setShowUploadDiv(true), 500));
+    setTimeoutId(setTimeout(() => setShowPopup(true), 500));
    
     
   }
-
   //API CALL DEGISECEK
   const handleUploadClick = async () => {
     setIsLoading(true);
@@ -337,6 +336,42 @@ const DataTable = () => {
       // Call your Django API to send the updated values here
     };
 
+
+    const handleAdd = async (event) => {
+      const access_token = await localforage.getItem('access_token');
+      event.preventDefault();
+    
+      fetch(`http://127.0.0.1:8000/api/add_supplier/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify({
+          tax_code: taxCode,
+          name: name,
+         
+          contact_name: contactName,
+          contact_no: contactNo,
+         
+        })
+      })
+      .then(response => response.json().then(data => ({status: response.status, body: data})))
+      .then(({status, body}) => {
+        if (status === 201) { // Assuming 201 is the success status code
+          console.log("Supplier added successfully");
+          successUpload(body.message);
+          setDataChanged(true);
+        } else {
+          console.log("Failed to adda supplier", body.error);
+          errorUpload(body.error);
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        errorUpload(error.message);
+      });
+    };
     const handleCancel = () => {
       setShowPopup(false);
       setEditData(null)
@@ -402,14 +437,14 @@ const DataTable = () => {
       {alert}
 
     {/* Pop Up */}
-      {showPopup && isUpdated &&(
+      {showPopup  &&(
        <div className="popup">
               <Card>
           <CardHeader>
-            <CardTitle tag="h4">Edit Supplier</CardTitle>
+            <CardTitle tag="h4">Tedarikçi Ekle</CardTitle>
           </CardHeader>
           <CardBody>
-            <Form onSubmit={handleSubmit}>
+            <Form onSubmit={handleAdd}>
               <div>
                 <div className="form-group-col">
                   <label>Vergi No</label>
@@ -449,23 +484,8 @@ const DataTable = () => {
                     />
                   </FormGroup>
 
-                  <label>Firma</label>
-                  <FormGroup>
-                    <Input
-                      type="text"
-                      defaultValue={company}
-                      onChange={(e) => setCompany(e.target.value)}
-                    />
-                  </FormGroup>
-
-                  <label>Proje</label>
-                  <FormGroup>
-                    <Input
-                      type="text"
-                      defaultValue={project}
-                      onChange={(e) => setProject(e.target.value)}
-                    />
-                  </FormGroup>
+                
+                
                 </div>
 
                 
@@ -473,7 +493,7 @@ const DataTable = () => {
             </Form>
           </CardBody>
           <CardFooter>
-            <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
+            <Button className="btn-round" color="success" type="submit" onClick={handleAdd}>
               Onayla
             </Button>
             <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
@@ -538,15 +558,12 @@ const DataTable = () => {
             
                 <ReactTable
                   data={dataTable.map((row,index) => ({
-                    id: row.id,
-                    tax_code: row[0],
-                    name: row[1],
-                    contact_name: row[2],
-                    contact_no: row[3],
-                    company: row[4],
-                    project: row[5],
-                    products: row[6],
-                    
+                    id: row[0],
+                    tax_code: row[1],
+                    name: row[2],
+                    contact_name: row[3],
+                    contact_no: row[4],
+                   
 
                     actions: (
                       <div className='actions-left'>
@@ -602,11 +619,11 @@ const DataTable = () => {
                   }))}
                   columns={[
                     {
-                      Header: 'Malzeme Kodu',
+                      Header: 'Vergi No',
                       accessor: 'tax_code',
                     },
                     {
-                      Header: 'Barkod',
+                      Header: 'İsİm',
                       accessor: 'name',
                     },
                     {
@@ -617,18 +634,7 @@ const DataTable = () => {
                       Header: 'Yetkili No',
                       accessor: 'contact_no',
                     },
-                    {
-                      Header: 'Firma',
-                      accessor: 'company',
-                    },
-                    {
-                      Header: 'Proje',
-                      accessor: 'project',
-                    },
-                    {
-                      Header: 'Ürün',
-                      accessor: 'products',
-                    },
+                   
                   
                     {
                       Header: 'İşlem',

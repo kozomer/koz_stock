@@ -42,12 +42,12 @@ const [description, setDescription] = useState(null);
 const [unit, setUnit] = useState(null);
 const [amount, setAmount] = useState(null);
 const [selectedFiles, setSelectedFiles] = useState(null);
-const [uploadedFile, setUploadedFile] = useState(null);
+;
 
 const [showModal, setShowModal] = useState(false);
 const [currentFiles, setCurrentFiles] = useState([]);
-
-
+const [uploadedFiles, setUploadedFiles] = useState([]);
+const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
 
 
 
@@ -299,8 +299,7 @@ const [currentFiles, setCurrentFiles] = useState([]);
         new_id: id,
         new_date: date,
         new_product_code: productCode,
-        new_provider_company: providerCompany,
-        new_reciever_company: recieverCompany,
+        
         new_inflow_outflow: inflowOutflow,
         new_status: status,
         new_place_of_use: placeOfUse,
@@ -360,6 +359,46 @@ const [currentFiles, setCurrentFiles] = useState([]);
     });
   };
 
+
+  const handleAdd = async (event) => {
+    const access_token = await localforage.getItem('access_token');
+    event.preventDefault();
+  
+    fetch(`http://127.0.0.1:8000/api/add_product_inflow/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+      body: JSON.stringify({
+        date: date,
+        product_code: productCode,
+        barcode: barcode,
+        provider_company_tax_code: providerCompanyTaxCode,
+        receiver_company_tax_code: recieverCompanyTaxCode,
+        status: status,
+        place_of_use: placeOfUse,
+        amount: amount
+      })
+    })
+    .then(response => response.json().then(data => ({status: response.status, body: data})))
+    .then(({status, body}) => {
+      if (status === 201) { // Assuming 201 is the success status code
+        console.log("Product inflow added successfully");
+        successUpload(body.message);
+        setDataChanged(true);
+      } else {
+        console.log("Failed to add product inflow", body.error);
+        errorUpload(body.error);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      errorUpload(error.message);
+    });
+  };
+  
+
     const handleCancel = () => {
       setShowPopup(false);
       setEditData(null)
@@ -412,23 +451,47 @@ const [currentFiles, setCurrentFiles] = useState([]);
       setRenderEdit(true)
     };
 
-    const handleFileChange = (event) => {
-      setSelectedFile(event.target.files);
-    };
+    const handleFileChange = (e) => {
+      // This is an array-like object
+      const files = e.target.files;
   
-    const handleUpload = (event) => {
-      event.preventDefault(); 
-      // Perform upload logic here
-      // You can use libraries like Axios or fetch API to send the file to a server
-      // Example: axios.post('/upload', selectedFile)
-      //   .then((response) => setUploadedFile(response.data))
-      //   .catch((error) => console.log(error));
+      // Convert it to an array
+      const fileArray = Array.from(files);
   
-      // Simulating the response with a timeout
-      setTimeout(() => {
-        setUploadedFile(selectedFiles);
-      }, 2000);
+      // You can then set the state with this array
+      setUploadedFiles(fileArray);
     };
+
+
+
+const handleUpload = (event) => {
+  event.preventDefault(); 
+
+  // Perform upload logic here
+  // If you're uploading files one at a time
+  let urls = [];
+  uploadedFiles.forEach((file, index) => {
+    // Replace this with your actual upload code
+    // Example: axios.post('/upload', file)
+    //   .then((response) => urls.push(response.data.url))
+    //   .catch((error) => console.log(`Error uploading file ${index + 1}: ${error}`));
+
+    console.log(`Uploading file ${index + 1}`);
+    // Simulating the response with a timeout
+    setTimeout(() => {
+      urls.push(URL.createObjectURL(file)); // This will create a blob URL for the file. Replace this with your server's response
+    }, 2000);
+  });
+
+  // Simulating the response with a timeout
+  setTimeout(() => {
+    console.log('All files uploaded successfully');
+    setUploadedFileUrls(urls);
+    setUploadedFiles([]);
+  }, 2000);
+};
+
+    
   
     const handleDownload = (event) => {
       event.preventDefault();
@@ -446,7 +509,7 @@ const [currentFiles, setCurrentFiles] = useState([]);
 
     // Function to handle showing the modal
 const handleShowModal = (files) => {
-  setCurrentFiles(files);
+  setCurrentFiles(uploadedFileUrls);
   setShowModal(true);
 };
 
@@ -592,25 +655,34 @@ const handleHideModal = () => {
         
           {/* Photo upload section */}
           <div className="photo-upload-section">
-                <input type="file" onChange={handleFileChange} multiple />
-                <button className="upload-button" onClick={handleUpload}>
-                  <FaFileUpload /> Upload
-                </button>
+      <input type="file" onChange={handleFileChange} multiple />
+      <button className="upload-button" onClick={handleUpload}>
+        <FaFileUpload /> Upload
+      </button>
+      {uploadedFiles.length > 0 && (
+        <p>
+          {uploadedFiles.length} files selected for upload
+        </p>
+      )}
+    </div>
+    <div className="uploaded-files-section">
+  <ul>
+    {uploadedFileUrls.map((url, index) => (
+      <li key={index}>
+        <a href={url} download>
+          Download File {index + 1}
+        </a>
+      </li>
+    ))}
+  </ul>
+</div>
 
-                {uploadedFile && (
-                  <p>
-                    <button className="download-button" onClick={handleDownload}>
-                      Download Uploaded File
-                    </button>
-                  </p>
-                )}
-              </div>
         </div>
         
               </Form>
             </CardBody>
               <CardFooter>
-                <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
+                <Button className="btn-round" color="success" type="submit" onClick={handleAdd}>
                   Onayla
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
@@ -839,13 +911,14 @@ const handleHideModal = () => {
                       accessor: 'amount'
                   },
 
-                  {
-                    Header: 'Uploaded Files',
-                    accessor: 'uploaded_files',
-                    Cell: ({ cell: { value } }) => (
-                      <button onClick={() => handleShowModal(value)}>Show Files</button>
-                    ),
-                  },
+                                      {
+                      Header: 'Uploaded Files',
+                      id: 'uploaded_files',  // change from accessor to id
+                      Cell: () => (  // removed the value from here
+                        <button onClick={handleShowModal}>Show Files</button>
+                      ),
+                    },
+
                     {
                       Header: 'İşlem',
                       accessor: 'actions',
@@ -865,6 +938,33 @@ const handleHideModal = () => {
 
 
       </div>
+      {showModal && (
+  <div className="modal show d-block" tabindex="-1">
+    <div className="modal-dialog">
+      <div className="modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Uploaded Files</h5>
+          <button type="button" className="close" onClick={handleHideModal}>
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div className="modal-body">
+          {currentFiles.map((file, index) => (
+            <p key={index}>
+              <a href={file}>{file}</a>
+            </p>
+          ))}
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={handleHideModal}>Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
     </>
     
   );
