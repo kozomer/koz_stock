@@ -177,19 +177,22 @@ class SetCurrentProjectView(APIView):
         return super().handle_exception(exc)
 
     def post(self, request):
-        # project_id=request.data.get('project_id')
-        # print(project_id)
         data = json.loads(request.body)
         project_id = data.get('project_id')
         try:
             project = Project.objects.get(id=project_id, company=request.user.company)
-            # print(project)
-            # print(request.user.current_project)
+
+            # Check if the project belongs to the user's projects
+            if project not in request.user.projects.all():
+                return JsonResponse({'error': _('You do not have access to this project.')}, status=403)
+
             request.user.current_project = project
             request.user.save()
-            return JsonResponse({'status': 'Project set successfully'})
+            return JsonResponse({'message': _('Project set successfully')})
         except ObjectDoesNotExist:
             return JsonResponse({'error': _('Project not found or does not belong to your company')}, status=400, safe=False)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 
 # endregion
@@ -207,48 +210,69 @@ class CreateUserView(APIView):
         return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
-        # Extract the data from the request
-        print(request.data)
-        username = request.data.get('username')
-        password = request.data.get('password')
-        first_name = request.data.get('first_name')
-        last_name = request.data.get('last_name')
-        staff_role = request.data.get('staff_role')
-        project_ids = request.data.get('projects', [])
+        try:
+            # Extract the data from the request
+            print(request.data)
+            username = request.data.get('username')
+            password = request.data.get('password')
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            staff_role = request.data.get('staff_role')
+            project_ids = request.data.get('projects', [])
+            # The new user's company should be equal to superstaff's company and set current_project to None
+            company = request.user.company
+            current_project = None
 
-        # The new user's company should be equal to superstaff's company and set current_project to None
-        company = request.user.company
-        current_project = None
+            # Check if the username is provided
+            if not username:
+                return JsonResponse({'error': _("Username is required.")}, status=400)
 
-        # Create the user
-        user = CustomUser(
-            username=username, 
-            first_name=first_name, 
-            last_name=last_name, 
-        )
-        if staff_role == "super_staff":
-            user.is_superstaff = True
-            user.is_stockstaff = True
-            user.is_accountingstaff = True
-        elif staff_role == "stock_staff":
-            user.is_superstaff = False
-            user.is_stockstaff = True
-            user.is_accountingstaff = False
-        elif staff_role == "accounting_staff":
-            user.is_superstaff = False
-            user.is_stockstaff = False
-            user.is_accountingstaff = True
-        user.set_password(password)
-        user.company = company
-        user.is_staff = True
-        user.current_project = current_project
-        user.save()
+            # Check if the password is provided
+            if not password:
+                return JsonResponse({'error': _("Password is required.")}, status=400)
 
-        # Assign the projects to the user
-        projects = Project.objects.filter(id__in=project_ids, company=company)
-        user.projects.set(projects)
+            # Check if the username is already taken
+            if CustomUser.objects.filter(username=username, company=company).exists():
+                return JsonResponse({'error': _("Username is already taken.")}, status=400)
 
-        return JsonResponse({'message': _('User created successfully')})
+            
+
+            # Create the user
+            user = CustomUser(
+                username=username, 
+                first_name=first_name, 
+                last_name=last_name, 
+            )
+            if staff_role == "super_staff":
+                user.is_superstaff = True
+                user.is_stockstaff = True
+                user.is_accountingstaff = True
+            elif staff_role == "stock_staff":
+                user.is_superstaff = False
+                user.is_stockstaff = True
+                user.is_accountingstaff = False
+            elif staff_role == "accounting_staff":
+                user.is_superstaff = False
+                user.is_stockstaff = False
+                user.is_accountingstaff = True
+            user.set_password(password)
+            user.company = company
+            user.is_staff = True
+            user.current_project = current_project
+            user.save()
+
+            # Assign the projects to the user
+            projects = Project.objects.filter(id__in=project_ids, company=company)
+            user.projects.set(projects)
+
+            return JsonResponse({'message': _('User created successfully')})
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 
 class EditUserView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
@@ -261,42 +285,70 @@ class EditUserView(APIView):
         return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
-        # Extract the data from the request
-        username = request.data.get('username')
-        password = request.data.get('password')
-        first_name = request.data.get('first_name')
-        last_name = request.data.get('last_name')
-        is_superstaff = request.data.get('is_superstaff', False)
-        is_stockstaff = request.data.get('is_stockstaff', False)
-        is_accountingstaff = request.data.get('is_accountingstaff', False)
-        project_ids = request.data.get('projects', [])
-
-        # Get the User, Projects instances
         try:
-            user = CustomUser.objects.get(username=username)
-            projects = Project.objects.filter(id__in=project_ids)
-        except (CustomUser.DoesNotExist, Project.DoesNotExist):
-            return JsonResponse({'error': _('Invalid username or project ID')}, status=400)
+            # Extract the data from the request
+            username = request.data.get('username')
+            password = request.data.get('password')
+            first_name = request.data.get('first_name')
+            last_name = request.data.get('last_name')
+            staff_role = request.data.get('staff_role')
+            project_ids = request.data.get('projects', [])
+            company = request.user.company
 
-        # Update the user details
-        if password:
-            user.set_password(password)
-        if first_name:
-            user.first_name = first_name
-        if last_name:
-            user.last_name = last_name
-        if is_superstaff is not None:
-            user.is_superstaff = is_superstaff
-        if is_stockstaff is not None:
-            user.is_stockstaff = is_stockstaff
-        if is_accountingstaff is not None:
-            user.is_accountingstaff = is_accountingstaff
-        user.save()
+            # Check if the username is provided
+            if not username:
+                return JsonResponse({'error': _("Username is required.")}, status=400)
 
-        # Assign the projects to the user
-        user.projects.set(projects)
+            # Check if the staff role is provided
+            if not staff_role:
+                return JsonResponse({'error': _("Staff role is required.")}, status=400)
 
-        return JsonResponse({'message': 'User details updated successfully'})
+            # Check if the staff role is valid
+            if staff_role not in ["super_staff", "stock_staff", "accounting_staff"]:
+                return JsonResponse({'error': _("Invalid staff role.")}, status=400)
+
+            # Get the User, Projects instances
+            user = CustomUser.objects.get(username=username, company=company)
+            projects = Project.objects.filter(id__in=project_ids, company=company)
+
+            # Update the user details
+            if password:
+                user.set_password(password)
+            if first_name:
+                user.first_name = first_name
+            if last_name:
+                user.last_name = last_name
+            if staff_role == "super_staff":
+                user.is_superstaff = True
+                user.is_stockstaff = True
+                user.is_accountingstaff = True
+            elif staff_role == "stock_staff":
+                user.is_superstaff = False
+                user.is_stockstaff = True
+                user.is_accountingstaff = False
+            elif staff_role == "accounting_staff":
+                user.is_superstaff = False
+                user.is_stockstaff = False
+                user.is_accountingstaff = True
+            user.save()
+
+            # Assign the projects to the user
+            user.projects.set(projects)
+
+            return JsonResponse({'message': 'User details updated successfully'})
+        
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'error': _("User not found.")}, status=400)
+
+        except Project.DoesNotExist:
+            return JsonResponse({'error': _("Project not found.")}, status=400)
+
+        except ValueError as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 
 class CollapsedUserView(APIView):
     permission_classes = (IsAuthenticated,)
