@@ -727,6 +727,9 @@ class EditSuppliersView(APIView):
         try:
             user = request.user
             data = json.loads(request.body)
+            print(data)
+            dirty_fields = supplier.get_dirty_fields()
+            print(dirty_fields)
 
             tax_code = data.get('tax_code')
             supplier = Suppliers.objects.get(tax_code=tax_code, company=user.company)
@@ -876,9 +879,11 @@ class EditConsumersView(APIView):
             # Check if any fields have been changed
             if consumer.is_dirty():
                 dirty_fields = consumer.get_dirty_fields()
+                print(dirty_fields)
 
                 # Check if the tax_code is being updated and if it's unique within the same company
                 if 'tax_code' in dirty_fields:
+                    print("omer")
                     new_tax_code = getattr(consumer, 'tax_code')
                     if Consumers.objects.filter(tax_code=new_tax_code, company=user.company).exists():
                         return JsonResponse({'error': _("The Tax Code '%s' already exists in the database for this company.") % new_tax_code}, status=400)
@@ -1911,14 +1916,15 @@ class AccountingView(APIView):
         return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
-        accountings = Accounting.objects.all(company=request.user.company, project=request.user.current_project)
+        accountings = Accounting.objects.filter(company=request.user.company, project=request.user.current_project)
         accounting_list = [
-            [ac.id, ac.product_inflow.product.product_code, ac.product_inflow.date, ac.product_inflow.barcode, ac.product_inflow.supplier_company, ac.product_inflow.receiver_company,
-             ac.product_inflow.status, ac.product_inflow.place_of_use, ac.product_inflow.product.group, ac.product_inflow.product.subgroup, ac.product_inflow.product.brand, ac.product_inflow.product.serial_number, 
+            [ac.id, ac.product_inflow.product.product_code, ac.product_inflow.date, ac.product_inflow.barcode, ac.product_inflow.supplier_company.name, ac.product_inflow.receiver_company.name,
+             ac.product_inflow.status, ac.product_inflow.place_of_use, ac.product_inflow.product.group.group_name, ac.product_inflow.product.subgroup.subgroup_name, ac.product_inflow.product.brand, ac.product_inflow.product.serial_number, 
              ac.product_inflow.product.model, ac.product_inflow.product.description, ac.product_inflow.product.unit, ac.product_inflow.amount, ac.unit_price, ac.discount_rate, 
              ac.discount_amount, ac.tax_rate, ac.tevkifat_rate, ac.price_without_tax, ac.unit_price_without_tax, ac.price_with_tevkifat, 
              ac.price_total] for ac in accountings
         ]
+        print(accounting_list)
         return JsonResponse(accounting_list, safe=False, status=200)
 
 
