@@ -11,6 +11,7 @@ function CreateGroups() {
   const [subgroupList, setSubgroupList] = useState([]);
   const [selectedGroup, setSelectedGroup] = useState("");
   const [editingGroup, setEditingGroup] = useState(null);
+  const [editingSubgroup, setEditingSubgroup] = useState(null);
 
   const fetchData = async () => {
     const access_token = await localforage.getItem('access_token');
@@ -52,6 +53,33 @@ function CreateGroups() {
     .catch(error => console.error(error));
   };
   
+  const fetchSubgroups = async (groupCode) => {
+    const access_token = await localforage.getItem('access_token');
+    fetch('http://127.0.0.1:8000/api/product_subgroups/', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + String(access_token),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ group_code: groupCode }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      
+      setSubgroupList(data);
+    })
+    .catch(error => console.error(error));
+  };
+
+
+  useEffect(() => {
+    if (selectedGroup) {
+      const groupCode = groupList.find(group => group[1] === selectedGroup)[0];
+      fetchSubgroups(groupCode);
+    }
+  }, [selectedGroup]);
+  
+  
 
   const handleCreateSubgroup = async () => {
     if (selectedGroup && subgroupName) {
@@ -78,6 +106,59 @@ function CreateGroups() {
       .catch(error => console.error(error));
     }
   };
+ 
+
+  const handleEditSubgroup = async (subgroupCode, newSubgroupName) => {
+    console.log("subgroupCode:",subgroupCode[1])
+    console.log("newSubgroupName:",newSubgroupName)
+    const access_token = await localforage.getItem('access_token');
+    fetch('http://127.0.0.1:8000/api/edit_product_subgroup/', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + String(access_token),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        subgroup_code: subgroupCode[0],
+        new_subgroup_name: newSubgroupName,
+        group_code: groupList.find(group => group[1] === selectedGroup)[0]
+      }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      // After successful update, fetch the updated list
+      fetchSubgroups(groupList.find(group => group[1] === selectedGroup)[0]);
+    })
+    .catch(error => console.error(error));
+  }
+  
+
+  
+  // Function to handle subgroup deleting
+  const handleDeleteSubgroup = async (subgroupCode) => {
+    console.log("subgroupCode:",subgroupCode[0])
+    const access_token = await localforage.getItem('access_token');
+    fetch('http://127.0.0.1:8000/api/delete_product_subgroup/', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + String(access_token),
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        subgroup_code: subgroupCode[0],
+        group_code: groupList.find(group => group[1] === selectedGroup)[0]
+      }),
+    })
+    .then(response => response.json())
+    .then(data => {
+      // After successful delete, fetch the updated list
+      fetchSubgroups(groupList.find(group => group[1] === selectedGroup)[0]);
+    })
+    .catch(error => console.error(error));
+  }
+
+
+  
 
   const handleEditGroup = (groupCode) => {
     setEditingGroup(groupCode);
@@ -231,10 +312,60 @@ function CreateGroups() {
             <Button disabled={!selectedGroup || !subgroupName} onClick={handleCreateSubgroup}>OK</Button>
           </Form>
           <ul>
-          {subgroupList.length > 0 ? 
-    subgroupList.map(subgroup => <li key={subgroup}>{subgroup}</li>) : 
+  {subgroupList.length > 0 ? 
+    subgroupList.map(subgroup => {
+      if (editingSubgroup === subgroup) {
+        return (
+          <li key={subgroup} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', height: '50px', alignItems: 'center' }}>
+            <input 
+              type="text" 
+              defaultValue={subgroup} 
+              onBlur={e => handleEditSubgroup(subgroup, e.target.value)}
+              style={{ height: '20px', padding: '5px' }}
+            />
+            <Button
+              className="btn-round btn-icon"
+              color="success"
+              size="sm"
+              style={{ top: "2.5px" }}
+              onClick={() => setEditingSubgroup(null)}
+              outline
+            >
+              <i className="nc-icon nc-check-2" />
+            </Button>
+          </li>
+        );
+      } else {
+        return (
+          <li key={subgroup} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px' }}>
+            <span>{subgroup}</span>
+            <Button
+              className="btn-round btn-icon"
+              color="warning"
+              size="sm"
+              style={{ top: "2.5px" }}
+              onClick={() => setEditingSubgroup(subgroup)}
+              outline
+            >
+              <i className="nc-icon nc-ruler-pencil" />
+            </Button>
+            <Button
+              className="btn-round btn-icon"
+              color="danger"
+              size="sm"
+              style={{ top: "2.5px" }}
+              onClick={() => handleDeleteSubgroup(subgroup)}
+              outline
+            >
+              <i className="nc-icon nc-simple-remove" />
+            </Button>
+          </li>
+        );
+      }
+    }) : 
     <li>There's no current subgroups in list</li>}
-          </ul>
+</ul>
+
         </Card>
       </Col>
     </Row>
