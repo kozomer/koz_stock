@@ -208,13 +208,12 @@ class CreateUserView(APIView):
 
     def post(self, request, *args, **kwargs):
         # Extract the data from the request
+        print(request.data)
         username = request.data.get('username')
         password = request.data.get('password')
         first_name = request.data.get('first_name')
         last_name = request.data.get('last_name')
-        is_superstaff = request.data.get('is_superstaff', False)
-        is_stockstaff = request.data.get('is_stockstaff', False)
-        is_accountingstaff = request.data.get('is_accountingstaff', False)
+        staff_role = request.data.get('staff_role')
         project_ids = request.data.get('projects', [])
 
         # The new user's company should be equal to superstaff's company and set current_project to None
@@ -227,16 +226,26 @@ class CreateUserView(APIView):
             first_name=first_name, 
             last_name=last_name, 
         )
+        if staff_role == "super_staff":
+            user.is_superstaff = True
+            user.is_stockstaff = True
+            user.is_accountingstaff = True
+        elif staff_role == "stock_staff":
+            user.is_superstaff = False
+            user.is_stockstaff = True
+            user.is_accountingstaff = False
+        elif staff_role == "accounting_staff":
+            user.is_superstaff = False
+            user.is_stockstaff = False
+            user.is_accountingstaff = True
         user.set_password(password)
-        user.is_superstaff = is_superstaff
-        user.is_stockstaff = is_stockstaff
-        user.is_accountingstaff = is_accountingstaff
         user.company = company
+        user.is_staff = True
         user.current_project = current_project
         user.save()
 
         # Assign the projects to the user
-        projects = Project.objects.filter(id__in=project_ids)
+        projects = Project.objects.filter(id__in=project_ids, company=company)
         user.projects.set(projects)
 
         return JsonResponse({'message': _('User created successfully')})

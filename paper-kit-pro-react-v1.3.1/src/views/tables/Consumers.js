@@ -19,11 +19,13 @@ const DataTable = () => {
   const [isUpdated, setIsUpdated] = useState(false);
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showEditPopup, setShowEditPopup] = useState(false);
+  const [productData, setProductData] = useState(null);
   //Edit Variables
-  const [taxCode, setTaxCode] = useState(null);
-  const [name, setName] = useState(null);
-  const [contactName, setContactName] = useState(null);
-  const [contactNo, setContactNo] = useState(null);
+  const [taxCode, setTaxCode] = useState('');
+  const [name, setName] = useState('');
+  const [contactName, setContactName] = useState('');
+  const [contactNo, setContactNo] = useState('');
   const [company, setCompany] = useState(null);
   const [project, setProject] = useState(null);
   const [products, setProducts] = useState(null);
@@ -225,7 +227,8 @@ const DataTable = () => {
         success
         style={{ display: "block", marginTop: "-100px" }}
         title="Uploaded!"
-        onConfirm={() => hideAlert()}
+        onConfirm={() => { hideAlert()
+        setShowPopup(false)}}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
@@ -273,83 +276,66 @@ const DataTable = () => {
     deleteFunc();
   }, [deleteConfirm]);
 
-    const handleClick = (row) => {
-      setEditData(row);
-      setOldData(row);
-      setTaxCode(row.tax_code);
-      setName(row.name);
-      setContactName(row.contact_name);
-      setContactNo(row.contact_no);
-      setCompany(row.company);
-      setProject(row.project);
-      setProducts(row.products);
-      setDescription(row.description);
-      setUnit(row.unit);
-      setSupplier(row.supplier);
-      setSupplierContact(row.supplier_contact);
-      setShowPopup(!showPopup);
-      console.log(row)
-    };
-
-
-    const handleSubmit =async (e) => {
-      const access_token =  await localforage.getItem('access_token'); 
-      
-      const updatedData = {
-        new_tax_code: taxCode,
-        new_name: name,
-        new_group: group,
-        new_subgroup: subgroup,
-        new_company: company,
-        new_project: project,
-        new_products: products,
-        new_description: description,
-        new_unit: unit,
-        new_supplier: supplier,
-        new_supplier_contact: supplierContact,
-    
-        old_tax_code: oldData[0],
-        old_name: oldData[1],
-        old_group: oldData[2],
-        old_subgroup: oldData[3],
-        old_company: oldData[4],
-        old_project: oldData[5],
-        old_products: oldData[6],
-        old_description: oldData[7],
-        old_unit: oldData[8],
-        old_supplier: oldData[9],
-        old_supplier_contact: oldData[10],
-    };
-    
-      console.log(updatedData)
-      fetch('http://127.0.0.1:8000/api/edit_products/', {
-      method: 'POST',
-      body: JSON.stringify(updatedData),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+ String(access_token)
-      },
-      
-    })
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then(data => {
-          console.log(data.error)
-          
-          errorUpload(data.error);
-        });
-      }
+  useEffect(() => {
+    if (productData) {
      
-      else{
-        return response.json().then(data => {
-          setEditData(updatedData);
-          successEdit(data.message);
-        })
-    
-        }
-      })
-      // Call your Django API to send the updated values here
+
+      setTaxCode(productData[1]);
+      setName(productData[2]);
+      setContactName(productData[3])
+     
+      setContactNo(productData[4]);
+     
+    }
+  }, [productData]);
+
+  const handleClick = (row) => {
+    setProductData(row);
+    setShowEditPopup(true);
+  };
+
+
+  const handleEdit = async (event) => {
+    event.preventDefault();
+  
+    const access_token = await localforage.getItem('access_token'); 
+    const updatedData = {
+      name,
+      contact_name: contactName,
+      contact_no:contactNo,
+      tax_code:taxCode,
+      
     };
+  
+    fetch(`http://127.0.0.1:8000/api/edit_consumer/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        'Authorization': 'Bearer ' + String(access_token)
+      },
+      body: JSON.stringify(updatedData)
+    })
+    .then(response => response.json().then(data => ({status: response.status, body: data})))
+    .then(({status, body}) => {
+      if (status === 200) { // Assuming 200 is the success status code
+        console.log("Product edited successfully");
+        successUpload(body.message);
+        
+
+        setDataChanged(true);
+        setShowEditPopup(false);
+       
+         
+      } else {
+        console.log("Failed to edit product", body.error);
+        errorUpload(body.error);
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      errorUpload(error.message);
+    });
+  };
 
 
     const handleAdd = async (event) => {
@@ -389,27 +375,11 @@ const DataTable = () => {
     };
     const handleCancel = () => {
       setShowPopup(false);
-      setEditData(null)
+      setProductData(null);
+      setShowEditPopup(false);
     };
 
-    useEffect(() => {
-      console.log("useEffect called")
-      if (editData) {
-        setTaxCode(editData[0]);
-        setName(editData[1]);
-        setContactName(editData[2]);
-        setContactNo(editData[3]);
-        setCompany(editData[4]);
-        setProject(editData[5]);
-        setProducts(editData[6]);
-        setDescription(editData[7]);
-        setUnit(editData[8]);
-        setSupplier(editData[9]);
-        setSupplierContact(editData[10]);
-        setIsUpdated(true);
-    }
-    
-    }, [editData])
+ 
 
 //API CALL
     async function handleExportClick() {
@@ -518,6 +488,74 @@ const DataTable = () => {
 
             </div>
 )}
+{showEditPopup  &&(
+       <div className="popup">
+              <Card>
+          <CardHeader>
+            <CardTitle tag="h4">Tüketici Düzenle</CardTitle>
+          </CardHeader>
+          <CardBody>
+            <Form onSubmit={handleEdit}>
+              <div>
+                <div className="form-group-col">
+                  <label>Vergi No</label>
+                  <FormGroup>
+                    <Input
+                      name="tax_code"
+                      type="number"
+                      defaultValue={taxCode}
+                      onChange={(e) => setTaxCode(e.target.value)}
+                    />
+                  </FormGroup>
+
+                  <label>İsim</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={name}
+                      onChange={(e) => setName(e.target.value)}
+                    />
+                  </FormGroup>
+
+                  <label>Yetkili Adı</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                    />
+                  </FormGroup>
+
+                  <label>Yetkili No</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      defaultValue={contactNo}
+                      onChange={(e) => setContactNo(e.target.value)}
+                    />
+                  </FormGroup>
+
+                
+                
+                </div>
+
+                
+              </div>
+            </Form>
+          </CardBody>
+          <CardFooter>
+            <Button className="btn-round" color="success" type="submit" onClick={handleEdit}>
+              Onayla
+            </Button>
+            <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
+              İptal Et
+            </Button>
+          </CardFooter>
+        </Card>
+
+            </div>
+)}
+
 <Card>
   <CardHeader>
     <CardTitle tag='h4'>TUKETICILER</CardTitle>
@@ -584,7 +622,7 @@ const DataTable = () => {
                       <div className='actions-left'>
                        
                          <Button
-                          disabled={showPopup}
+                          disabled={showEditPopup}
                           onClick={() => {
                             // Enable edit mode
                             
@@ -604,7 +642,7 @@ const DataTable = () => {
     
     
                           <Button
-                            disabled={showPopup}
+                            disabled={showEditPopup}
                             onClick={() => {
                               
                                warningWithConfirmAndCancelMessage() 
@@ -638,7 +676,7 @@ const DataTable = () => {
                       accessor: 'tax_code',
                     },
                     {
-                      Header: 'Barkod',
+                      Header: 'Şirket Adı',
                       accessor: 'name',
                     },
                     {

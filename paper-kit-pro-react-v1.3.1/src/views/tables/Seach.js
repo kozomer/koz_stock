@@ -44,12 +44,12 @@ const SearchComponent = () => {
         <Col style={{ borderRight: '1px solid #000' }}>
           <Card>
             <CardBody>
-              <CardTitle tag="h5">Suppliers</CardTitle>
+              <CardTitle tag="h5">Tedarikçiler</CardTitle>
               {suppliers.map((supplier) => (
                 <div key={supplier.id}>
                   <p><strong>{supplier.name}</strong></p>
-                  <p>Contact Name: {supplier.contact_name}</p>
-                  <p>Contact No: {supplier.contact_no}</p>
+                  <p>Yetkili Adı: {supplier.contact_name}</p>
+                  <p>Yetkili No: {supplier.contact_no}</p>
                   <hr />
                 </div>
               ))}
@@ -60,12 +60,12 @@ const SearchComponent = () => {
         <Col>
           <Card>
             <CardBody>
-              <CardTitle tag="h5">Consumers</CardTitle>
+              <CardTitle tag="h5">Tüketiciler</CardTitle>
               {consumers.map((consumer) => (
                 <div key={consumer.id}>
                   <p><strong>{consumer.name}</strong></p>
-                  <p>Contact Name: {consumer.contact_name}</p>
-                  <p>Contact No: {consumer.contact_no}</p>
+                  <p>Yetkili Adı: {consumer.contact_name}</p>
+                  <p>Yetkili No: {consumer.contact_no}</p>
                   <hr />
                 </div>
               ))}

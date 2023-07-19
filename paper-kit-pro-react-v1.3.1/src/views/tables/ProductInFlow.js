@@ -895,7 +895,7 @@ const handleHideModal = () => {
                       <div className='actions-left'>
                        
                        <Button
-                          disabled={showPopup}
+                          disabled={showEditPopup}
                           onClick={() => {
                             // Enable edit mode
                             
@@ -915,7 +915,7 @@ const handleHideModal = () => {
     
     
                           <Button
-                              disabled={showPopup}
+                              disabled={showEditPopup}
                             onClick={() => {
                               
                                warningWithConfirmAndCancelMessage() 

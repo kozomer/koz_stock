@@ -858,7 +858,7 @@ const [consumerList, setConsumerList] = React.useState([]);
                       <div className='actions-left'>
                        
                        <Button
-                          disabled={showPopup}
+                          disabled={showEditPopup}
                           onClick={() => {
                             // Enable edit mode
                             
@@ -875,10 +875,19 @@ const [consumerList, setConsumerList] = React.useState([]);
                         </Button>{' '}
                         
                         <>
-    
+                            
+                        <Button
+      disabled={showPopup}
+      onClick={() => handlePDF(row)}
+      color="info"
+      size="sm"
+      className="btn-icon btn-link"
+    >
+      <i className="fa fa-file-pdf-o" />
+    </Button>
     
                           <Button
-                              disabled={showPopup}
+                              disabled={showEditPopup}
                             onClick={() => {
                               
                                warningWithConfirmAndCancelMessage() 
