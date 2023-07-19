@@ -1130,6 +1130,7 @@ class EditProductSubgroupView(APIView):
         return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
+        print(request.data)
         subgroup_code = request.data.get('subgroup_code')
         new_subgroup_name = request.data.get('new_subgroup_name')
         group_code = request.data.get('group_code')
