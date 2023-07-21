@@ -3,6 +3,7 @@ import { Card, Button, Row, Col, Form, FormGroup, Label, Input } from 'reactstra
 import localforage from 'localforage';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faSave, faTrash } from '@fortawesome/free-solid-svg-icons';
+import ReactBSAlert from "react-bootstrap-sweetalert";
 
 function CreateGroups() {
   const [groupName, setGroupName] = useState("");
@@ -12,7 +13,7 @@ function CreateGroups() {
   const [selectedGroup, setSelectedGroup] = useState("");
   const [editingGroup, setEditingGroup] = useState(null);
   const [editingSubgroup, setEditingSubgroup] = useState(null);
-
+  const [alert, setAlert] = useState(null);
   const fetchData = async () => {
     const access_token = await localforage.getItem('access_token');
     fetch('http://127.0.0.1:8000/api/product_groups/', {
@@ -40,18 +41,27 @@ function CreateGroups() {
       },
       body: JSON.stringify({ group_name: groupName }),
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {throw err});
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.message) {
         setGroupName("");
         setGroupList([...groupList, data.group]);
         fetchData();  // Move the fetchData call here.
-      } else {
-        console.error(data.error);
+        successUpload(data.message);
+      } else if (data.error) {
+        errorUpload(data.error);
       }
     })
-    .catch(error => console.error(error));
+    .catch(error => {
+      errorUpload(error.error);
+    });
   };
+  
   
   const fetchSubgroups = async (groupCode) => {
     const access_token = await localforage.getItem('access_token');
@@ -65,7 +75,7 @@ function CreateGroups() {
     })
     .then(response => response.json())
     .then(data => {
-      
+      console.log(data)
       setSubgroupList(data);
     })
     .catch(error => console.error(error));
@@ -84,7 +94,7 @@ function CreateGroups() {
   const handleCreateSubgroup = async () => {
     if (selectedGroup && subgroupName) {
       const group_code = groupList.find(group => group[1] === selectedGroup)[0];
-
+  
       const access_token = await localforage.getItem('access_token');
       fetch('http://127.0.0.1:8000/api/create_product_subgroup/', {
         method: 'POST',
@@ -94,16 +104,24 @@ function CreateGroups() {
         },
         body: JSON.stringify({ group_code: group_code, subgroup_name: subgroupName })
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {throw err});
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.message) {
           setSubgroupName("");
           setSubgroupList([...subgroupList, subgroupName]);
-        } else {
-          console.error(data.error);
+          successUpload(data.message);
+        } else if (data.error) {
+          errorUpload(data.error);
         }
       })
-      .catch(error => console.error(error));
+      .catch(error => {
+        errorUpload(error.error);
+      });
     }
   };
  
@@ -124,12 +142,25 @@ function CreateGroups() {
         group_code: groupList.find(group => group[1] === selectedGroup)[0]
       }),
     })
-    .then(response => response.json())
-    .then(data => {
-      // After successful update, fetch the updated list
-      fetchSubgroups(groupList.find(group => group[1] === selectedGroup)[0]);
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {throw err});
+      }
+      return response.json();
     })
-    .catch(error => console.error(error));
+    .then(data => {
+      if(data.message) {
+        successUpload(data.message);
+        fetchSubgroups(groupList.find(group => group[1] === selectedGroup)[0]);
+      } else if(data.error) {
+        errorUpload(data.error);
+      } else {
+        fetchSubgroups(groupList.find(group => group[1] === selectedGroup)[0]);
+      }
+    })
+    .catch(error => {
+      errorUpload(error.error);
+    });
   }
   
 
@@ -149,14 +180,30 @@ function CreateGroups() {
         group_code: groupList.find(group => group[1] === selectedGroup)[0]
       }),
     })
-    .then(response => response.json())
-    .then(data => {
-      // After successful delete, fetch the updated list
-      fetchSubgroups(groupList.find(group => group[1] === selectedGroup)[0]);
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {throw err});
+      }
+      return response.json();
     })
-    .catch(error => console.error(error));
-  }
-
+    .then(data => {
+      if(data.message) {
+        // handle success message
+        successUpload(data.message);
+        
+      } else if(data.error) {
+        // handle error message
+        errorUpload(data.error);
+      } else {
+        // After successful delete, fetch the updated list
+        fetchSubgroups(groupList.find(group => group[1] === selectedGroup)[0]);
+      }
+    })
+    .catch(error => {
+      // handle error message
+      errorUpload(error.error);
+    });
+}
 
   
 
@@ -174,20 +221,28 @@ function CreateGroups() {
       },
       body: JSON.stringify({ group_code: groupCode, new_group_name: newGroupName }),
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok) {
+        return response.json().then(err => {throw err});
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.message) {
         setEditingGroup(null);
         fetchData();
-      } else {
-        console.error(data.error);
+        successUpload(data.message);
+      } else if (data.error) {
+        errorUpload(data.error);
       }
     })
-    .catch(error => console.error(error));
+    .catch(error => {
+      errorUpload(error.error);
+    });
   };
 
   const handleDeleteGroup = async (groupCode) => {
-    if (window.confirm("Are you sure you want to delete this group?")) {
+   
       const access_token = await localforage.getItem('access_token');
       fetch('http://127.0.0.1:8000/api/delete_product_group/', {
         method: 'POST',
@@ -197,34 +252,153 @@ function CreateGroups() {
         },
         body: JSON.stringify({ group_code: groupCode }),
       })
-      .then(response => response.json())
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => {throw err});
+        }
+        return response.json();
+      })
       .then(data => {
         if (data.message) {
           fetchData();
-        } else {
-          console.error(data.error);
+          successUpload(data.message);
+        } else if (data.error) {
+          errorUpload(data.error);
         }
       })
-      .catch(error => console.error(error));
-    }
+      .catch(error => {
+        errorUpload(error.error);
+      });
+    
   };
 
  
+  const errorUpload = (e) => {
+    setAlert(
+      <ReactBSAlert
+        danger
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Error"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+       {e}
+      </ReactBSAlert>
+    );
+  };
+
+  const successUpload = (s) => {
+    setAlert(
+      <ReactBSAlert
+        success
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Uploaded!"
+        onConfirm={() => { hideAlert()
+       }}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        {s}
+      </ReactBSAlert>
+    );
+  };
+
+
+  const hideAlert = () => {
+    setAlert(null);
+  };
+
+
+  const deleteSubgroupPopup = (subgroup) => {
+    
+    setAlert(
+      
+      <ReactBSAlert
+        warning
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Emin misin?"
+        onConfirm={() =>{ 
+        handleDeleteSubgroup(subgroup)
+       }}
+        onCancel={() => {
+        
+          cancelDelete()
+        }}
+        confirmBtnBsStyle="info"
+        cancelBtnBsStyle="danger"
+        confirmBtnText="Evet, sil!"
+        cancelBtnText="İptal et"
+        showCancel
+        btnSize=""
+      >
+       Bu altgrubu silmek istediğine emin misin?
+      </ReactBSAlert>
+    );
+    
+  };
+
+  const deleteGroupPopup = (group) => {
+    
+    setAlert(
+      
+      <ReactBSAlert
+        warning
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Emin misin?"
+        onConfirm={() =>{ 
+        handleDeleteGroup(group)
+       }}
+        onCancel={() => {
+        
+          cancelDelete()
+        }}
+        confirmBtnBsStyle="info"
+        cancelBtnBsStyle="danger"
+        confirmBtnText="Evet, sil"
+        cancelBtnText="İptal et"
+        showCancel
+        btnSize=""
+      >
+       Bu altgrubu silmek istediğine emin misin?
+      </ReactBSAlert>
+    );
+    
+  };
+
+  const cancelDelete = () => {
+    setAlert(
+      <ReactBSAlert
+        danger
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Cancelled"
+        onConfirm={() => hideAlert()}
+        onCancel={() => hideAlert()}
+        confirmBtnBsStyle="info"
+        btnSize=""
+      >
+        Your row is safe :)
+      </ReactBSAlert>
+    );
+  };
 
   return (
     <>
     <div className='content'>
+    {alert}
     <Row>
       <Col xs="6">
         <Card body>
           <h4>Groups</h4>
-          <Button onClick={handleCreateGroup}>Create Group</Button>
+         
           <Form>
             <FormGroup>
               <Label>Group Name</Label>
               <Input type="text" value={groupName} onChange={e => setGroupName(e.target.value)} />
             </FormGroup>
-            <Button disabled={!groupName} onClick={handleCreateGroup}>OK</Button>
+            <Button disabled={!groupName} className="my-button-class" color="primary" onClick={handleCreateGroup}>OLUSTUR</Button>
           </Form>
           <ul>
                 {groupList.length > 0 ? 
@@ -244,7 +418,8 @@ function CreateGroups() {
                               color="success"
                               size="sm"
                               style={{ top: "2.5px" }}
-                              onClick={() => handleSaveGroup(group[0])}
+                              onClick={(e) => handleSaveGroup(group[0], e.currentTarget.previousSibling.value)}
+
                               outline
                             >
                               <i className="nc-icon nc-check-2" />
@@ -270,7 +445,7 @@ function CreateGroups() {
                               color="danger"
                               size="sm"
                               style={{ top: "2.5px" }}
-                              onClick={() => handleDeleteGroup(group[0])}
+                              onClick={() => deleteGroupPopup(group[0])}
                               outline
                             >
                               <i className="nc-icon nc-simple-remove" />
@@ -309,60 +484,61 @@ function CreateGroups() {
               <Label>Subgroup Name</Label>
               <Input type="text" value={subgroupName} onChange={e => setSubgroupName(e.target.value)} />
             </FormGroup>
-            <Button disabled={!selectedGroup || !subgroupName} onClick={handleCreateSubgroup}>OK</Button>
+            <Button disabled={!selectedGroup || !subgroupName} className="my-button-class" color="primary" onClick={handleCreateSubgroup}>OLUSTUR</Button>
           </Form>
           <ul>
   {subgroupList.length > 0 ? 
-    subgroupList.map(subgroup => {
-      if (editingSubgroup === subgroup) {
-        return (
-          <li key={subgroup} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', height: '50px', alignItems: 'center' }}>
-            <input 
-              type="text" 
-              defaultValue={subgroup} 
-              onBlur={e => handleEditSubgroup(subgroup, e.target.value)}
-              style={{ height: '20px', padding: '5px' }}
-            />
-            <Button
-              className="btn-round btn-icon"
-              color="success"
-              size="sm"
-              style={{ top: "2.5px" }}
-              onClick={() => setEditingSubgroup(null)}
-              outline
-            >
-              <i className="nc-icon nc-check-2" />
-            </Button>
-          </li>
-        );
-      } else {
-        return (
-          <li key={subgroup} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px' }}>
-            <span>{subgroup}</span>
-            <Button
-              className="btn-round btn-icon"
-              color="warning"
-              size="sm"
-              style={{ top: "2.5px" }}
-              onClick={() => setEditingSubgroup(subgroup)}
-              outline
-            >
-              <i className="nc-icon nc-ruler-pencil" />
-            </Button>
-            <Button
-              className="btn-round btn-icon"
-              color="danger"
-              size="sm"
-              style={{ top: "2.5px" }}
-              onClick={() => handleDeleteSubgroup(subgroup)}
-              outline
-            >
-              <i className="nc-icon nc-simple-remove" />
-            </Button>
-          </li>
-        );
-      }
-    }) : 
+   subgroupList.map(subgroup => {
+    if (editingSubgroup === subgroup) {
+      return (
+        <li key={subgroup[0]} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px', height: '50px', alignItems: 'center' }}>
+          <input 
+            type="text" 
+            defaultValue={subgroup[1]} 
+            onBlur={e => handleEditSubgroup(subgroup, e.target.value)}
+            style={{ height: '20px', padding: '5px' }}
+          />
+          <Button
+            className="btn-round btn-icon"
+            color="success"
+            size="sm"
+            style={{ top: "2.5px" }}
+            onClick={() => setEditingSubgroup(null)}
+            outline
+          >
+            <i className="nc-icon nc-check-2" />
+          </Button>
+        </li>
+      );
+    } else {
+      return (
+        <li key={subgroup[0]} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '10px' }}>
+          <span>{subgroup[1]}</span>
+          <Button
+            className="btn-round btn-icon"
+            color="warning"
+            size="sm"
+            style={{ top: "2.5px" }}
+            onClick={() => setEditingSubgroup(subgroup)}
+            outline
+          >
+            <i className="nc-icon nc-ruler-pencil" />
+          </Button>
+          <Button
+            className="btn-round btn-icon"
+            color="danger"
+            size="sm"
+            style={{ top: "2.5px" }}
+            onClick={() => deleteSubgroupPopup(subgroup)}
+            outline
+          >
+            <i className="nc-icon nc-simple-remove" />
+          </Button>
+        </li>
+      );
+    }
+  }) 
+   : 
     <li>There's no current subgroups in list</li>}
 </ul>
 

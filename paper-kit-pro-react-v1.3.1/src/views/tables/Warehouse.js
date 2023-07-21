@@ -44,6 +44,7 @@ const DataTable = () => {
           'Authorization': 'Bearer '+ String(access_token)
         }});
       const data = await response.json();
+      console.log(data)
       setDataTable(data);
     }
     fetchData();
@@ -614,21 +615,21 @@ const handleAddFileClick = () => {
              
                 <ReactTable
                   data={dataTable.map((row, key) => ({
-                    id: key,
-                    product_code: row[0],
+                    id: row[0],
+                    product_code: row[1],
                    
-                    group: row[1],
-                    subgroup: row[2],
-                    brand: row[3],
-                    serial_number: row[4],
-                    model: row[5],
-                    description: row[6],
-                    unit: row[7],
-                    warehouse: row[8],
-                    inflow: row[9],
-                    outflow: row[10],
-                    stock: row[11],
-                    reserve_stock: row[12],
+                    group: row[2],
+                    subgroup: row[3],
+                    brand: row[4],
+                    serial_number: row[5],
+                    model: row[6],
+                    description: row[7],
+                    unit: row[8],
+                    warehouse: row[9],
+                    inflow: row[10],
+                    outflow: row[11],
+                    stock: row[12],
+                    reserve_stock: row[13],
                     
                     actions: (
                       <div className='actions-left'>

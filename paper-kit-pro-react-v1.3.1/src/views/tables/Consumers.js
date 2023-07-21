@@ -22,6 +22,7 @@ const DataTable = () => {
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [productData, setProductData] = useState(null);
   //Edit Variables
+  const [id, setId] = useState('');
   const [taxCode, setTaxCode] = useState('');
   const [name, setName] = useState('');
   const [contactName, setContactName] = useState('');
@@ -279,7 +280,7 @@ const DataTable = () => {
   useEffect(() => {
     if (productData) {
      
-
+      setId(productData[0])
       setTaxCode(productData[1]);
       setName(productData[2]);
       setContactName(productData[3])
@@ -437,7 +438,7 @@ const DataTable = () => {
                     <Input
                       name="tax_code"
                       type="number"
-                      defaultValue={taxCode}
+                     
                       onChange={(e) => setTaxCode(e.target.value)}
                     />
                   </FormGroup>
@@ -446,7 +447,7 @@ const DataTable = () => {
                   <FormGroup>
                     <Input
                       type="text"
-                      defaultValue={name}
+                      
                       onChange={(e) => setName(e.target.value)}
                     />
                   </FormGroup>
@@ -455,7 +456,7 @@ const DataTable = () => {
                   <FormGroup>
                     <Input
                       type="text"
-                      defaultValue={contactName}
+                      
                       onChange={(e) => setContactName(e.target.value)}
                     />
                   </FormGroup>
@@ -464,7 +465,7 @@ const DataTable = () => {
                   <FormGroup>
                     <Input
                       type="text"
-                      defaultValue={contactNo}
+                      
                       onChange={(e) => setContactNo(e.target.value)}
                     />
                   </FormGroup>

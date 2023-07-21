@@ -728,14 +728,15 @@ class EditSuppliersView(APIView):
             user = request.user
             data = json.loads(request.body)
             print(data)
+
+            # Get supplier using id
+            supplier_id = data.get('id')
+            supplier = Suppliers.objects.get(id=supplier_id, company=user.company)
             dirty_fields = supplier.get_dirty_fields()
             print(dirty_fields)
 
-            tax_code = data.get('tax_code')
-            supplier = Suppliers.objects.get(tax_code=tax_code, company=user.company)
-
             # Update supplier fields
-            for field in ['name', 'contact_name', 'contact_no']:
+            for field in ['name', 'contact_name', 'contact_no', 'tax_code']:
                 value = data.get(field)
                 if value is not None and value != '':
                     setattr(supplier, field, value)
@@ -749,8 +750,8 @@ class EditSuppliersView(APIView):
                 # Check if the tax_code is being updated and if it's unique within the same company
                 if 'tax_code' in dirty_fields:
                     new_tax_code = getattr(supplier, 'tax_code')
-                    if Suppliers.objects.filter(tax_code=new_tax_code, company=user.company).exists():
-                        return JsonResponse({'error': _("The Tax Code '%s' already exists in the database for this company.") % new_tax_code}, status=400)
+                    if Suppliers.objects.filter(tax_code=new_tax_code, company=user.company).exclude(id=supplier_id).exists():
+                        return JsonResponse({'error': _("The Tax Code '%s' already exists in the database for another company.") % new_tax_code}, status=400)
 
             supplier.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
@@ -763,6 +764,7 @@ class EditSuppliersView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
 
 class DeleteSupplierView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
@@ -864,12 +866,14 @@ class EditConsumersView(APIView):
         try:
             user = request.user
             data = json.loads(request.body)
+            print(data)
 
-            tax_code = data.get('tax_code')
-            consumer = Consumers.objects.get(tax_code=tax_code, company=user.company)
+            # Get consumer using id
+            consumer_id = data.get('id')
+            consumer = Consumers.objects.get(id=consumer_id, company=user.company)
 
             # Update consumer fields
-            for field in ['name', 'contact_name', 'contact_no']:
+            for field in ['name', 'contact_name', 'contact_no', 'tax_code']:
                 value = data.get(field)
                 if value is not None and value != '':
                     setattr(consumer, field, value)
@@ -885,8 +889,8 @@ class EditConsumersView(APIView):
                 if 'tax_code' in dirty_fields:
                     print("omer")
                     new_tax_code = getattr(consumer, 'tax_code')
-                    if Consumers.objects.filter(tax_code=new_tax_code, company=user.company).exists():
-                        return JsonResponse({'error': _("The Tax Code '%s' already exists in the database for this company.") % new_tax_code}, status=400)
+                    if Consumers.objects.filter(tax_code=new_tax_code, company=user.company).exclude(id=consumer_id).exists():
+                        return JsonResponse({'error': _("The Tax Code '%s' already exists in the database for another company.") % new_tax_code}, status=400)
 
             consumer.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
@@ -899,6 +903,7 @@ class EditConsumersView(APIView):
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
 
 class DeleteConsumerView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
@@ -1168,6 +1173,7 @@ class DeleteProductSubgroupView(APIView):
         return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
+        print(request.data)
         subgroup_code = request.data.get('subgroup_code')
         group_code = request.data.get('group_code')
 

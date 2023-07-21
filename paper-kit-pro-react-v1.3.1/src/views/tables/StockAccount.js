@@ -46,7 +46,7 @@ const DataTable = () => {
   const [priceWithTevkifat, setPriceWithTevkifat] = useState(null);
   const [priceTotal, setPriceTotal] = useState(null);
 
-  
+  const [productData, setProductData] = useState(null);
   
 
   const [oldData, setOldData] = useState(null);
@@ -282,173 +282,97 @@ const DataTable = () => {
 }, [deleteConfirm]);
 
 
-    const handleClick = (row) => {
-     
-      setEditData(row);
-      setOldData(row);
-
-      setId(row.id);
-      setProductCode(row.product_code);
-      setDate(row.date);
-      setBarcode(row.barcode);
-      setProviderCompany(row.provider_company);
-      setReceiverCompany(row.receiver_company);
-      setStatus(row.status);
-      setPlaceOfUse(row.place_of_use);
-      setGroup(row.group);
-      setSubgroup(row.subgroup);
-      setBrand(row.brand);
-      setSerialNumber(row.serial_number);
-      setModel(row.model);
-      setDescription(row.description);
-      setUnit(row.unit);
-      setAmount(row.amount);
-      setUnitPrice(row.unit_price);
-      setDiscountRate(row.discount_rate);
-      setDiscountAmount(row.discount_amount);
-      setTaxRate(row.tax_rate);
-      setTevkifatRate(row.tevkifat_rate);
-      setPriceWithoutTax(row.price_without_tax);
-      setUnitPriceWithoutTax(row.unit_price_without_tax);
-      setPriceWithTevkifat(row.price_with_tevkifat);
-      setPriceTotal(row.price_total);
-
-
-      setShowPopup(!showPopup);
-      console.log(row)
-    };
-
-
-    const handleSubmit = async (e) => {
-      const access_token = await localforage.getItem('access_token'); 
-      console.log(oldData)
-      const updatedData = {
-        new_id: id,
-        new_product_code: productCode,
-        new_date: date,
-        new_barcode: barcode,
-        new_provider_company: providerCompany,
-        new_receiver_company: receiverCompany,
-        new_status: status,
-        new_place_of_use: placeOfUse,
-        new_group: group,
-        new_subgroup: subgroup,
-        new_brand: brand,
-        new_serial_number: serialNumber,
-        new_model: model,
-        new_description: description,
-        new_unit: unit,
-        new_amount: amount,
-        new_unit_price: unitPrice,
-        new_discount_rate: discountRate,
-        new_discount_amount: discountAmount,
-        new_tax_rate: taxRate,
-        new_tevkifat_rate: tevkifatRate,
-        new_price_without_tax: priceWithoutTax,
-        new_unit_price_without_tax: unitPriceWithoutTax,
-        new_price_with_tevkifat: priceWithTevkifat,
-        new_price_total: priceTotal,
-
-        old_id: oldData[0],
-        old_product_code: oldData[1],
-        old_date: oldData[2],
-        old_barcode: oldData[3],
-        old_provider_company: oldData[4],
-        old_receiver_company: oldData[5],
-        old_status: oldData[6],
-        old_place_of_use: oldData[7],
-        old_group: oldData[8],
-        old_subgroup: oldData[9],
-        old_brand: oldData[10],
-        old_serial_number: oldData[11],
-        old_model: oldData[12],
-        old_description: oldData[13],
-        old_unit: oldData[14],
-        old_amount: oldData[15],
-        old_unit_price: oldData[16],
-        old_discount_rate: oldData[17],
-        old_discount_amount: oldData[18],
-        old_tax_rate: oldData[19],
-        old_tevkifat_rate: oldData[20],
-        old_price_without_tax: oldData[21],
-        old_unit_price_without_tax: oldData[22],
-        old_price_with_tevkifat: oldData[23],
-        old_price_total: oldData[24],
-
-        
-      };
-      console.log(updatedData)
-      fetch('http://127.0.0.1:8000/api/edit_accounting/', {
-      method: 'POST',
-      body: JSON.stringify(updatedData),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+ String(access_token)
-      },
-      
-    })
-
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then(data => {
-          console.log(data.error)
-          
-          errorUpload(data.error);
-        });
-      }
-     
-      else{
-        return response.json().then(data => {
-          setEditData(updatedData);
-          successEdit(data.message);
-        })
     
+
+
+useEffect(() => {
+  if (productData) {
+    setId(productData[0]);
+    setProductCode(productData[1]);
+    setDate(productData[2]);
+    setBarcode(productData[3]);
+    setProviderCompany(productData[4]);
+    setReceiverCompany(productData[5]);
+    setStatus(productData[6]);
+    setPlaceOfUse(productData[7]);
+    setGroup(productData[8]);
+    setSubgroup(productData[9]);
+    setBrand(productData[10]);
+    setSerialNumber(productData[11]);
+    setModel(productData[12]);
+    setDescription(productData[13]);
+    setUnit(productData[14]);
+    setAmount(productData[15]);
+    setUnitPrice(productData[16]);
+    setDiscountRate(productData[17]);
+    setDiscountAmount(productData[18]);
+    setTaxRate(productData[19]);
+    setTevkifatRate(productData[20]);
+    setPriceWithoutTax(productData[21]);
+    setUnitPriceWithoutTax(productData[22]);
+    setPriceWithTevkifat(productData[23]);
+    setPriceTotal(productData[24]);
+  }
+}, [productData]);
+
+  
+    const handleClick = (row) => {
+      setProductData(row);
+      setShowPopup(true);
+    };
+  
+    const handleEdit = async (event) => {
+      event.preventDefault();
+    
+      const access_token = await localforage.getItem('access_token'); 
+      const updatedData = {
+        id,
+        brand,
+        serial_number:serialNumber,
+        model,
+        description,
+        unit,
+        group:selectedEditGroup,
+        subgroup:selectedEditSubgroup,
+      };
+    
+      fetch(`http://127.0.0.1:8000/api/edit_products/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
+        },
+        body: JSON.stringify(updatedData)
+      })
+      .then(response => response.json().then(data => ({status: response.status, body: data})))
+      .then(({status, body}) => {
+        if (status === 200) { // Assuming 200 is the success status code
+          console.log("Product edited successfully");
+          successUpload(body.message);
+          setUpdatedProductData(updatedData);
+  
+          setDataChanged(true);
+          setShowEditPopup(false);
+         
+           
+        } else {
+          console.log("Failed to edit product", body.error);
+          errorUpload(body.error);
         }
       })
-    
-
-      // Call your Django API to send the updated values here
+      .catch(error => {
+        console.error('Error:', error);
+        errorUpload(error.message);
+      });
     };
+  
 
     const handleCancel = () => {
       setShowPopup(false);
       setEditData(null)
     };
 
-    useEffect(() => {
-      console.log("useEffect called")
-      if(editData){
-        setId(editData[0]);
-        setProductCode(editData[1]);
-        setDate(editData[2]);
-        setBarcode(editData[3]);
-        setProviderCompany(editData[4]);
-        setReceiverCompany(editData[5]);
-        setStatus(editData[6]);
-        setPlaceOfUse(editData[7]);
-        setGroup(editData[8]);
-        setSubgroup(editData[9]);
-        setBrand(editData[10]);
-        setSerialNumber(editData[11]);
-        setModel(editData[12]);
-        setDescription(editData[13]);
-        setUnit(editData[14]);
-        setAmount(editData[15]);
-        setUnitPrice(editData[16]);
-        setDiscountRate(editData[17]);
-        setDiscountAmount(editData[18]);
-        setTaxRate(editData[19]);
-        setTevkifatRate(editData[20]);
-        setPriceWithoutTax(editData[21]);
-        setUnitPriceWithoutTax(editData[22]);
-        setPriceWithTevkifat(editData[23]);
-        setPriceTotal(editData[24]);
-
-
-          
-          setIsUpdated(true)
-      }
-    }, [editData])
+    
 
     async function handleExportClick() {
       // Retrieve the access token from localForage
@@ -491,16 +415,16 @@ const DataTable = () => {
       {alert}
       {/* Pop Up */}
       {showPopup && (
-       <div className="popup">
+       <div className="popup-sales">
       <Card>
             <CardHeader>
               <CardTitle tag="h4">Muhasebe Girişi Ekle</CardTitle>
             </CardHeader>
             <CardBody>
-              <Form onSubmit={handleSubmit}>
+              <Form onSubmit={handleEdit}>
               <div>
 
-        <div className="form-group-col">
+        <div className="form-group-col-sales">
         
         <label>No</label>
         <FormGroup>
@@ -548,6 +472,29 @@ const DataTable = () => {
             />
           </FormGroup>
 
+          <label>Tevkifatlı Fiyat</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={priceWithTevkifat}
+              onChange={(e) => setPriceWithTevkifat(e.target.value)}
+            />
+          </FormGroup>
+
+
+          <label>Toplam Fiyat(Vergi Dahil)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={priceTotal}
+              onChange={(e) => setPriceTotal(e.target.value)}
+            />
+          </FormGroup>
+
+          </div>
+
+
+          <div className="form-group-col-sales">
           <label>Alan Firma</label>
           <FormGroup>
             <Input
@@ -601,6 +548,20 @@ const DataTable = () => {
               onChange={(e) => setBrand(e.target.value)}
             />
           </FormGroup>
+
+          <label>Toplam Fiyat(Vergi Hrç.)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={priceWithoutTax}
+              onChange={(e) => setPriceWithoutTax(e.target.value)}
+            />
+          </FormGroup>
+
+          </div>
+
+
+          <div className="form-group-col-sales">
 
           <label>Seri Numarası</label>
           <FormGroup>
@@ -656,6 +617,19 @@ const DataTable = () => {
             />
           </FormGroup>
 
+          <label>Birim Fiyat(Vergi Hrç)</label>
+          <FormGroup>
+            <Input
+              type="text"
+              defaultValue={unitPriceWithoutTax}
+              onChange={(e) => setUnitPriceWithoutTax(e.target.value)}
+            />
+          </FormGroup>
+
+
+        </div>
+
+        <div className="form-group-col-sales">
           <label>İndirim Oranı</label>
           <FormGroup>
             <Input
@@ -692,51 +666,26 @@ const DataTable = () => {
             />
           </FormGroup>
 
-          <label>Toplam Fiyat(Vergi Hariç)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={priceWithoutTax}
-              onChange={(e) => setPriceWithoutTax(e.target.value)}
-            />
-          </FormGroup>
+      
 
-          <label>Birim Fiyat(Vergi Hariç)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={unitPriceWithoutTax}
-              onChange={(e) => setUnitPriceWithoutTax(e.target.value)}
-            />
-          </FormGroup>
+         
+          </div>
 
-          <label>Tevkifatlı Fiyat</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={priceWithTevkifat}
-              onChange={(e) => setPriceWithTevkifat(e.target.value)}
-            />
-          </FormGroup>
+          <div className="form-group-col-sales">
 
-          <label>Toplam Fiyat(Vergi Dahil)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={priceTotal}
-              onChange={(e) => setPriceTotal(e.target.value)}
-            />
-          </FormGroup>
+        
+
+          
           </div>
          
-        
+         
           
         
         </div>
               </Form>
             </CardBody>
               <CardFooter>
-                <Button className="btn-round" color="success" type="submit" onClick={handleSubmit}>
+                <Button className="btn-round" color="success" type="submit" onClick={handleEdit}>
                   Onayla
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>

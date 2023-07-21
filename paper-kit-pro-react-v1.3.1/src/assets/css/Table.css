@@ -94,7 +94,7 @@
 
 /* Sales */
 .popup-sales {
-  width:1250px;
+  width:950px;
   position: fixed;
   top: 50%;
   left: 60%;
@@ -105,6 +105,7 @@
   display: inline-block;
   width: 10%; /* adjust as needed */
   margin-right: 5%; /* adjust as needed */
+  margin-left: 5%;
   vertical-align: top;
 }
 .popup-sales .card-footer {

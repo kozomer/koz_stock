@@ -570,7 +570,7 @@ const handleInputChange = (event) => {
                     <Input
                       name="brand"
                       type="text"
-                      value={product.brand}
+                     
                       onChange={handleInputChange}
                       placeholder="Brand"
                     />
@@ -581,7 +581,7 @@ const handleInputChange = (event) => {
                     <Input
                       type="text"
                       name="serial_number" 
-                      value={product.serial_number}
+                      
                        onChange={handleInputChange} 
                        placeholder="Serial Number"
                     />
@@ -593,7 +593,7 @@ const handleInputChange = (event) => {
                   <FormGroup>
                     <Input
                       type="text"
-                      name="model" value={product.model}
+                      name="model" 
                        onChange={handleInputChange} 
                        placeholder="Model" 
                     />
@@ -604,7 +604,7 @@ const handleInputChange = (event) => {
                     <Input
                       type="text"
                       name="description"
-                       value={product.description}
+                      
                         onChange={handleInputChange}
                          placeholder="Description"
                     />
@@ -615,7 +615,7 @@ const handleInputChange = (event) => {
                     <Input
                       type="text"
                       name="unit"
-                       value={product.unit}
+                      
                         onChange={handleInputChange}
                          placeholder="Unit"
                     />

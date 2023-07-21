@@ -576,6 +576,8 @@ const [consumerList, setConsumerList] = React.useState([]);
             onChange={(e) => setBarcode(e.target.value)}
           />
         </FormGroup>
+
+        
         <label>Tedarikçi Vergi No</label>
       <FormGroup>
       <Select

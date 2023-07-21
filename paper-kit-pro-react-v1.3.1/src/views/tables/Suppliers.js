@@ -22,6 +22,7 @@ const DataTable = () => {
   const [showEditPopup, setShowEditPopup] = useState(false);
   const [productData, setProductData] = useState(null);
   //Edit Variables
+  const [id, setId] = useState('');
   const [taxCode, setTaxCode] = useState('');
   const [name, setName] = useState('');
   const [contactName, setContactName] = useState('');
@@ -282,65 +283,6 @@ const DataTable = () => {
 
     
 
-    const handleSubmit =async (e) => {
-      const access_token =  await localforage.getItem('access_token'); 
-      
-      const updatedData = {
-        new_tax_code: taxCode,
-        new_name: name,
-        new_group: group,
-        new_subgroup: subgroup,
-        new_company: company,
-        new_project: project,
-        new_products: products,
-        new_description: description,
-        new_unit: unit,
-        new_supplier: supplier,
-        new_supplier_contact: supplierContact,
-    
-        old_tax_code: oldData[0],
-        old_name: oldData[1],
-        old_group: oldData[2],
-        old_subgroup: oldData[3],
-        old_company: oldData[4],
-        old_project: oldData[5],
-        old_products: oldData[6],
-        old_description: oldData[7],
-        old_unit: oldData[8],
-        old_supplier: oldData[9],
-        old_supplier_contact: oldData[10],
-    };
-    
-      console.log(updatedData)
-      fetch('http://127.0.0.1:8000/api/edit_products/', {
-      method: 'POST',
-      body: JSON.stringify(updatedData),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer '+ String(access_token)
-      },
-      
-    })
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then(data => {
-          console.log(data.error)
-          
-          errorUpload(data.error);
-        });
-      }
-     
-      else{
-        return response.json().then(data => {
-          setEditData(updatedData);
-          successEdit(data.message);
-        })
-    
-        }
-      })
-      // Call your Django API to send the updated values here
-    };
-
 
     const handleAdd = async (event) => {
       const access_token = await localforage.getItem('access_token');
@@ -386,7 +328,7 @@ const DataTable = () => {
     useEffect(() => {
       if (productData) {
        
-
+        setId(productData[0])
         setTaxCode(productData[1]);
         setName(productData[2]);
         setContactName(productData[3])
@@ -407,6 +349,7 @@ const DataTable = () => {
     
       const access_token = await localforage.getItem('access_token'); 
       const updatedData = {
+        id,
         name,
         contact_name: contactName,
         contact_no:contactNo,
