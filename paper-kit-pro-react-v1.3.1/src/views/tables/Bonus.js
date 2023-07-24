@@ -579,7 +579,7 @@ function UserProfile() {
                         <Button
                           className="btn-round"
                           color="success"
-                          onClick={() => setShowAddForm(true)}
+                          onClick={() => setShowAddForm(!showAddForm)}
                           outline
                         >
                           <i className="nc-icon nc-simple-add" />

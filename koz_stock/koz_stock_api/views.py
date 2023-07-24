@@ -245,8 +245,8 @@ class CreateUserView(APIView):
             )
             if staff_role == "super_staff":
                 user.is_superstaff = True
-                user.is_stockstaff = True
-                user.is_accountingstaff = True
+                user.is_stockstaff = False
+                user.is_accountingstaff = False
             elif staff_role == "stock_staff":
                 user.is_superstaff = False
                 user.is_stockstaff = True
@@ -286,6 +286,7 @@ class EditUserView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
+            print(request.data)
             # Extract the data from the request
             username = request.data.get('username')
             password = request.data.get('password')
@@ -320,8 +321,8 @@ class EditUserView(APIView):
                 user.last_name = last_name
             if staff_role == "super_staff":
                 user.is_superstaff = True
-                user.is_stockstaff = True
-                user.is_accountingstaff = True
+                user.is_stockstaff = False
+                user.is_accountingstaff = False
             elif staff_role == "stock_staff":
                 user.is_superstaff = False
                 user.is_stockstaff = True
@@ -347,6 +348,7 @@ class EditUserView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 
@@ -363,11 +365,9 @@ class CollapsedUserView(APIView):
     def get(self, request, *args, **kwargs):
         active_users = CustomUser.objects.filter(is_active=True)
         active_users_list = [[user.id, user.first_name, user.last_name, user.is_active] for user in active_users]
-        passive_users = CustomUser.objects.filter(is_active=False)
-        passive_users_list = [[user.id,user.first_name, user.last_name, user.is_active] for user in passive_users]
         
         return JsonResponse({"active_users_list": active_users_list,
-                             "passive_users_list": passive_users_list}, safe=False)
+                             }, safe=False)
 
 class UserCardView(APIView):
     permission_classes = (IsAuthenticated,) 
@@ -382,26 +382,32 @@ class UserCardView(APIView):
     def post(self, request, *args, **kwargs):
         data = json.loads(request.body)
         id = data.get('id')
+        print(id)
         try:
             user = CustomUser.objects.get(id=id)
         except ObjectDoesNotExist:
             return JsonResponse({'error': _('User not found')}, status=404)
 
+        if user.is_superstaff:
+            staff_role = "super_staff"
+        elif user.is_stockstaff:
+            staff_role = "stock_staff"
+        elif user.is_accountingstaff:
+            staff_role = "accounting_staff"
+        else:
+            staff_role = None
+        # Check if the staff role is valid
+        if staff_role not in ["super_staff", "stock_staff", "accounting_staff"]:
+            return JsonResponse({'error': _("Invalid staff role.")}, status=400)
         response_data = {
             'id': user.id, 
             'username': user.username, 
             'first_name': user.first_name,
             'last_name': user.last_name,
-            'email': user.email,
             'is_superuser': user.is_superuser,
-            'is_staff': user.is_staff,
             'is_active': user.is_active,
-            'is_superstaff': user.is_superstaff,
-            'is_stockstaff': user.is_stockstaff,
-            'is_accountingstaff': user.is_accountingstaff,
-            'company': user.company.name if user.company else None,
-            'current_project': user.current_project.name if user.current_project else None,
-            'projects': [project.name for project in user.projects.all()],
+            'staff_role': staff_role,
+            'projects': [[project.id ,project.name] for project in user.projects.all()],
         }
 
         return JsonResponse(response_data, safe=False)
@@ -1949,6 +1955,7 @@ class EditAccountingView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = request.data
+            print(data)
 
             old_id = data.get('old_id')
             # Filter Accounting based on user's company and project
@@ -1957,7 +1964,7 @@ class EditAccountingView(APIView):
 
             # Update accounting fields
             for field in ['unit_price', 'discount_rate', 'discount_amount', 'tax_rate', 'tevkifat_rate', 'price_without_tax', 'unit_price_without_tax', 'price_with_tevkifat', 'price_total']:
-                value = data.get('new_' + field)
+                value = data.get(field)
 
                 if value is not None and value != '':
                     old_value = accounting_fields.get(field)

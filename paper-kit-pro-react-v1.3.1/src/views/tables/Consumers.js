@@ -301,6 +301,7 @@ const DataTable = () => {
   
     const access_token = await localforage.getItem('access_token'); 
     const updatedData = {
+      id,
       name,
       contact_name: contactName,
       contact_no:contactNo,

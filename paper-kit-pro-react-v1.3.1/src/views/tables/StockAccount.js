@@ -326,17 +326,19 @@ useEffect(() => {
     
       const access_token = await localforage.getItem('access_token'); 
       const updatedData = {
-        id,
-        brand,
-        serial_number:serialNumber,
-        model,
-        description,
-        unit,
-        group:selectedEditGroup,
-        subgroup:selectedEditSubgroup,
+        old_id:id,
+        unit_price:unitPrice,
+        discount_rate:discountRate,
+        discount_amount:discountAmount,
+        tax_rate: taxRate,
+        tevkifat_rate: tevkifatRate,
+        price_without_tax:priceWithoutTax,
+        unit_price_without_tax: unitPriceWithoutTax,
+        price_with_tevkifat: priceWithTevkifat,
+        price_total: priceTotal,
       };
     
-      fetch(`http://127.0.0.1:8000/api/edit_products/`, {
+      fetch(`http://127.0.0.1:8000/api/edit_accounting/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -349,10 +351,10 @@ useEffect(() => {
         if (status === 200) { // Assuming 200 is the success status code
           console.log("Product edited successfully");
           successUpload(body.message);
-          setUpdatedProductData(updatedData);
+         
   
           setDataChanged(true);
-          setShowEditPopup(false);
+          setShowPopup(false);
          
            
         } else {
@@ -369,7 +371,7 @@ useEffect(() => {
 
     const handleCancel = () => {
       setShowPopup(false);
-      setEditData(null)
+      
     };
 
     
@@ -418,7 +420,7 @@ useEffect(() => {
        <div className="popup-sales">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Muhasebe Girişi Ekle</CardTitle>
+              <CardTitle tag="h4">Muhasebe Girişi Düzenle</CardTitle>
             </CardHeader>
             <CardBody>
               <Form onSubmit={handleEdit}>
@@ -429,6 +431,7 @@ useEffect(() => {
         <label>No</label>
         <FormGroup>
           <Input
+            disabled
             name="id"
             type="number"
             defaultValue={id}
@@ -439,6 +442,7 @@ useEffect(() => {
         <label>Malzeme Kodu</label>
           <FormGroup>
             <Input
+             disabled
               type="text"
               defaultValue={productCode}
               onChange={(e) => setProductCode(e.target.value)}
@@ -448,6 +452,7 @@ useEffect(() => {
         <label>Tarih</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={date}
               onChange={(e) => setDate(e.target.value)}
@@ -457,6 +462,7 @@ useEffect(() => {
           <label>Barkod</label>
           <FormGroup>
             <Input
+               disabled
               type="text"
               defaultValue={barcode}
               onChange={(e) => setBarcode(e.target.value)}
@@ -466,6 +472,7 @@ useEffect(() => {
           <label>Alınan Firma</label>
           <FormGroup>
             <Input
+             disabled
               type="text"
               defaultValue={providerCompany}
               onChange={(e) => setProviderCompany(e.target.value)}
@@ -498,6 +505,7 @@ useEffect(() => {
           <label>Alan Firma</label>
           <FormGroup>
             <Input
+               disabled
               type="text"
               defaultValue={receiverCompany}
               onChange={(e) => setReceiverCompany(e.target.value)}
@@ -507,6 +515,7 @@ useEffect(() => {
           <label>Durum</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={status}
               onChange={(e) => setStatus(e.target.value)}
@@ -516,6 +525,7 @@ useEffect(() => {
           <label>Kullanım Yeri</label>
           <FormGroup>
             <Input
+               disabled
               type="text"
               defaultValue={placeOfUse}
               onChange={(e) => setPlaceOfUse(e.target.value)}
@@ -525,6 +535,7 @@ useEffect(() => {
           <label>Grup</label>
           <FormGroup>
             <Input
+               disabled
               type="text"
               defaultValue={group}
               onChange={(e) => setGroup(e.target.value)}
@@ -534,6 +545,7 @@ useEffect(() => {
           <label>Alt Grup</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={subgroup}
               onChange={(e) => setSubgroup(e.target.value)}
@@ -543,6 +555,7 @@ useEffect(() => {
           <label>Marka</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={brand}
               onChange={(e) => setBrand(e.target.value)}
@@ -566,6 +579,7 @@ useEffect(() => {
           <label>Seri Numarası</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={serialNumber}
               onChange={(e) => setSerialNumber(e.target.value)}
@@ -575,6 +589,7 @@ useEffect(() => {
           <label>Model</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={model}
               onChange={(e) => setModel(e.target.value)}
@@ -584,6 +599,7 @@ useEffect(() => {
           <label>Açıklama</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -593,6 +609,7 @@ useEffect(() => {
           <label>Birim</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={unit}
               onChange={(e) => setUnit(e.target.value)}
@@ -602,6 +619,7 @@ useEffect(() => {
           <label>Miktar</label>
           <FormGroup>
             <Input
+              disabled
               type="text"
               defaultValue={amount}
               onChange={(e) => setAmount(e.target.value)}

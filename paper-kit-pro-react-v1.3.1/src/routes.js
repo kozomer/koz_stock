@@ -69,108 +69,101 @@ const routes = [
     layout: "/admin"
   },
   
- 
-  
 
   {
-    path: "/products-tables",
+    collapse: true,
+    name: "Firmalar",
+    icon: "nc-icon nc-bank", 
+    state: "companiesCollapse",
+    views: [ {
+      path: "/suppliers",
+      name: "Tedarikçiler",
+      icon: "nc-icon nc-delivery-fast",
+      component: Suppliers,
+      layout: "/admin",
+     
+    },
+    {
+      path: "/consumers",
+      name: "Tüketiciler",
+      icon: "nc-icon nc-single-02",
+      component: Consumers,
+      layout: "/admin",
+     
+    },
+  ]
+},
+ 
+ 
+  {
+    collapse: true,
     name: "Malzemeler",
-    icon:"nc-icon nc-tag-content",
-    component: Products,
-    layout: "/admin"
-  },
- 
-  {
-    path: "/product-in",
-    name: "Ambar Giriş",
-    icon:"nc-icon nc-cart-simple",
-    component: ProductInFlow,
-    layout: "/admin"
+    icon: "nc-icon nc-box",
+    state: "ProductsCollapse",
+    views: [{
+      path: "/products-tables",
+      name: "Malzemeler",
+      icon:"nc-icon nc-tag-content",
+      component: Products,
+      layout: "/admin"
+      
+    },
+
+    {
+      path: "/create-groups",
+      name: "Grup Oluşturma",
+      icon: "nc-icon nc-simple-add",
+      component: CreateGroups,
+      layout: "/admin",
+     
+    },
+    ]
   },
 
-  {
-    path: "/product-out",
-    name: "Ambar Çıkış",
-    icon:"nc-icon nc-cart-simple",
-    component: ProductOutFlow,
-    layout: "/admin"
-  },
-  {
-    path: "/stock-account",
-    name: "Ambar Muhasebe",
-    icon:"nc-icon nc-briefcase-24",
-    component: StockAccount,
-    layout: "/admin"
-  },
-  {
-    path: "/warehouse-tables",
-    name: "Ambar",
-    icon:"nc-icon nc-box",
-    component: Warehouse,
-    layout: "/admin"
-  },
-  {
-    path: "/suppliers",
-    name: "Tedarikçiler",
-    icon: "nc-icon nc-bus-front-12",
-    component: Suppliers,
-    layout: "/admin",
-   
-  },
-  {
-    path: "/consumers",
-    name: "Tüketiciler",
-    icon: "nc-icon nc-bus-front-12",
-    component: Consumers,
-    layout: "/admin",
-   
-  },
-  {
-    path: "/bonus-tables",
-    name: "Staff",
-    icon:"nc-icon nc-badge",
-    component:Bonus,
-    layout: "/admin"
-  },
+
   
   {
-    path: "/saler-performance",
-    name: "Staff Performance",
-    icon:"nc-icon nc-user-run",
-    component: StaffPerformance,
-    layout: "/admin"
-  },
+    collapse: true,
+    name: "Ambar Bilgisi",
+    icon: "nc-icon nc-shop", // updated icon
+    state: "WarehouseCollapse",
+    views: [
+      {
+        path: "/product-in",
+        name: "Ambar Giriş",
+        icon:"nc-icon nc-send",// updated icon, signifies "entering"
+        component: ProductInFlow,
+        layout: "/admin"
+      },
+      {
+        path: "/product-out",
+        name: "Ambar Çıkış",
+        icon:"nc-icon nc-box-2", // updated icon, signifies "exiting"
+        component: ProductOutFlow,
+        layout: "/admin"
+      },
+      {
+        path: "/stock-account",
+        name: "Ambar Muhasebe",
+        icon:"nc-icon nc-money-coins",  // updated icon, signifies "accounting"
+        component: StockAccount,
+        layout: "/admin"
+      },
+      {
+        path: "/warehouse-tables",
+        name: "Ambar",
+        icon:"nc-icon nc-delivery-fast", // updated icon, signifies "warehouse"
+        component: Warehouse,
+        layout: "/admin"
+      },
+    ]
+},
+
+  
  
-  
-  {
-    path: "/sales-report",
-    name: "Sales Report",
-    icon:"nc-icon nc-single-copy-04",
-    component: SalesReport,
-    layout: "/admin"
-  },
-  {
-    path: "/rop",
-    name: "Reorder Points",
-    icon:"nc-icon nc-bullet-list-67",
-    component: ReorderPoints,
-    layout: "/admin"
-  },
-  {
-    path: "/orderlist",
-    name: "Orderlist",
-    icon:"nc-icon nc-bookmark-2",
-    component: Orderlist,
-    layout: "/admin"
-  },
-  {
-    path: "/goods-road",
-    name: "Goods On Road",
-    icon: "nc-icon nc-bus-front-12",
-    component: GoodsOnRoad,
-    layout: "/admin",
-    navbar: false  // Add this field to indicate that the Login link should not be displayed in the navbar
-  },
+ 
+ 
+ 
   {
     path: "/login",
     name: "Login",
@@ -187,13 +180,14 @@ const routes = [
     icon: "nc-icon nc-bus-front-12",
     component: Select,
     layout: "/auth",
+    navbar: false
    
   },
 
   {
     path: "/deneme",
-    name: "Deneme",
-    icon: "nc-icon nc-bus-front-12",
+    name: "Kullanıcı",
+    icon: "nc-icon nc-circle-10",
     component: Deneme,
     layout: "/admin",
    
@@ -202,20 +196,13 @@ const routes = [
   {
     path: "/searc",
     name: "Sorgulama",
-    icon: "nc-icon nc-bus-front-12",
+    icon: "nc-icon nc-zoom-split",
     component: Search,
     layout: "/admin",
    
   },
 
-  {
-    path: "/create-groups",
-    name: "Grup Oluşturma",
-    icon: "nc-icon nc-bus-front-12",
-    component: CreateGroups,
-    layout: "/admin",
-   
-  },
+ 
   
 ];
 
