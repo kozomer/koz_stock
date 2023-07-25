@@ -1404,9 +1404,10 @@ class DeleteProductInflowView(APIView):
             id = request.data.get('id')
             product_inflow = ProductInflow.objects.get(id=id)
 
+            #!silmeden önce kullanıcıya muhasebe öğesinin de silineceğine dair uyarı verilmeli
             # Check if there are any associated accounting objects
-            if product_inflow.accounting_set.exists():
-                return JsonResponse({'error': _('Cannot delete product inflow object. There are accounting objects associated with it.')}, status=400)
+            # if product_inflow.accounting_set.exists():
+            #     return JsonResponse({'error': _('Cannot delete product inflow object. There are accounting objects associated with it.')}, status=400)
 
             product_inflow.delete()
 
@@ -1751,36 +1752,43 @@ def update_stock_inflow_on_delete(sender, instance, **kwargs):
         return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
+
+
 @receiver(post_save, sender=ProductOutflow)
 def update_stock_outflow(sender, instance, created, **kwargs):
-    dirty_fields = instance.get_dirty_fields()
+    with transaction.atomic():
+        dirty_fields = instance.get_dirty_fields()
 
-    # Check if product_code has been changed
-    old_product_code = dirty_fields.get('product__product_code')
-    if old_product_code:
+        old_product_code = dirty_fields.get('product__product_code')
+        if old_product_code:
+            try:
+                old_product_stock = Stock.objects.get(product__product_code=old_product_code, company=instance.company, project=instance.project)
+                old_product_stock.outflow -= instance.amount
+                old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
+                if old_product_stock.stock < 0:
+                    return JsonResponse({'error': _("You do not have enough products in your warehouse.")}, status=400)
+                old_product_stock.save()
+            except Stock.DoesNotExist:
+                return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
+
         try:
-            old_product_stock = Stock.objects.get(product__product_code=old_product_code, company=instance.company, project=instance.project)
-            old_product_stock.outflow -= instance.amount
-            old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
-            old_product_stock.save()
+            stock = Stock.objects.get(product__product_code=instance.product.product_code, company=instance.company, project=instance.project)
         except Stock.DoesNotExist:
-            return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
+            return
 
-    try:
-        stock = Stock.objects.get(product__product_code=instance.product.product_code, company=instance.company, project=instance.project)
-    except Stock.DoesNotExist:
-        return
+        if created:
+            instance.receiver_company.products.add(instance.product)
+            stock.outflow += float(instance.amount)
+        else:
+            old_amount = dirty_fields.get('amount')
+            if old_amount is not None:
+                stock.outflow = (stock.outflow or 0) - old_amount + instance.amount
 
-    if created:
-        instance.receiver_company.products.add(instance.product)
-        stock.outflow += float(instance.amount)
-    else:
-        old_amount = dirty_fields.get('amount')
-        if old_amount is not None:
-            stock.outflow = (stock.outflow or 0) - old_amount + instance.amount
+        stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+        if stock.stock < 0:
+            raise ValidationError(_('You do not have enough products in your warehouse.'))
+        stock.save()
 
-    stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
-    stock.save()
 
 
 @receiver(pre_delete, sender=ProductOutflow)
