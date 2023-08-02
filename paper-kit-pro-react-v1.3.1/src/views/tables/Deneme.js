@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card,Label, CardHeader, CardBody, CardFooter, Form, Row, Col, FormGroup, CardTitle, ListGroupItem,Input, Button, Alert, Modal, ModalHeader, ModalBody, ModalFooter, ListGroup } from 'reactstrap'; // Replace this line with your actual import if you're not using reactstrap
 import localforage from 'localforage';
 import ReactBSAlert from "react-bootstrap-sweetalert";
-import { PencilSquare, TrashFill, InfoCircleFill } from 'react-bootstrap-icons'; // Icons for buttons
+//import { PencilSquare, TrashFill, InfoCircleFill } from 'react-bootstrap-icons'; // Icons for buttons
 
 function RegistrationForm() {
   

@@ -1,6 +1,18 @@
 from django.db import models
 from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
+import uuid
+from django.utils.deconstruct import deconstructible
+
+@deconstructible
+class RandomFileName(object):
+    def __init__(self, path):
+        self.path = path
+
+    def __call__(self, _, filename):
+        extension = filename.split('.')[-1]
+        filename = '{}.{}'.format(uuid.uuid4(), extension)
+        return '{}/{}'.format(self.path, filename)
 
 #! Şirket ve proje için ayrı olmalı
 class SequenceNumber(models.Model):
@@ -83,6 +95,11 @@ class ProductInflow(models.Model, DirtyFieldsMixin):
     amount = models.FloatField(null= True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+class ProductImage(models.Model):
+    product_inflow = models.ForeignKey(ProductInflow, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=RandomFileName('product_images/'), null=True, blank=True)
+
 
 class ProductOutflow(models.Model, DirtyFieldsMixin):
     date = models.DateField()

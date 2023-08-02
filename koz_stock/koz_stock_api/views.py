@@ -2,7 +2,7 @@ from django.shortcuts import render
 import pandas as pd
 from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
                       Stock, Accounting, Project, CustomUser, Company, ProductGroups,
-                      SequenceNumber, ProductSubgroups)
+                      SequenceNumber, ProductSubgroups, ProductImage)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -48,6 +48,8 @@ from rest_framework.exceptions import ValidationError
 import filetype
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.exceptions import NotAuthenticated, PermissionDenied
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.exceptions import ValidationError
 
 from django.http import JsonResponse
 from rest_framework.views import APIView
@@ -1260,6 +1262,30 @@ class AddProductInflowView(APIView):
             product.projects.add(project)
             supplier_company.projects.add(project)
             receiver_company.projects.add(project)
+            # Get the uploaded images
+            images = request.FILES.getlist('images')
+            print(request.FILES)
+            
+            for image in images:
+                # Check that it's an image
+                if not isinstance(image, InMemoryUploadedFile) or image.content_type not in ['image/png', 'image/jpeg']:
+                    return JsonResponse({'error': _('Invalid file type. Only PNG and JPEG are allowed.')}, status=400)
+
+                # Check file size (max 2 MB)
+                if image.size > 2 * 1024 * 1024:
+                    return JsonResponse({'error': _('The image file is too large (max 2 MB).')}, status=400)
+
+                # Use Django's built-in validation
+                try:
+                    image.full_clean()
+                except ValidationError as e:
+                    return JsonResponse({'error': str(e)}, status=400)
+                
+                # Create the ProductImage object
+                ProductImage.objects.create(
+                    product_inflow=product_inflow,
+                    image=image
+                )
 
             return JsonResponse({'message': _('ProductInflow created successfully')}, status=201)
         except Products.DoesNotExist:
