@@ -57,6 +57,7 @@ from rest_framework.permissions import IsAuthenticated
 from django.core.exceptions import ObjectDoesNotExist
 from .models import Project
 from django.utils import translation
+from PIL import Image
 
 
 
@@ -1278,9 +1279,17 @@ class AddProductInflowView(APIView):
 
                 # Use Django's built-in validation
                 try:
-                    image.full_clean()
-                except ValidationError as e:
-                    return JsonResponse({'error': str(e)}, status=400)
+        # Open the image file
+                    img = Image.open(image)
+
+                    # Check if the file is an image
+                    img.verify()
+
+                    # The file is an image, save it to your model
+                    ProductImage.objects.create(product_inflow=product_inflow, image=image)
+                except (IOError, SyntaxError):
+                    # The file is not an image, handle the exception
+                    return JsonResponse({'error': _('One or more uploaded files are not valid images.')}, status=400)
                 
                 # Create the ProductImage object
                 ProductImage.objects.create(
