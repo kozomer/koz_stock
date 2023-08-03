@@ -1223,15 +1223,16 @@ class AddProductInflowView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            print(request.data)
-            product_code = request.data.get('product_code')
-            date = request.data.get('date')
-            barcode = request.data.get('barcode')
-            provider_company_tax_code = request.data.get('provider_company_tax_code')
-            receiver_company_tax_code = request.data.get('receiver_company_tax_code')
-            status = request.data.get('status')
-            place_of_use = request.data.get('place_of_use')
-            amount = request.data.get('amount')
+            print(request.POST)  # This should print your non-file data
+            print(request.FILES) 
+            product_code = request.POST.get('product_code')
+            date = request.POST.get('date')
+            barcode = request.POST.get('barcode')
+            provider_company_tax_code = request.POST.get('provider_company_tax_code')
+            receiver_company_tax_code = request.POST.get('receiver_company_tax_code')
+            status = request.POST.get('status')
+            place_of_use = request.POST.get('place_of_use')
+            amount = request.POST.get('amount')
             company = request.user.company
             project = request.user.current_project
 

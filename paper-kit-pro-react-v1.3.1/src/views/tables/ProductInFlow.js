@@ -406,22 +406,35 @@ const DataTable = () => {
     const access_token = await localforage.getItem('access_token');
     event.preventDefault();
 
-    fetch(`http://127.0.0.1:8000/api/add_product_inflow/`, {
+    const formData = new FormData();
+
+    formData.append('date', date);
+    formData.append('product_code', productCode);
+    formData.append('barcode', barcode);
+    formData.append('provider_company_tax_code', providerCompanyTaxCode);
+    formData.append('receiver_company_tax_code', recieverCompanyTaxCode);
+    formData.append('status', status);
+    formData.append('place_of_use', placeOfUse);
+    formData.append('amount', amount);
+  
+    // Append all the uploaded files
+    console.log(uploadedFiles);
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      formData.append('images', uploadedFiles[i]);
+    }
+    
+    
+  
+    for(let pair of formData.entries()) {
+      console.log(pair[0]+ ', '+ pair[1]); 
+   }
+   
+   fetch(`http://127.0.0.1:8000/api/add_product_inflow/`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         'Authorization': 'Bearer ' + String(access_token)
       },
-      body: JSON.stringify({
-        date: date,
-        product_code: productCode,
-        barcode: barcode,
-        provider_company_tax_code: providerCompanyTaxCode,
-        receiver_company_tax_code: recieverCompanyTaxCode,
-        status: status,
-        place_of_use: placeOfUse,
-        amount: amount
-      })
+      body:formData,
     })
       .then(response => response.json().then(data => ({ status: response.status, body: data })))
       .then(({ status, body }) => {
@@ -429,6 +442,7 @@ const DataTable = () => {
           console.log("Product inflow added successfully");
           successUpload(body.message);
           setDataChanged(true);
+          setUploadedFiles([]);
         } else {
           console.log("Failed to add product inflow", body.error);
           errorUpload(body.error);
@@ -502,11 +516,12 @@ const DataTable = () => {
       }, 2000);
     });
 
+    
     // Simulating the response with a timeout
     setTimeout(() => {
       console.log('All files uploaded successfully');
       setUploadedFileUrls(urls);
-      setUploadedFiles([]);
+      
     }, 2000);
   };
 
