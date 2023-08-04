@@ -2,7 +2,7 @@ from django.shortcuts import render
 import pandas as pd
 from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
                       Stock, Accounting, Project, CustomUser, Company, ProductGroups,
-                      SequenceNumber, ProductSubgroups, ProductImage)
+                      SequenceNumber, ProductSubgroups, ProductInflowImage, ProductOutflowImage)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -1224,8 +1224,6 @@ class AddProductInflowView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            print(request.POST)  # This should print your non-file data
-            print(request.FILES) 
             product_code = request.POST.get('product_code')
             date = request.POST.get('date')
             barcode = request.POST.get('barcode')
@@ -1266,7 +1264,6 @@ class AddProductInflowView(APIView):
             receiver_company.projects.add(project)
             # Get the uploaded images
             images = request.FILES.getlist('images')
-            print(request.FILES)
             
             for image in images:
                 # Check that it's an image
@@ -1286,16 +1283,12 @@ class AddProductInflowView(APIView):
                     img.verify()
 
                     # The file is an image, save it to your model
-                    ProductImage.objects.create(product_inflow=product_inflow, image=image)
+                    ProductInflowImage.objects.create(product_inflow=product_inflow, image=image)
                 except (IOError, SyntaxError):
                     # The file is not an image, handle the exception
                     return JsonResponse({'error': _('One or more uploaded files are not valid images.')}, status=400)
                 
-                # Create the ProductImage object
-                ProductImage.objects.create(
-                    product_inflow=product_inflow,
-                    image=image
-                )
+                
 
             return JsonResponse({'message': _('ProductInflow created successfully')}, status=201)
         except Products.DoesNotExist:
@@ -1322,7 +1315,7 @@ class ProductInflowView(APIView):
 
     def get(self, request, *args, **kwargs):
         try:
-            product_inflows = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').all()
+            product_inflows = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').prefetch_related('images').all()
 
             product_inflow_list = [
                 [
@@ -1343,7 +1336,8 @@ class ProductInflowView(APIView):
                     pf.product.model,
                     pf.product.description,
                     pf.product.unit,
-                    pf.amount
+                    pf.amount,
+                    [image.image.url for image in pf.images.all()]  # URLs of all images related to this ProductInflow
                 ] 
                 for pf in product_inflows
             ]
@@ -1353,6 +1347,7 @@ class ProductInflowView(APIView):
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
 
 
 
@@ -1496,11 +1491,6 @@ class AddProductOutflowView(APIView):
             product = Products.objects.get(product_code=product_code, company=request.user.company)
             supplier_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
             receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company)
-            print(product)
-            print(supplier_company)
-            print(receiver_company)
-            print(request.user.company)
-            print(request.user.current_project)
             # Create the ProductOutflow object
             product_outflow = ProductOutflow.objects.create(
                 product=product,
@@ -1518,6 +1508,32 @@ class AddProductOutflowView(APIView):
             product.projects.add(request.user.current_project)
             supplier_company.projects.add(request.user.current_project)
             receiver_company.projects.add(request.user.current_project)
+
+            # Get the uploaded images
+            images = request.FILES.getlist('images')
+            
+            for image in images:
+                # Check that it's an image
+                if not isinstance(image, InMemoryUploadedFile) or image.content_type not in ['image/png', 'image/jpeg']:
+                    return JsonResponse({'error': _('Invalid file type. Only PNG and JPEG are allowed.')}, status=400)
+
+                # Check file size (max 2 MB)
+                if image.size > 2 * 1024 * 1024:
+                    return JsonResponse({'error': _('The image file is too large (max 2 MB).')}, status=400)
+
+                # Use Django's built-in validation
+                try:
+        # Open the image file
+                    img = Image.open(image)
+
+                    # Check if the file is an image
+                    img.verify()
+
+                    # The file is an image, save it to your model
+                    ProductOutflowImage.objects.create(product_outflow=product_outflow, image=image)
+                except (IOError, SyntaxError):
+                    # The file is not an image, handle the exception
+                    return JsonResponse({'error': _('One or more uploaded files are not valid images.')}, status=400)
 
             return JsonResponse({'message': _('ProductOutflow created successfully')}, status=201)
         except Products.DoesNotExist:
@@ -1560,7 +1576,8 @@ class ProductOutflowView(APIView):
                 pf.product.model,
                 pf.product.description,
                 pf.product.unit,
-                pf.amount
+                pf.amount,
+                [image.image.url for image in pf.images.all()]  # URLs of all images related to this ProductOutflow
             ] 
             for pf in product_outflows
         ]

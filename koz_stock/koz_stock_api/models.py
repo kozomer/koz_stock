@@ -96,7 +96,7 @@ class ProductInflow(models.Model, DirtyFieldsMixin):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
-class ProductImage(models.Model):
+class ProductInflowImage(models.Model):
     product_inflow = models.ForeignKey(ProductInflow, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to=RandomFileName('product_images/'), null=True, blank=True)
 
@@ -112,6 +112,10 @@ class ProductOutflow(models.Model, DirtyFieldsMixin):
     amount = models.FloatField(null= True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+class ProductOutflowImage(models.Model):
+    product_outflow = models.ForeignKey(ProductOutflow, related_name='images', on_delete=models.CASCADE)
+    image = models.ImageField(upload_to=RandomFileName('product_images/'), null=True, blank=True)
 
 
 class Stock(models.Model):
