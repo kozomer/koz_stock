@@ -33,7 +33,8 @@ import os
 import tempfile
 from django.http import FileResponse, Http404
 import urllib.parse
-
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 # Authentications
@@ -1337,8 +1338,8 @@ class ProductInflowView(APIView):
                     pf.product.description,
                     pf.product.unit,
                     pf.amount,
-                    [image.image.url for image in pf.images.all()]  # URLs of all images related to this ProductInflow
-                ] 
+                    [settings.MEDIA_URL + str(image.image) for image in pf.images.all()]  # URLs of all images related to this ProductInflow    
+            ] 
                 for pf in product_inflows
             ]
 
@@ -1577,7 +1578,9 @@ class ProductOutflowView(APIView):
                 pf.product.description,
                 pf.product.unit,
                 pf.amount,
-                [image.image.url for image in pf.images.all()]  # URLs of all images related to this ProductOutflow
+                [settings.MEDIA_URL + str(image.image) for image in pf.images.all()]  # URLs of all images related to this ProductInflow
+
+                # [image.image.url for image in pf.images.all()]  # URLs of all images related to this ProductOutflow
             ] 
             for pf in product_outflows
         ]

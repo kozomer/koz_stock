@@ -5,6 +5,8 @@ import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import localforage from 'localforage';
 import Select from 'react-select';
+import { FaFileUpload } from 'react-icons/fa';
+
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
@@ -45,6 +47,12 @@ const [productData, setProductData] = useState(null);
 const [productList, setProductList] = useState([]);
 const [supplierList, setSupplierList] = useState([]);
 const [consumerList, setConsumerList] = React.useState([]);
+
+
+const [showModal, setShowModal] = useState(false);
+const [currentFiles, setCurrentFiles] = useState([]);
+const [uploadedFiles, setUploadedFiles] = useState([]);
+const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
 
   React.useEffect(() => {
     return function cleanup() {
@@ -375,40 +383,55 @@ const [consumerList, setConsumerList] = React.useState([]);
   const handleAdd = async (event) => {
     const access_token = await localforage.getItem('access_token');
     event.preventDefault();
+
+    const formData = new FormData();
+
+    formData.append('date', date);
+    formData.append('product_code', productCode);
+    formData.append('barcode', barcode);
+    formData.append('provider_company_tax_code', providerCompanyTaxCode);
+    formData.append('receiver_company_tax_code', recieverCompanyTaxCode);
+    formData.append('status', status);
+    formData.append('place_of_use', placeOfUse);
+    formData.append('amount', amount);
   
-    fetch(`http://127.0.0.1:8000/api/add_product_outflow/`, {
+    // Append all the uploaded files
+    console.log(uploadedFiles);
+    for (let i = 0; i < uploadedFiles.length; i++) {
+      formData.append('images', uploadedFiles[i]);
+    }
+    
+    
+  
+    for(let pair of formData.entries()) {
+      console.log(pair[0]+ ', '+ pair[1]); 
+   }
+   
+   fetch(`http://127.0.0.1:8000/api/add_product_outflow/`, {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         'Authorization': 'Bearer ' + String(access_token)
       },
-      body: JSON.stringify({
-        date: date,
-        product_code: productCode,
-        barcode: barcode,
-        provider_company_tax_code: providerCompanyTaxCode,
-        receiver_company_tax_code: recieverCompanyTaxCode,
-        status: status,
-        place_of_use: placeOfUse,
-        amount: amount
+      body:formData,
+    })
+      .then(response => response.json().then(data => ({ status: response.status, body: data })))
+      .then(({ status, body }) => {
+        if (status === 201) { // Assuming 201 is the success status code
+          console.log("Product inflow added successfully");
+          successUpload(body.message);
+          setDataChanged(true);
+          setUploadedFiles([]);
+        } else {
+          console.log("Failed to add product inflow", body.error);
+          errorUpload(body.error);
+        }
       })
-    })
-    .then(response => response.json().then(data => ({status: response.status, body: data})))
-    .then(({status, body}) => {
-      if (status === 201) { // Assuming 201 is the success status code
-        console.log("Product inflow added successfully");
-        successUpload(body.message);
-        setDataChanged(true);
-      } else {
-        console.log("Failed to add product inflow", body.error);
-        errorUpload(body.error);
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      errorUpload(error.message);
-    });
+      .catch(error => {
+        console.error('Error:', error);
+        errorUpload(error.message);
+      });
   };
+
     const handleCancel = () => {
       setShowPopup(false);
       setShowEditPopup(false);
@@ -535,7 +558,65 @@ const [consumerList, setConsumerList] = React.useState([]);
       link.href = window.URL.createObjectURL(blob);
       link.download = filename;
       link.click();
+
+
+
     }
+
+    const handleFileChange = (e) => {
+      // This is an array-like object
+      const files = e.target.files;
+  
+      // Convert it to an array
+      const fileArray = Array.from(files);
+  
+      // You can then set the state with this array
+      setUploadedFiles(fileArray);
+    };
+  
+  
+  
+    const handleUpload = (event) => {
+      event.preventDefault();
+  
+      // Perform upload logic here
+      // If you're uploading files one at a time
+      let urls = [];
+      uploadedFiles.forEach((file, index) => {
+        // Replace this with your actual upload code
+        // Example: axios.post('/upload', file)
+        //   .then((response) => urls.push(response.data.url))
+        //   .catch((error) => console.log(`Error uploading file ${index + 1}: ${error}`));
+  
+        console.log(`Uploading file ${index + 1}`);
+        // Simulating the response with a timeout
+        setTimeout(() => {
+          urls.push(URL.createObjectURL(file)); // This will create a blob URL for the file. Replace this with your server's response
+        }, 2000);
+      });
+  
+      
+      // Simulating the response with a timeout
+      setTimeout(() => {
+        console.log('All files uploaded successfully');
+        setUploadedFileUrls(urls);
+        
+      }, 2000);
+    };
+
+
+    const handleShowModal = (files) => {
+      console.log(files)
+      setCurrentFiles(files);
+      setShowModal(true);
+    };
+  
+    // Function to handle hiding the modal
+    const handleHideModal = () => {
+      setCurrentFiles([]);
+      setShowModal(false);
+    };
+  
   return (
     <>
       <div className='content'>
@@ -644,7 +725,28 @@ const [consumerList, setConsumerList] = React.useState([]);
         </div>
 
         
-       
+        <div className="photo-upload-section">
+                          <input type="file" onChange={handleFileChange} multiple />
+                          <button className="upload-button" onClick={handleUpload}>
+                            <FaFileUpload /> Upload
+                          </button>
+                          {uploadedFiles.length > 0 && (
+                            <p>
+                              {uploadedFiles.length} files selected for upload
+                            </p>
+                          )}
+                        </div>
+                        <div className="uploaded-files-section">
+                          <ul>
+                            {uploadedFileUrls.map((url, index) => (
+                              <li key={index}>
+                                <a href={url} download>
+                                  Download File {index + 1}
+                                </a>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
 
       
 
@@ -855,6 +957,7 @@ const [consumerList, setConsumerList] = React.useState([]);
                     description : row[15],
                     unit : row[16],
                     amount : row[17],
+                    uploaded_files: row[18],  // This line is added
 
                     actions: (
                       <div className='actions-left'>
@@ -1018,6 +1121,13 @@ const [consumerList, setConsumerList] = React.useState([]);
                       Header: 'Miktar',
                       accessor: 'amount'
                   },
+                  {
+                    Header: 'Uploaded Files',
+                    id: 'uploaded_files',
+                    Cell: ({row: {original}}) => (
+                      <button onClick={() => handleShowModal(original.uploaded_files)}>Show Files</button>
+                    ),
+                  },
                     {
                       Header: 'İşlem',
                       accessor: 'actions',
@@ -1035,6 +1145,40 @@ const [consumerList, setConsumerList] = React.useState([]);
           </Col>
         </Row>
       </div>
+
+      {showModal && (
+        <div className="modal show d-block" tabindex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Uploaded Files</h5>
+                <button type="button" className="close" onClick={handleHideModal}>
+                  <span aria-hidden="true">&times;</span>
+                </button>
+              </div>
+              <div className="modal-body">
+    {currentFiles.map((file, index) => {
+        // prepend the server's base URL to the relative file URL
+        const imageUrl = `http://127.0.0.1:8000/${file}`; 
+
+
+        return (
+            <p key={index}>
+                <img src={imageUrl} alt={`file ${index}`} />
+            </p>
+        );
+    })}
+</div>
+
+
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={handleHideModal}>Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </>
     
   );

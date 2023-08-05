@@ -55,6 +55,7 @@ const DataTable = () => {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
 
+
   React.useEffect(() => {
     return function cleanup() {
       var id = window.setTimeout(null, 0);
@@ -130,6 +131,7 @@ const DataTable = () => {
               .then((response) => response.json())
               .then((data) => {
                 setDataTable(data)
+                console.log(data)
               });
             clearTimeout(timeoutId); // Clear any existing timeout
             setTimeoutId(setTimeout(() => setShowUploadDiv(false), 500));
@@ -543,7 +545,8 @@ const DataTable = () => {
 
   // Function to handle showing the modal
   const handleShowModal = (files) => {
-    setCurrentFiles(uploadedFileUrls);
+    console.log(files)
+    setCurrentFiles(files);
     setShowModal(true);
   };
 
@@ -911,6 +914,8 @@ const DataTable = () => {
                     description: row[15],
                     unit: row[16],
                     amount: row[17],
+                    uploaded_files: row[18],  // This line is added
+
 
                     actions: (
                       <div className='actions-left'>
@@ -1067,11 +1072,12 @@ const DataTable = () => {
 
                     {
                       Header: 'Uploaded Files',
-                      id: 'uploaded_files',  // change from accessor to id
-                      Cell: () => (  // removed the value from here
-                        <button onClick={handleShowModal}>Show Files</button>
+                      id: 'uploaded_files',
+                      Cell: ({row: {original}}) => (
+                        <button onClick={() => handleShowModal(original.uploaded_files)}>Show Files</button>
                       ),
                     },
+                    
 
                     {
                       Header: 'İşlem',
@@ -1103,12 +1109,20 @@ const DataTable = () => {
                 </button>
               </div>
               <div className="modal-body">
-                {currentFiles.map((file, index) => (
-                  <p key={index}>
-                    <a href={file}>{file}</a>
-                  </p>
-                ))}
-              </div>
+    {currentFiles.map((file, index) => {
+        // prepend the server's base URL to the relative file URL
+        const imageUrl = `http://127.0.0.1:8000/${file}`; 
+
+
+        return (
+            <p key={index}>
+                <img src={imageUrl} alt={`file ${index}`} />
+            </p>
+        );
+    })}
+</div>
+
+
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={handleHideModal}>Close</button>
               </div>
