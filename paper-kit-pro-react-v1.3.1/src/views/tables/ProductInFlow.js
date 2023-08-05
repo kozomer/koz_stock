@@ -1111,7 +1111,7 @@ const DataTable = () => {
               <div className="modal-body">
     {currentFiles.map((file, index) => {
         // prepend the server's base URL to the relative file URL
-        const imageUrl = `http://127.0.0.1:8000/${file}`; 
+        const imageUrl = `http://127.0.0.1:8000${file}`; 
 
 
         return (

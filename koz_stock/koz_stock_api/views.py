@@ -1580,7 +1580,7 @@ class ProductOutflowView(APIView):
                 pf.amount,
                 [settings.MEDIA_URL + str(image.image) for image in pf.images.all()]  # URLs of all images related to this ProductInflow
 
-                # [image.image.url for image in pf.images.all()]  # URLs of all images related to this ProductOutflow
+                #? [image.image.url for image in pf.images.all()]  # URLs of all images related to this ProductOutflow
             ] 
             for pf in product_outflows
         ]
