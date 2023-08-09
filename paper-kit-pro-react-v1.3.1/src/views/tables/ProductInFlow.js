@@ -445,6 +445,7 @@ const DataTable = () => {
           successUpload(body.message);
           setDataChanged(true);
           setUploadedFiles([]);
+          setShowPopup(false);
         } else {
           console.log("Failed to add product inflow", body.error);
           errorUpload(body.error);
@@ -486,45 +487,24 @@ const DataTable = () => {
     setRenderEdit(true)
   };
 
-  const handleFileChange = (e) => {
-    // This is an array-like object
-    const files = e.target.files;
-
-    // Convert it to an array
-    const fileArray = Array.from(files);
-
-    // You can then set the state with this array
-    setUploadedFiles(fileArray);
-  };
-
-
-
-  const handleUpload = (event) => {
-    event.preventDefault();
-
-    // Perform upload logic here
-    // If you're uploading files one at a time
-    let urls = [];
-    uploadedFiles.forEach((file, index) => {
-      // Replace this with your actual upload code
-      // Example: axios.post('/upload', file)
-      //   .then((response) => urls.push(response.data.url))
-      //   .catch((error) => console.log(`Error uploading file ${index + 1}: ${error}`));
-
-      console.log(`Uploading file ${index + 1}`);
-      // Simulating the response with a timeout
-      setTimeout(() => {
-        urls.push(URL.createObjectURL(file)); // This will create a blob URL for the file. Replace this with your server's response
-      }, 2000);
-    });
-
-    
-    // Simulating the response with a timeout
-    setTimeout(() => {
-      console.log('All files uploaded successfully');
-      setUploadedFileUrls(urls);
+  const instantUploadFileChange = (e) => {
+      const files = Array.from(e.target.files);
+      let urls = [];
       
-    }, 2000);
+      files.forEach((file, index) => {
+        console.log(`Uploading file ${index + 1}`);
+  
+        // Replace below simulated upload logic with your actual upload code if needed
+        setTimeout(() => {
+          urls.push(file.name); // Storing the name of the file instead of the blob URL
+        }, 2000);
+      });
+  
+      setTimeout(() => {
+        console.log('All files uploaded successfully');
+        setUploadedFileUrls(urls); // This will now store file names
+        setUploadedFiles(files);
+      }, 2000 * files.length); // Assuming each file takes 2 seconds to upload
   };
 
 
@@ -694,29 +674,30 @@ const DataTable = () => {
                         </div>
 
 
-                        {/* Photo upload section */}
-                        <div className="photo-upload-section">
-                          <input type="file" onChange={handleFileChange} multiple />
-                          <button className="upload-button" onClick={handleUpload}>
-                            <FaFileUpload /> Upload
-                          </button>
-                          {uploadedFiles.length > 0 && (
-                            <p>
-                              {uploadedFiles.length} files selected for upload
-                            </p>
-                          )}
-                        </div>
-                        <div className="uploaded-files-section">
-                          <ul>
-                            {uploadedFileUrls.map((url, index) => (
-                              <li key={index}>
-                                <a href={url} download>
-                                  Download File {index + 1}
-                                </a>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
+                        
+{/* Photo upload section */}
+<div className="photo-upload-section">
+  <input 
+    type="file" 
+    onChange={instantUploadFileChange}
+    multiple 
+  />
+  {uploadedFiles.length > 0 && (
+    <p>
+      {uploadedFiles.length} files selected for upload
+    </p>
+  )}
+</div>
+
+<div className="uploaded-files-section">
+  <ul>
+    {uploadedFileUrls.map((name, index) => (
+      <li key={index}>
+        {name} {/* Displaying the file name directly */}
+      </li>
+    ))}
+  </ul>
+</div>
 
                       </div>
 
@@ -1073,10 +1054,22 @@ const DataTable = () => {
                     {
                       Header: 'Uploaded Files',
                       id: 'uploaded_files',
-                      Cell: ({row: {original}}) => (
-                        <button onClick={() => handleShowModal(original.uploaded_files)}>Show Files</button>
-                      ),
+                      Cell: ({row: {original}}) => {
+                        const numOfFiles = original.uploaded_files.length;
+                    
+                        return (
+                          <Button 
+                            color="link" 
+                            onClick={() => handleShowModal(original.uploaded_files)}
+                            title="Show Uploaded Files"
+                          >
+        <i className="fa fa-picture-o" /> 
+                            <span>{numOfFiles}</span>
+                          </Button>
+                        );
+                      },
                     },
+                    
                     
 
                     {
@@ -1099,37 +1092,35 @@ const DataTable = () => {
 
       </div>
       {showModal && (
-        <div className="modal show d-block" tabindex="-1">
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Uploaded Files</h5>
-                <button type="button" className="close" onClick={handleHideModal}>
-                  <span aria-hidden="true">&times;</span>
-                </button>
-              </div>
-              <div className="modal-body">
-    {currentFiles.map((file, index) => {
-        // prepend the server's base URL to the relative file URL
-        const imageUrl = `http://127.0.0.1:8000${file}`; 
-
-
-        return (
-            <p key={index}>
-                <img src={imageUrl} alt={`file ${index}`} />
-            </p>
-        );
-    })}
-</div>
-
-
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={handleHideModal}>Close</button>
-              </div>
-            </div>
-          </div>
+  <div className="modal show d-block custom-modal" tabindex="-1">
+    <div className="modal-dialog">
+      <div className="modal-content custom-modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Uploaded Files</h5>
+          <button type="button" className="close" onClick={handleHideModal}>
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-      )}
+        <div className="modal-body">
+          {currentFiles.map((file, index) => {
+            // prepend the server's base URL to the relative file URL
+            const imageUrl = `http://127.0.0.1:8000${file}`; 
+
+            return (
+              <p key={index}>
+                <img src={imageUrl} alt={`file ${index}`} />
+              </p>
+            );
+          })}
+        </div>
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={handleHideModal}>Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
 
 
 

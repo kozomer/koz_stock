@@ -75,24 +75,24 @@ const routes = [
     name: "Firmalar",
     icon: "nc-icon nc-bank", 
     state: "companiesCollapse",
-    views: [ {
-      path: "/suppliers",
-      name: "Tedarikçiler",
-      icon: "nc-icon nc-delivery-fast",
-      component: Suppliers,
-      layout: "/admin",
-     
-    },
-    {
-      path: "/consumers",
-      name: "Tüketiciler",
-      icon: "nc-icon nc-single-02",
-      component: Consumers,
-      layout: "/admin",
-     
-    },
-  ]
+    views: [ 
+        {
+            path: "/suppliers",
+            name: "    Tedarikçiler",
+            icon: "    nc-icon nc-delivery-fast",
+            component: Suppliers,
+            layout: "/admin"
+        },
+        {
+            path: "/consumers",
+            name: "    Tüketiciler",
+            icon: "    nc-icon nc-single-02",
+            component: Consumers,
+            layout: "/admin"
+        },
+    ]
 },
+
  
  
   {

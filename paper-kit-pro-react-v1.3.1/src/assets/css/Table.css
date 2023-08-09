@@ -55,25 +55,25 @@
 
 
 /* Popup Uploaded File */ 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+/* Style for modal */
+.custom-modal {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
 }
 
-.modal {
-  background-color: white;
-  padding: 20px;
-  border-radius: 5px;
-  max-width: 80%;
-  max-height: 80%;
-  overflow: auto;
+/* Adjusting modal content */
+.custom-modal-content {
+  width: 70%; /* Adjust width as needed */
+  max-height: 80vh; /* Limit height to 80% of the viewport height */
+  overflow-y: auto; /* Add scroll if content overflows */
 }
 
-
+/* If you have a lot of images, you might want to limit their width */
+.custom-modal img {
+  max-width: 100%;
+  height: auto;
+}
 
 
 /* PopUp */
