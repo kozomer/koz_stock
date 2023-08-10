@@ -3,6 +3,8 @@ from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
 import uuid
 from django.utils.deconstruct import deconstructible
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 
 @deconstructible
 class RandomFileName(object):
@@ -25,6 +27,35 @@ class Company(models.Model):
 class Project(models.Model):
     name = models.CharField(max_length=200)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+
+class Part(models.Model):
+    name = models.CharField(max_length=200)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+class ElevationOrFloor(models.Model):
+    name = models.CharField(max_length=200)  # For example: +110.1m or 15th floor
+    part = models.ForeignKey(Part, on_delete=models.CASCADE)
+
+class Section(models.Model):
+    name = models.CharField(max_length=200)  # For example: public areas or 44th flat
+    elevation_or_floor = models.ForeignKey(ElevationOrFloor, on_delete=models.CASCADE)
+
+class Place(models.Model):
+    name = models.CharField(max_length=200)  # For example: room, living room, bath, etc.
+    section = models.ForeignKey(Section, on_delete=models.CASCADE)
+
+class QuantityTakeOff(models.Model):
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    material = models.CharField(max_length=200)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)  # Adjust as per your needs
+    unit = models.CharField(max_length=50)  # For example: cubic meters, kilograms, etc.
+    description = models.TextField(blank=True, null=True)  # Any additional details
+
+    def __str__(self):
+        return f"{self.material} - {self.quantity} {self.unit} for {self.content_object.name}"
 
 
 class CustomUser(AbstractUser):
