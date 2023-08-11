@@ -28,13 +28,13 @@ class Project(models.Model):
     name = models.CharField(max_length=200)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
-class Part(models.Model):
+class Building(models.Model):
     name = models.CharField(max_length=200)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
 class ElevationOrFloor(models.Model):
     name = models.CharField(max_length=200)  # For example: +110.1m or 15th floor
-    part = models.ForeignKey(Part, on_delete=models.CASCADE)
+    building = models.ForeignKey(Building, on_delete=models.CASCADE)
 
 class Section(models.Model):
     name = models.CharField(max_length=200)  # For example: public areas or 44th flat
@@ -45,17 +45,22 @@ class Place(models.Model):
     section = models.ForeignKey(Section, on_delete=models.CASCADE)
 
 class QuantityTakeOff(models.Model):
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey('content_type', 'object_id')
+    place = models.ForeignKey(Place, on_delete=models.CASCADE, null=True, blank=True)
+    section = models.ForeignKey(Section, on_delete=models.CASCADE, null=True, blank=True)
+    elevation_or_floor = models.ForeignKey(ElevationOrFloor, on_delete=models.CASCADE, null=True, blank=True)
+    building = models.ForeignKey(Building, on_delete=models.CASCADE, null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
+    pose_code = models.CharField(max_length=200)
+    manufacturing_code = models.CharField(max_length=200)
     material = models.CharField(max_length=200)
+    description = models.TextField(blank=True, null=True)  # Any additional details
     quantity = models.DecimalField(max_digits=10, decimal_places=2)  # Adjust as per your needs
     unit = models.CharField(max_length=50)  # For example: cubic meters, kilograms, etc.
-    description = models.TextField(blank=True, null=True)  # Any additional details
-
-    def __str__(self):
-        return f"{self.material} - {self.quantity} {self.unit} for {self.content_object.name}"
+    multiplier = models.DecimalField(max_digits=10, decimal_places=2)
+    take_out = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=10, decimal_places=2)
+    
 
 
 class CustomUser(AbstractUser):
