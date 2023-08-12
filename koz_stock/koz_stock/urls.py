@@ -23,7 +23,7 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                     CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, ProductGroupsView, EditProductGroupView, DeleteProductGroupView,
                                     CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
                                     AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView, SupplierConsumerProductSearchView,
-                                    AddQTOView, BuildingsForProjectView, ElevationsForBuildingView, SectionsForElevationView, PlacesForSectionView  )
+                                    AddQTOView, BuildingsForProjectView, ElevationsForBuildingView, SectionsForElevationView, PlacesForSectionView, QTOView  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -107,6 +107,8 @@ urlpatterns = [
     path('api/floors_for_building/', ElevationsForBuildingView.as_view(), name='floors_for_building'),
     path('api/sections_for_floor/', SectionsForElevationView.as_view(), name='sections_for_floor'),
     path('api/places_for_section/', PlacesForSectionView.as_view(), name='places_for_section'),
+    path('api/qto/', QTOView.as_view(), name='qto'),
+
 
 
 
