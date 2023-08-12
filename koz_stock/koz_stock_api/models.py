@@ -3,8 +3,7 @@ from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
 import uuid
 from django.utils.deconstruct import deconstructible
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
+
 
 @deconstructible
 class RandomFileName(object):
