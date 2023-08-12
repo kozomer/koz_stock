@@ -16,24 +16,14 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProductsView, AddProductsView,
-                                  DeleteProductsView, AddProductInflowView, ProductInflowView, EditProductInflowView, DeleteProductInflowView,
+                                    DeleteProductsView, AddProductInflowView, ProductInflowView, EditProductInflowView, DeleteProductInflowView,
                                     StockView,  AddProductOutflowView, ProductOutflowView, EditProductOutflowView, DeleteProductOutflowView,
                                     AccountingView, EditAccountingView, CollapsedUserView, UserCardView, DeleteUserView,  EditUserView,
                                     SetCurrentProjectView, GetProjectsView, CreateProjectView,
                                     CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, ProductGroupsView, EditProductGroupView, DeleteProductGroupView,
-                                     CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
-                                     AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView, SupplierConsumerProductSearchView )
-# from koz_stock_api.views import ( AddCustomersView, AddSalesView, AddProductsView, AddWarehouseView, AddSalerView, SalerPerformanceView,
-#                                  ViewSalesView,  ViewWarehouseView, ViewProductsView, ChartView, ItemListView, ViewCustomersView, CollapsedSalerView, SalerCardView, SalerTableView, SalesReportView, ROPView, OrderListView,
-#                                  DeleteSaleView, DeleteCustomerView, DeleteProductView, DeleteSalerView, DeleteWarehouseView,
-#                                  EditProductView, EditCustomerView, EditSaleView, EditWarehouseView,  EditSalerView, EditOrderListView,  EditGoodsOnRoadView,
-#                                  LoginView, LogoutView,
-#                                  TopCustomersView, TopProductsView,
-#                                  ExchangeRateAPIView, SalerDataView, TotalDataView, TotalDataByMonthlyView, CustomerAreaPieChartView, 
-#                                  ExportCustomersView, ExportSalesView, ExportWarehouseView, ExportProductsView,
-#                                  GoodsOnRoadView, AddTruckView, WaitingTrucksView, TrucksOnRoadView, ApproveWaitingTruckView,
-#                                  ApproveProductsToOrderView, ApproveArrivedTruckView, NotificationsView, DeleteNotificationView
-#                                  )
+                                    CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
+                                    AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView, SupplierConsumerProductSearchView,
+                                    AddQTOView, BuildingsForProjectView, ElevationsForBuildingView, SectionsForElevationView, PlacesForSectionView  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -111,6 +101,16 @@ urlpatterns = [
     path('api/delete_supplier/', DeleteSupplierView.as_view(), name='delete_supplier'),
     
     path('api/search_supplier_consumer_product/', SupplierConsumerProductSearchView.as_view(), name='search_supplier_consumer_product'),
+
+    path('api/add_qto/', AddQTOView.as_view(), name='add_qto'),
+    path('api/buildings_for_project/', BuildingsForProjectView.as_view(), name='buildings_for_project'),
+    path('api/floors_for_building/', ElevationsForBuildingView.as_view(), name='floors_for_building'),
+    path('api/sections_for_floor/', SectionsForElevationView.as_view(), name='sections_for_floor'),
+    path('api/places_for_section/', PlacesForSectionView.as_view(), name='places_for_section'),
+
+
+
+
     # path('api/add_customers/', AddCustomersView.as_view(), name='add_customers'),
     # path('api/add_warehouse/', AddWarehouseView.as_view(), name='add_warehouse'),
     # path('api/add_sales/', AddSalesView.as_view(), name='add_sales'),

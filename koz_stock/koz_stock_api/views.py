@@ -2,7 +2,8 @@ from django.shortcuts import render
 import pandas as pd
 from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
                       Stock, Accounting, Project, CustomUser, Company, ProductGroups,
-                      SequenceNumber, ProductSubgroups, ProductInflowImage, ProductOutflowImage)
+                      SequenceNumber, ProductSubgroups, ProductInflowImage, ProductOutflowImage,
+                      QuantityTakeOff, Building, Section, Place, ElevationOrFloor)
 #from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
                     #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
@@ -1007,7 +1008,6 @@ class ProductGroupsView(APIView):
 
         # Create a list of lists where each sublist is [group_code, group_name]
         product_groups_list = [[group.group_code, group.group_name] for group in product_groups]
-        print(product_groups_list)
         return JsonResponse(product_groups_list, safe= False)
 
 class EditProductGroupView(APIView):
@@ -2152,6 +2152,146 @@ class SupplierConsumerProductSearchView(APIView):
 
 
 # endregion
+
+# region QTO
+
+class AddQTOView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': "You do not have permission to perform this action."}, status=400)
+
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Assuming all these fields are provided in the POST request
+            project = request.user.current_project
+            building_id = request.POST.get('building_id')
+            elevation_or_floor_id = request.POST.get('elevation_or_floor_id')
+            section_id = request.POST.get('section_id')
+            place_id = request.POST.get('place_id')
+
+            # You'd fetch the instances using the IDs
+            building = Building.objects.get(id=building_id, project=project)
+            elevation_or_floor = ElevationOrFloor.objects.get(id=elevation_or_floor_id, building=building)
+            section = Section.objects.get(id=section_id, elevation_or_floor=elevation_or_floor)
+            place = Place.objects.get(id=place_id, section=section)
+
+            # Rest of the fields
+            pose_code = request.POST.get('pose_code')
+            manufacturing_code = request.POST.get('manufacturing_code')
+            material = request.POST.get('material')
+            description = request.POST.get('description')
+            width = request.POST.get('width')
+            depth = request.POST.get('depth')
+            height = request.POST.get('height')
+            quantity = request.POST.get('quantity')
+            unit = request.POST.get('unit')
+            multiplier = request.POST.get('multiplier')
+            multiplier2 = request.POST.get('multiplier2')
+            take_out = request.POST.get('take_out')
+            # ... and so on for other fields
+
+            qto = QuantityTakeOff(
+                pose_code=pose_code,
+                manufacturing_code=manufacturing_code,
+                material=material,
+                description=description,
+                width=width or 1,
+                depth=depth or 1,
+                height=height or 1,
+                quantity=quantity,
+                unit=unit,
+                multiplier=multiplier or 1,
+                multiplier2=multiplier2 or 1,
+                take_out=take_out,
+                project=project,
+                building=building,
+                elevation_or_floor=elevation_or_floor,
+                section=section,
+                place=place
+            )
+            qto.save()
+            
+            return JsonResponse({'message': 'Quantity Takeoff object created successfully'}, status=201)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class BuildingsForProjectView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request):
+        project = request.user.current_project
+        buildings = Building.objects.filter(project=project)
+        data = [{'id': building.id, 'name': building.name} for building in buildings]
+        return JsonResponse(data, safe=False)
+
+class ElevationsForBuildingView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request):
+        building_id = request.GET.get('building_id')
+        elevations = ElevationOrFloor.objects.filter(building_id=building_id)
+        data = [{'id': elevation.id, 'name': elevation.name} for elevation in elevations]
+        return JsonResponse(data, safe=False)
+
+class SectionsForElevationView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def get(self, request):
+        elevation_id = request.GET.get('elevation_id')
+        sections = Section.objects.filter(elevation_or_floor_id=elevation_id)
+        data = [{'id': section.id, 'name': section.name} for section in sections]
+        return JsonResponse(data, safe=False)
+
+class PlacesForSectionView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+    
+    def get(self, request, section_id):
+        section_id = request.GET.get('section_id')
+        places = Place.objects.filter(section_id=section_id)
+        data = [{'id': place.id, 'name': place.name} for place in places]
+        return JsonResponse(data, safe=False)
+
+class QTOView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, NotAuthenticated):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+        return super().handle_exception(exc)
+
+    def get(self, request, *args, **kwargs):
+        try:
+            # Assuming the current project is stored in request.user.current_project
+            project = request.user.current_project
+
+            # Filter QTO objects by the user's current project
+            qto_entries = QuantityTakeOff.objects.filter(project=project).values(
+                'id', 'building__name', 'elevation_or_floor__name', 'section__name','place__name',
+                'pose_code', 'manufacturing_code', 'material', 'description', 'width', 'depth', 'height', 
+                'quantity', 'unit', 'multiplier', 'multiplier2', 'take_out', 'total',
+                
+            )
+
+            return JsonResponse(list(qto_entries), safe=False)
+        
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+
+# endregion
+
+
 
 
 # # region Customers

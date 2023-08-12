@@ -54,12 +54,21 @@ class QuantityTakeOff(models.Model):
     pose_code = models.CharField(max_length=200)
     manufacturing_code = models.CharField(max_length=200)
     material = models.CharField(max_length=200)
-    description = models.TextField(blank=True, null=True)  # Any additional details
-    quantity = models.DecimalField(max_digits=10, decimal_places=2)  # Adjust as per your needs
-    unit = models.CharField(max_length=50)  # For example: cubic meters, kilograms, etc.
-    multiplier = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField(blank=True, null=True)
+    width = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    depth = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    height = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    unit = models.CharField(max_length=50)
+    multiplier = models.DecimalField(max_digits=10, decimal_places=2, default=1)
+    multiplier2 = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     take_out = models.DecimalField(max_digits=10, decimal_places=2)
     total = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        self.total = ((self.width * self.depth * self.height * self.multiplier * self.multiplier2 * self.quantity) - self.take_out)
+        super(QuantityTakeOff, self).save(*args, **kwargs)
+
     
 
 
