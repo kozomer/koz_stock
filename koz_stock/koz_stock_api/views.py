@@ -4,8 +4,6 @@ from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Supplie
                       Stock, Accounting, Project, CustomUser, Company, ProductGroups,
                       SequenceNumber, ProductSubgroups, ProductInflowImage, ProductOutflowImage,
                       QuantityTakeOff, Building, Section, Place, ElevationOrFloor)
-#from .models import (Customers, Products, Sales, Warehouse, ROP, Salers, SalerPerformance, SaleSummary, SalerMonthlySaleRating, 
-                    #MonthlyProductSales,CustomerPerformance, ProductPerformance, OrderList, GoodsOnRoad, Trucks, NotificationsOrderList)
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse
@@ -71,8 +69,7 @@ def set_language(request):
     request.session[translation.LANGUAGE_SESSION_KEY] = user_language
 
 # endregion
-#! Tüm sistemi farklı projelere ve şirketlere göre kurabiliriz. Mesela Koz Grup(Koz Oran, Koz Horizon) gibi. 
-#! Kullanıcı girişte zorunlu olarak proje seçer, daha sonra site üzerinde yaptığı her işlem o projeyle ilişkilendirilerek kaydedilir.
+
 
 # region Login/Logout
 
@@ -162,14 +159,6 @@ class GetProjectsView(APIView):
         print(projects)
         return JsonResponse(projects, safe=False)
 
-# class GetProjectsView(APIView):
-#     permission_classes = (IsAuthenticated,)
-#     authentication_classes = (JWTAuthentication,)
-
-#     def get(self, request):
-#         # Assuming your User model has a 'projects' ManyToManyField
-#         projects = list(request.user.projects.values('id', 'name'))  # Convert QuerySet to a list
-#         return JsonResponse(projects, safe=False)
 
 class SetCurrentProjectView(APIView):
     permission_classes = (IsAuthenticated,)
@@ -448,11 +437,7 @@ class DeleteUserView(APIView):
 
 
 #region Products
-#! 1) Ürün kodu seçilen grup ve alt gruplara göre otomatik oluşturulmalı. Örn: "001.002.1234"
-#! 2) Kullanıcı Grup ve Alt grupları seçerken Dropdown menü ile seçimi yapmalı.
-#! 3) Grup ve Alt grupların eklenebileceği ayrı bir tablo oluşturulmalı. İleride yeni sınıf ekleneceği zaman buradan eklenmeli.
-#? Product ya da customer gibi öğeleri Foreign Key ile giriş çıkışlarla ilişkilendirirsek ilerde bu alandaki değişiklikler otomatik olarak giriş çıkışlarda da uygulanacaktır.
-#? Mesela şuan bir product'ın ismini değiştirirsek bundan önce o product ile girilmiş ambar giriş çıkışlarında o productın ismi değişmiyor.
+
 
 class AddProductsView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
@@ -723,7 +708,7 @@ class SuppliersView(APIView):
         supplier_list = [[s.id, s.tax_code, s.name, s.contact_name, s.contact_no] for s in suppliers]
         return JsonResponse(supplier_list, safe=False, status=200)
 
-#! EditSuppliersView2ın doğru çalışıp çalışmadığını kontrol et.
+
 class EditSuppliersView(APIView):
     permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
@@ -1364,59 +1349,56 @@ class EditProductInflowView(APIView):
         return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
+        # ... your initial code ...
         try:
             data = request.data
-            print(data)
             old_id = data.get('old_id')
             product_inflow = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).get(id=old_id)
-            inflow_fields = product_inflow.get_dirty_fields()
 
-            # Check if new product_code value is unique
+            # Store the images linked to this product inflow
+            inflow_images = list(product_inflow.images.all())
+
+            # Delete the old product inflow - triggers pre_delete signal
+            product_inflow.delete()
+
+            # Create a new product inflow - triggers post_save signal
             new_product_code = data.get('new_product_code')
-            if new_product_code and new_product_code != product_inflow.product.product_code:
-                product = Products.objects.filter(product_code=new_product_code, company=request.user.company).first()
-                if not product:
-                    return JsonResponse({'error': _("The Product Code '%s' does not exist in the database.") % new_product_code}, status=400)
-                product_inflow.product = product
-
-            # Update supplier_company
+            product = Products.objects.filter(product_code=new_product_code, company=request.user.company).first()
             new_supplier_tax_code = data.get('new_supplier_tax_code')
-            if new_supplier_tax_code:
-                supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company).first()
-                if not supplier_company:
-                    return JsonResponse({'error': _("The Supplier with tax code '%s' does not exist in the database.") % new_supplier_tax_code}, status=400)
-                product_inflow.supplier_company = supplier_company
-
-            # Update receiver_company
+            supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company).first()
             new_receiver_tax_code = data.get('new_receiver_tax_code')
-            if new_receiver_tax_code:
-                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company).first()
-                if not receiver_company:
-                    return JsonResponse({'error': _("The Receiver with tax code '%s' does not exist in the database.") % new_receiver_tax_code}, status=400)
-                product_inflow.receiver_company = receiver_company
-
-            # Update other product inflow fields
+            receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company).first()
+            product_data = {
+                'product': product if new_product_code else product_inflow.product,
+                'supplier_company': supplier_company if new_supplier_tax_code else product_inflow.supplier_company,
+                'receiver_company': receiver_company if new_receiver_tax_code else product_inflow.receiver_company,
+                # ... any other fields you want to use ...
+            }
             for field in ['date', 'status', 'place_of_use', 'amount', 'barcode']:
                 value = data.get(field)
                 if value is not None and value != '':
-                    old_value = inflow_fields.get(field)
-                    if old_value != value:  # If the field has changed
-                        setattr(product_inflow, field, value)
+                    product_data[field] = value
                 else:
                     return JsonResponse({'error': _("The field '{field}' cannot be empty.")}, status=400)
 
-            product_inflow.save()
+            product_data["company"]=request.user.company
+            product_data["project"]=request.user.current_project
+            print(product_data)
+            new_product_inflow = ProductInflow.objects.create(**product_data)
+
+            # Reassign the images to the new product inflow instance
+            for image in inflow_images:
+                image.product_inflow = new_product_inflow
+                image.save()
+
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
         except ProductInflow.DoesNotExist:
             return JsonResponse({'error': _("Product not found.")}, status=400)
-
-        except ValueError as e:
-            return JsonResponse({'error': str(e)}, status=400)
-
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
 
 
 
@@ -1763,35 +1745,16 @@ class CreateProductOutflowReceiptView(APIView):
 
 @receiver(post_save, sender=ProductInflow)
 def update_stock_inflow(sender, instance, created, **kwargs):
-    dirty_fields = instance.get_dirty_fields()
-
-    # Check if product_code has been changed
-    old_product_code = dirty_fields.get('product__product_code')
-    if old_product_code:
-        try:
-            old_product_stock = Stock.objects.get(product__product_code=old_product_code, company=instance.company, project=instance.project)
-            old_product_stock.inflow -= instance.amount
-            old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
-            old_product_stock.save()
-        except Stock.DoesNotExist:
-            return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
-
     try:
-        stock = Stock.objects.get(product__product_code=instance.product.product_code, company=instance.company, project=instance.project)
-    except Stock.DoesNotExist:
-        return
-
-    if created:
-        # Add product to supplier
-        instance.supplier_company.products.add(instance.product)
+        stock = Stock.objects.get(product=instance.product, company=instance.company, project=instance.project)
         stock.inflow += float(instance.amount)
-    else:
-        old_amount = dirty_fields.get('amount')
-        if old_amount is not None:
-            stock.inflow = (float(stock.inflow) or 0) - float(old_amount) + float(instance.amount)
+        stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+        stock.save()
+        instance.supplier_company.products.add(instance.product)
+        instance.receiver_company.products.add(instance.product)
+    except Stock.DoesNotExist:
+        return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
-    stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
-    stock.save()
 
 
 @receiver(pre_delete, sender=ProductInflow)
@@ -1804,6 +1767,7 @@ def update_stock_inflow_on_delete(sender, instance, **kwargs):
 
         # If product was added to the supplier, remove it
         instance.supplier_company.products.remove(instance.product)
+        instance.receiver_company.products.remove(instance.product)
     except Stock.DoesNotExist:
         return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 

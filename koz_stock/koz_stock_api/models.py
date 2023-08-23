@@ -173,6 +173,9 @@ class Stock(models.Model):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
+    def save(self, *args, **kwargs):
+        self.stock = self.inflow - self.outflow
+        super().save(*args, **kwargs)
 
 class Accounting(models.Model, DirtyFieldsMixin):
     product_inflow = models.ForeignKey(ProductInflow, on_delete=models.CASCADE)

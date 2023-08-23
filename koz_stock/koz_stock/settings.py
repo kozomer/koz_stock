@@ -61,7 +61,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_jwt',
-    'django.contrib.contenttypes',
+    
 ]
 CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',  
                                                 ]
