@@ -3,8 +3,8 @@ from dirtyfields import DirtyFieldsMixin
 from django.contrib.auth.models import AbstractUser
 import uuid
 from django.utils.deconstruct import deconstructible
-from django.contrib.contenttypes.fields import GenericForeignKey
-from django.contrib.contenttypes.models import ContentType
+from decimal import Decimal
+
 
 @deconstructible
 class RandomFileName(object):
@@ -63,10 +63,21 @@ class QuantityTakeOff(models.Model):
     multiplier = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     multiplier2 = models.DecimalField(max_digits=10, decimal_places=2, default=1)
     take_out = models.DecimalField(max_digits=10, decimal_places=2)
-    total = models.DecimalField(max_digits=10, decimal_places=2)
+    total = models.DecimalField(max_digits=15, decimal_places=2)
+    
 
     def save(self, *args, **kwargs):
+        print(type(self.width), type(self.depth), type(self.height), type(self.multiplier), type(self.multiplier2), type(self.quantity), type(self.take_out))
+        self.width = Decimal(self.width)
+        self.depth = Decimal(self.depth)
+        self.height = Decimal(self.height)
+        self.multiplier = Decimal(self.multiplier)
+        self.multiplier2 = Decimal(self.multiplier2)
+        self.quantity = Decimal(self.quantity)
+        self.take_out = Decimal(self.take_out)
         self.total = ((self.width * self.depth * self.height * self.multiplier * self.multiplier2 * self.quantity) - self.take_out)
+        
+        print(f"Width: {self.width}, Depth: {self.depth}, Height: {self.height}, Multiplier: {self.multiplier}, Multiplier2: {self.multiplier2}, Quantity: {self.quantity}, Take out: {self.take_out}, Total: {self.total}")
         super(QuantityTakeOff, self).save(*args, **kwargs)
 
     

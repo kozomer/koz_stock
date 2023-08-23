@@ -47,6 +47,8 @@ import StockAccount from "views/tables/StockAccount";
 import Consumers from "views/tables/Consumers";
 import Deneme from "views/tables/Deneme";
 import Search from "views/tables/Seach";
+import QTO from "views/tables/QuantityTakeOff";
+
 import CreateGroups from "views/tables/CreateGroups";
 import Register from "views/pages/Register.js";
 import RegularForms from "views/forms/RegularForms.js";
@@ -192,6 +194,16 @@ const routes = [
     layout: "/admin",
    
   },
+
+  {
+    path: "/qto",
+    name: "Metraj",
+    icon: "nc-icon nc-circle-10",
+    component: QTO,
+    layout: "/admin",
+   
+  },
+
 
   {
     path: "/searc",

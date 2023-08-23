@@ -2133,10 +2133,11 @@ class AddQTOView(APIView):
         try:
             # Assuming all these fields are provided in the POST request
             project = request.user.current_project
-            building_id = request.POST.get('building_id')
-            elevation_or_floor_id = request.POST.get('elevation_or_floor_id')
-            section_id = request.POST.get('section_id')
-            place_id = request.POST.get('place_id')
+            print(request.data.get('building_id'))
+            building_id = request.data.get('building_id')
+            elevation_or_floor_id = request.data.get('elevation_or_floor_id')
+            section_id = request.data.get('section_id')
+            place_id = request.data.get('place_id')
 
             # You'd fetch the instances using the IDs
             building = Building.objects.get(id=building_id, project=project)
@@ -2145,18 +2146,18 @@ class AddQTOView(APIView):
             place = Place.objects.get(id=place_id, section=section)
 
             # Rest of the fields
-            pose_code = request.POST.get('pose_code')
-            manufacturing_code = request.POST.get('manufacturing_code')
-            material = request.POST.get('material')
-            description = request.POST.get('description')
-            width = request.POST.get('width')
-            depth = request.POST.get('depth')
-            height = request.POST.get('height')
-            quantity = request.POST.get('quantity')
-            unit = request.POST.get('unit')
-            multiplier = request.POST.get('multiplier')
-            multiplier2 = request.POST.get('multiplier2')
-            take_out = request.POST.get('take_out')
+            pose_code = request.data.get('pose_code')
+            manufacturing_code = request.data.get('manufacturing_code')
+            material = request.data.get('material')
+            description = request.data.get('description')
+            width = request.data.get('width')
+            depth = request.data.get('depth')
+            height = request.data.get('height')
+            quantity = request.data.get('quantity')
+            unit = request.data.get('unit')
+            multiplier = request.data.get('multiplier')
+            multiplier2 = request.data.get('multiplier2')
+            take_out = request.data.get('take_out')
             # ... and so on for other fields
 
             qto = QuantityTakeOff(
@@ -2182,6 +2183,7 @@ class AddQTOView(APIView):
             
             return JsonResponse({'message': 'Quantity Takeoff object created successfully'}, status=201)
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 class BuildingsForProjectView(APIView):
@@ -2198,8 +2200,12 @@ class ElevationsForBuildingView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
 
-    def get(self, request):
-        building_id = request.GET.get('building_id')
+    def post(self, request):
+        # Extract building_id from request data (body) instead of GET parameters
+        building_id = request.data.get('building_id')
+        if not building_id:
+            return JsonResponse({'error': 'building_id is required'}, status=400)
+
         elevations = ElevationOrFloor.objects.filter(building_id=building_id)
         data = [{'id': elevation.id, 'name': elevation.name} for elevation in elevations]
         return JsonResponse(data, safe=False)
@@ -2208,8 +2214,8 @@ class SectionsForElevationView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
 
-    def get(self, request):
-        elevation_id = request.GET.get('elevation_id')
+    def post(self, request):
+        elevation_id = request.data.get('elevation_id')
         sections = Section.objects.filter(elevation_or_floor_id=elevation_id)
         data = [{'id': section.id, 'name': section.name} for section in sections]
         return JsonResponse(data, safe=False)
@@ -2218,8 +2224,8 @@ class PlacesForSectionView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
     
-    def get(self, request, section_id):
-        section_id = request.GET.get('section_id')
+    def post(self, request):
+        section_id = request.data.get('section_id')
         places = Place.objects.filter(section_id=section_id)
         data = [{'id': place.id, 'name': place.name} for place in places]
         return JsonResponse(data, safe=False)
@@ -2239,16 +2245,18 @@ class QTOView(APIView):
             project = request.user.current_project
 
             # Filter QTO objects by the user's current project
-            qto_entries = QuantityTakeOff.objects.filter(project=project).values(
-                'id', 'building__name', 'elevation_or_floor__name', 'section__name','place__name',
-                'pose_code', 'manufacturing_code', 'material', 'description', 'width', 'depth', 'height', 
-                'quantity', 'unit', 'multiplier', 'multiplier2', 'take_out', 'total',
+            qtos = QuantityTakeOff.objects.filter(project=project)
+
+            qto_entries=  [[qto.id, qto.building.name, qto.elevation_or_floor.name, qto.section.name,qto.place.name,
+                qto.pose_code, qto.manufacturing_code, qto.material, qto.description, qto.width, qto.depth, qto.height, 
+                qto.quantity, qto.unit, qto.multiplier, qto.multiplier2, qto.take_out, qto.total] for qto in qtos]
                 
-            )
+            
 
             return JsonResponse(list(qto_entries), safe=False)
         
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 

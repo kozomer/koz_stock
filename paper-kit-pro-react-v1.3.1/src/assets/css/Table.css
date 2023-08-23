@@ -75,6 +75,17 @@
   height: auto;
 }
 
+.form-item {
+  flex: 0 0 auto;
+  margin-right: 10px;
+  width: 200px; /* You can adjust this value to the desired width */
+  height: 100px; /* Adjust the height as needed */
+}
+
+/* If the `Select` component dropdown is being clipped, you might need to adjust its z-index and overflow properties */
+.form-item > Select {
+  z-index: 10;
+}
 
 /* PopUp */
 .popup {
