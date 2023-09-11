@@ -4,6 +4,7 @@ import ReactTable from 'components/ReactTable/ReactTable.js';
 import ReactBSAlert from "react-bootstrap-sweetalert";
 import '../../assets/css/Table.css';
 import localforage from 'localforage';
+import debounce from 'lodash.debounce';
 
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
@@ -20,33 +21,77 @@ const DataTable = () => {
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   /* Variables */
-  const [id, setId] = useState(null);
-  const [date, setDate] = useState(null);
-  const [productCode, setProductCode] = useState(null);
-  const [barcode, setBarcode] = useState(null);
-  const [providerCompany, setProviderCompany] = useState(null);
-  const [receiverCompany, setReceiverCompany] = useState(null);
-  const [status, setStatus] = useState(null);
-  const [placeOfUse, setPlaceOfUse] = useState(null);
-  const [group, setGroup] = useState(null);
-  const [subgroup, setSubgroup] = useState(null);
-  const [brand, setBrand] = useState(null);
-  const [serialNumber, setSerialNumber] = useState(null);
-  const [model, setModel] = useState(null);
-  const [description, setDescription] = useState(null);
-  const [unit, setUnit] = useState(null);
-  const [amount, setAmount] = useState(null);
-  const [unitPrice, setUnitPrice] = useState(null);
-  const [discountRate, setDiscountRate] = useState(null);
-  const [discountAmount, setDiscountAmount] = useState(null);
-  const [taxRate, setTaxRate] = useState(null);
-  const [tevkifatRate, setTevkifatRate] = useState(null);
-  const [priceWithoutTax, setPriceWithoutTax] = useState(null);
-  const [unitPriceWithoutTax, setUnitPriceWithoutTax] = useState(null);
-  const [priceWithTevkifat, setPriceWithTevkifat] = useState(null);
-  const [priceTotal, setPriceTotal] = useState(null);
+
+  const [formData, setFormData] = useState({
+    id :  '' ,
+    date  :   '' ,
+    productCode :   '' ,
+    barcode :   '' ,
+    providerCompany  :   '' ,
+    receiverCompany  :   '' ,
+    status  :   '' ,
+    placeOfUse  :   '' ,
+    group :   '' ,
+    subgroup :   '' ,
+    brand :   '' ,
+    serialNumber  :   '' ,
+    model :   '' ,
+    description  :   '' ,
+    unit  :   '' ,
+    amount  :   '' ,
+    unitPrice  :   '' ,
+    discountRate  :   '' ,
+    discountAmount  :   '' ,
+    taxRate :   '' ,
+    tevkifatRate :   '' ,
+    priceWithoutTax :   '' ,
+    unitPriceWithoutTax :   '' ,
+    priceWithTevkifat :   '' ,
+    priceTotal:   '' ,
+
+});
+
+
+/*
+  const setters = [
+    setId, setProductCode, setDate, setBarcode, setProviderCompany,
+    setReceiverCompany, setStatus, setPlaceOfUse, setGroup, setSubgroup,
+    setBrand, setSerialNumber, setModel, setDescription, setUnit, setAmount,
+    setUnitPrice, setDiscountRate, setDiscountAmount, setTaxRate, setTevkifatRate,
+    setPriceWithoutTax, setUnitPriceWithoutTax, setPriceWithTevkifat, setPriceTotal
+];
+*/
 
   const [productData, setProductData] = useState(null);
+
+
+  const refs = {
+     idRef : React.useRef(null),
+     productCodeRef : React.useRef(null),
+     dateRef : React.useRef(null),
+     barcodeRef : React.useRef(null),
+     providerCompanyRef : React.useRef(null),
+     receiverCompanyRef : React.useRef(null),
+     statusRef : React.useRef(null),
+     placeOfUseRef : React.useRef(null),
+     groupRef : React.useRef(null),
+     subgroupRef : React.useRef(null),
+     brandRef : React.useRef(null),
+     serialNumberRef : React.useRef(null),
+     modelRef : React.useRef(null),
+     descriptionRef : React.useRef(null),
+     unitRef : React.useRef(null),
+     amountRef : React.useRef(null),
+     unitPriceRef : React.useRef(null),
+     discountRateRef : React.useRef(null),
+     discountAmountRef : React.useRef(),
+     taxRateRef : React.useRef(null),
+     tevkifatRateRef : React.useRef(null),
+     priceWithoutTaxRef : React.useRef(null),
+     unitPriceWithoutTaxRef : React.useRef(null),
+     priceWithTevkifatRef : React.useRef(null),
+     priceTotalRef : React.useRef(null),
+};
   
 
   const [oldData, setOldData] = useState(null);
@@ -285,36 +330,47 @@ const DataTable = () => {
     
 
 
-useEffect(() => {
-  if (productData) {
-    setId(productData[0]);
-    setProductCode(productData[1]);
-    setDate(productData[2]);
-    setBarcode(productData[3]);
-    setProviderCompany(productData[4]);
-    setReceiverCompany(productData[5]);
-    setStatus(productData[6]);
-    setPlaceOfUse(productData[7]);
-    setGroup(productData[8]);
-    setSubgroup(productData[9]);
-    setBrand(productData[10]);
-    setSerialNumber(productData[11]);
-    setModel(productData[12]);
-    setDescription(productData[13]);
-    setUnit(productData[14]);
-    setAmount(productData[15]);
-    setUnitPrice(productData[16]);
-    setDiscountRate(productData[17]);
-    setDiscountAmount(productData[18]);
-    setTaxRate(productData[19]);
-    setTevkifatRate(productData[20]);
-    setPriceWithoutTax(productData[21]);
-    setUnitPriceWithoutTax(productData[22]);
-    setPriceWithTevkifat(productData[23]);
-    setPriceTotal(productData[24]);
-  }
-}, [productData]);
+// 2. Define the formKeys array in the correct order
+const formKeys = [
+  'id',
+  'date',
+  'productCode',
+  'barcode',
+  'providerCompany',
+  'receiverCompany',
+  'status',
+  'placeOfUse',
+  'group',
+  'subgroup',
+  'brand',
+  'serialNumber',
+  'model',
+  'description',
+  'unit',
+  'amount',
+  'unitPrice',
+  'discountRate',
+  'discountAmount',
+  'taxRate',
+  'tevkifatRate',
+  'priceWithoutTax',
+  'unitPriceWithoutTax',
+  'priceWithTevkifat',
+  'priceTotal'
+];
 
+// Continue with your useEffect to map productData to formData
+useEffect(() => {
+if (productData) {
+  const updatedFormData = {};
+
+  formKeys.forEach((key, index) => {
+    updatedFormData[key] = productData[index];
+  });
+
+  setFormData(updatedFormData);
+}
+}, [productData]);
   
     const handleClick = (row) => {
       setProductData(row);
@@ -323,20 +379,22 @@ useEffect(() => {
   
     const handleEdit = async (event) => {
       event.preventDefault();
-    
+      console.log(formData);
       const access_token = await localforage.getItem('access_token'); 
       const updatedData = {
-        old_id:id,
-        unit_price:unitPrice,
-        discount_rate:discountRate,
-        discount_amount:discountAmount,
-        tax_rate: taxRate,
-        tevkifat_rate: tevkifatRate,
-        price_without_tax:priceWithoutTax,
-        unit_price_without_tax: unitPriceWithoutTax,
-        price_with_tevkifat: priceWithTevkifat,
-        price_total: priceTotal,
+        old_id:formData.id,
+        unit_price:formData.unitPrice,
+        discount_rate:formData.discountRate,
+        discount_amount:formData. discountAmount,
+        tax_rate:formData. taxRate,
+        tevkifat_rate:formData. tevkifatRate,
+        price_without_tax:formData.priceWithoutTax,
+        unit_price_without_tax: formData.unitPriceWithoutTax,
+        price_with_tevkifat:formData. priceWithTevkifat,
+        price_total:formData. priceTotal,
       };
+
+ 
     
       fetch(`http://127.0.0.1:8000/api/edit_accounting/`, {
         method: "POST",
@@ -409,7 +467,19 @@ useEffect(() => {
       link.download = filename;
       link.click();
     }
+
     
+
+    const handleInputChange = (event) => {
+      const { name, value } = event.target;
+      
+      // Update the respective state
+      setFormData(prevData => ({ ...prevData, [name]: value }));
+
+      // Example condition: Move to next input after 3 characters
+    
+  };
+
   
   return (
     <>
@@ -423,284 +493,139 @@ useEffect(() => {
               <CardTitle tag="h4">Muhasebe Girişi Düzenle</CardTitle>
             </CardHeader>
             <CardBody>
-              <Form onSubmit={handleEdit}>
-              <div>
+            <Form onSubmit={handleEdit}>
+    <div>
 
         <div className="form-group-col-sales">
         
-        <label>No</label>
-        <FormGroup>
-          <Input
-            disabled
-            name="id"
-            type="number"
-            defaultValue={id}
-            onChange={(e) => setId(e.target.value)}
-          />
-        </FormGroup>
-        
-        <label>Malzeme Kodu</label>
-          <FormGroup>
-            <Input
-             disabled
-              type="text"
-              defaultValue={productCode}
-              onChange={(e) => setProductCode(e.target.value)}
-            />
-          </FormGroup>
-        
-        <label>Tarih</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </FormGroup>
+                  <FormGroup>
+                <label>No</label>
+                <div>{formData.id}</div>
+                </FormGroup>
+           
+
+                <FormGroup>
+                <label>Product Code</label>
+                <div>{formData.productCode} </div>
+                 </FormGroup>
+            
+                <FormGroup>
+                <label>Date</label>
+                <div>{formData.date} </div>
+                </FormGroup>
+            
+                <FormGroup>
+                <label>Barcode</label>
+                <div>{formData.barcode}</div>
+                </FormGroup>
+            
+                <FormGroup>
+                <label>Provider Company</label>
+                <div>{formData.providerCompany} </div>
+                </FormGroup>
+                <FormGroup>
+                <label>Receiver Company</label>
+              <div>{formData.receiverCompany} </div>
+              </FormGroup>
+           
+              <FormGroup>
+                <label>Status</label>
+                <div>{formData.status} </div>
+                </FormGroup>
+
+                <FormGroup>
+                <label>Place Of Use</label>
+              <div>{formData.placeOfUse}</div>
+            </FormGroup>
           
-          <label>Barkod</label>
-          <FormGroup>
-            <Input
-               disabled
-              type="text"
-              defaultValue={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Alınan Firma</label>
-          <FormGroup>
-            <Input
-             disabled
-              type="text"
-              defaultValue={providerCompany}
-              onChange={(e) => setProviderCompany(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Tevkifatlı Fiyat</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={priceWithTevkifat}
-              onChange={(e) => setPriceWithTevkifat(e.target.value)}
-            />
-          </FormGroup>
-
-
-          <label>Toplam Fiyat(Vergi Dahil)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={priceTotal}
-              onChange={(e) => setPriceTotal(e.target.value)}
-            />
-          </FormGroup>
-
-          </div>
-
-
-          <div className="form-group-col-sales">
-          <label>Alan Firma</label>
-          <FormGroup>
-            <Input
-               disabled
-              type="text"
-              defaultValue={receiverCompany}
-              onChange={(e) => setReceiverCompany(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Durum</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={status}
-              onChange={(e) => setStatus(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Kullanım Yeri</label>
-          <FormGroup>
-            <Input
-               disabled
-              type="text"
-              defaultValue={placeOfUse}
-              onChange={(e) => setPlaceOfUse(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Grup</label>
-          <FormGroup>
-            <Input
-               disabled
-              type="text"
-              defaultValue={group}
-              onChange={(e) => setGroup(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Alt Grup</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={subgroup}
-              onChange={(e) => setSubgroup(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Marka</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={brand}
-              onChange={(e) => setBrand(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Toplam Fiyat(Vergi Hrç.)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={priceWithoutTax}
-              onChange={(e) => setPriceWithoutTax(e.target.value)}
-            />
-          </FormGroup>
-
-          </div>
-
-
-          <div className="form-group-col-sales">
-
-          <label>Seri Numarası</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={serialNumber}
-              onChange={(e) => setSerialNumber(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Model</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={model}
-              onChange={(e) => setModel(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Açıklama</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Birim</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={unit}
-              onChange={(e) => setUnit(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Miktar</label>
-          <FormGroup>
-            <Input
-              disabled
-              type="text"
-              defaultValue={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Birim Fiyatı</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
-            />
-          </FormGroup>
-
-          <label>Birim Fiyat(Vergi Hrç)</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={unitPriceWithoutTax}
-              onChange={(e) => setUnitPriceWithoutTax(e.target.value)}
-            />
-          </FormGroup>
-
-
         </div>
 
         <div className="form-group-col-sales">
-          <label>İndirim Oranı</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={discountRate}
-              onChange={(e) => setDiscountRate(e.target.value)}
-            />
-          </FormGroup>
+            
+            <FormGroup>
+                <label>Group</label>
+               <div>{formData.group}</div>
+            </FormGroup>
 
-          <label>İndirim Miktarı</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={discountAmount}
-              onChange={(e) => setDiscountAmount(e.target.value)}
-            />
-          </FormGroup>
+            <FormGroup>
+                <label>Subgroup</label>
+              <div>{formData.subgroup}</div> 
+            </FormGroup>
 
-          <label>KDV Oranı</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={taxRate}
-              onChange={(e) => setTaxRate(e.target.value)}
-            />
-          </FormGroup>
-          
-          <label>Tevkifat Oranı</label>
-          <FormGroup>
-            <Input
-              type="text"
-              defaultValue={tevkifatRate}
-              onChange={(e) => setTevkifatRate(e.target.value)}
-            />
-          </FormGroup>
+            <FormGroup>
+                <label>Brand</label>
+                <div>{formData.brand}</div>
+            </FormGroup>
 
-      
+            <FormGroup>
+                <label>Serial Number</label>
+                <div>{formData.serialNumber} </div>
+            </FormGroup>
+            <FormGroup>
+                <label>Model</label>
+               <div> {formData.model}</div>
+            </FormGroup>
+            <FormGroup>
+                <label>Description</label>
+               <div>{formData.description}</div>
+            </FormGroup>
 
-         
-          </div>
 
-          <div className="form-group-col-sales">
-
-        
-
-          
-          </div>
-         
-         
-          
-        
+            <FormGroup>
+                <label>Unit</label>
+                <div>{formData.unit}</div>
+            </FormGroup>
+            <FormGroup>
+                <label>Amount</label>
+                <div>{formData.amount}</div>
+            </FormGroup>
         </div>
-              </Form>
+
+        <div className="form-group-col-sales">
+          
+            <FormGroup>
+                <label>Unit Price</label>
+                <Input name="unitPrice" onChange={(e) => handleInputChange(e)} value={formData.unitPrice} />
+            </FormGroup>
+            <FormGroup>
+                <label>Discount Rate</label>
+                <Input  onChange={(e) => handleInputChange(e)} value={formData.discountRate} />
+            </FormGroup>
+            <FormGroup>
+                <label>Discount Amount</label>
+                <Input ref={refs.discountAmountRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.discountAmount} />
+            </FormGroup>
+            <FormGroup>
+                <label>Tax Rate</label>
+                <Input ref={refs.taxRateRef} onChange={(e) =>handleInputChange(e)} defaultValue={formData.taxRate} />
+            </FormGroup>
+            <FormGroup>
+                <label>Tevkifat Rate</label>
+                <Input ref={refs.tevkifatRateRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.tevkifatRate} />
+            </FormGroup>
+        </div>
+
+        <div className="form-group-col-sales">
+            <FormGroup>
+                <label>Price Without Tax</label>
+                <Input ref={refs.priceWithoutTaxRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.priceWithoutTax} />
+            </FormGroup>
+            <FormGroup>
+                <label>Unit Price Without Tax</label>
+                <Input ref={refs.unitPriceWithoutTaxRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.unitPriceWithoutTax} />
+            </FormGroup>
+            <FormGroup>
+                <label>Price With Tevkifat</label>
+                <Input ref={refs.priceWithTevkifatRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.priceWithTevkifat} />
+            </FormGroup>
+            <FormGroup>
+                <label>Price Total</label>
+                <Input ref={refs.priceTotalRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.priceTotal} />
+            </FormGroup>
+        </div>
+    </div>
+</Form>
+
             </CardBody>
               <CardFooter>
                 <Button className="btn-round" color="success" type="submit" onClick={handleEdit}>

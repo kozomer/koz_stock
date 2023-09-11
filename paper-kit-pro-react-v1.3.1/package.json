@@ -39,6 +39,7 @@
     "chart.js": "3.4.1",
     "classnames": "2.3.1",
     "localforage": "^1.10.0",
+    "lodash.debounce": "^4.0.8",
     "match-sorter": "6.3.1",
     "moment": "^2.29.3",
     "nouislider": "14.6.3",

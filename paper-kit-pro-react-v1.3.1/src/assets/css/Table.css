@@ -1,3 +1,77 @@
+
+/* Selection Page */
+.container {
+  display: flex;
+  justify-content: center;
+  padding-top: 50px;
+}
+
+.column {
+  margin-bottom: 30px;
+}
+
+.cardStyle {
+  width: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cardStyle:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.cardHeader {
+  background-color: #f7f7f7; /* Light gray background for header */
+  padding: 20px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  border-bottom: 1px solid #e0e0e0; /* Slight border for separation */
+}
+
+.backgroundImage {
+  height: 200px; /* Adjust this based on your needs */
+  width: 100%;
+  background-position: center;
+  background-size: cover;
+}
+
+.cardInner {
+  position: relative;
+  padding: 30px;
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}
+
+
+
+
+/* */
+
+
 .custom-file-upload {
     border: 1px solid #ccc;
     display: inline-block;
@@ -75,6 +149,8 @@
   height: auto;
 }
 
+
+/*QTO ADDpopup */
 .form-item {
   flex: 0 0 auto;
   margin-right: 10px;
@@ -85,6 +161,32 @@
 /* If the `Select` component dropdown is being clipped, you might need to adjust its z-index and overflow properties */
 .form-item > Select {
   z-index: 10;
+}
+.popup-qto {
+  width:1500px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001
+}
+
+.backdrop {
+  background-color: rgba(0, 0, 0, 0.5); /* Default semi-transparent black overlay */
+  /* other styles such as positioning to cover the full viewport */
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1000; /* this ensures it's above other content */
+}
+
+@supports (backdrop-filter: blur(5px)) {
+  .backdrop {
+      background-color: rgba(0, 0, 0, 0.3); /* Lighter overlay since we'll have blur */
+      backdrop-filter: blur(5px);
+  }
 }
 
 /* PopUp */

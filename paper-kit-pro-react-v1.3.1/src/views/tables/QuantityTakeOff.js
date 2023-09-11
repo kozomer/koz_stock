@@ -4,6 +4,7 @@ import localforage from 'localforage';
 import Select from 'react-select';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
+import ReactBSAlert from "react-bootstrap-sweetalert";
 
 
 function QTOForm() {
@@ -18,6 +19,10 @@ function QTOForm() {
     const [selectedElevation, setSelectedElevation] = useState(null);
     const [selectedSection, setSelectedSection] = useState(null);
     const [selectedPlace, setSelectedPlace] = useState(null);
+
+    const [dataChanged, setDataChanged] = useState(false);
+    const [renderEdit, setRenderEdit] = useState(false);
+
 
     // Additional fields for QuantityTakeOff
     const [poseCode, setPoseCode] = useState('');
@@ -58,6 +63,8 @@ function QTOForm() {
     });
     
     
+    const [alert, setAlert] = useState(null);
+
     useEffect(() => {
         fetchBuildings();
     }, []);
@@ -186,10 +193,12 @@ function QTOForm() {
             });
             const data = await response.json();
             if (response.status === 201) {
-                console.log(data.message);
+                successUpload(data.message);
                 setIsAdding(false); 
+                setDataChanged(true);
+
             } else {
-                console.error(data.error);
+                errorUpload(data.error);
             }
         } catch (error) {
             console.error("Error submitting data:", error);
@@ -203,7 +212,7 @@ function QTOForm() {
 
     useEffect(() => {
         fetchBuildings();
-        fetchRows();
+       
     }, []);
 
     const handleCancel = () => {
@@ -212,7 +221,8 @@ function QTOForm() {
       };
   
     
-    const fetchRows = async () => {
+      useEffect(() => {
+        async function fetchRows () {
         const access_token = await localforage.getItem('access_token'); 
         try {
             const response = await fetch('http://127.0.0.1:8000/api/qto/', {
@@ -223,12 +233,13 @@ function QTOForm() {
             });
             const data = await response.json();
             setDataTable(data);
-            console.log(data)
+            setDataChanged(false);
         } catch (error) {
             console.error("Error fetching rows:", error);
         }
     };
-    
+    fetchRows();
+}, [dataChanged,renderEdit]);
     const customStyles = {
         menu: (provided, state) => ({
           ...provided,
@@ -277,340 +288,57 @@ function QTOForm() {
         (!columnFilters.filter_takeOut || row[15].toString().toLowerCase().includes(columnFilters.filter_takeOut.toLowerCase()))
     );
     
+
+    const successUpload = (s) => {
+        setAlert(
+          <ReactBSAlert
+            success
+            style={{ display: "block", marginTop: "-100px" }}
+            title="Uploaded!"
+            onConfirm={() => { hideAlert()
+            setShowPopup(false)}}
+            onCancel={() => hideAlert()}
+            confirmBtnBsStyle="info"
+            btnSize=""
+          >
+            {s}
+          </ReactBSAlert>
+        );
+      };
+
+      const errorUpload = (e) => {
+        setAlert(
+          <ReactBSAlert
+            danger
+            style={{ display: "block", marginTop: "-100px" }}
+            title="Error"
+            onConfirm={() => hideAlert()}
+            onCancel={() => hideAlert()}
+            confirmBtnBsStyle="info"
+            btnSize=""
+          >
+           {e}
+          </ReactBSAlert>
+        );
+      };
+
+      const hideAlert = () => {
+        setAlert(null);
+      };
+    
     return (
-        <div style={{marginTop:"100px"}}> 
+        <div className='content'> 
+           {alert}
+
             
-            <div style={{ overflowX: 'auto', maxWidth: '100%', height:"500px"}}>
+           
 
-            <Table>
-                <thead>
-                    <tr>
-                    <th>
-                        <input
-                            value={columnFilters.filter_building}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, filter_building: e.target.value }))}
-                            placeholder="Filter by building..."
-                        />
-                    </th>
-                    <th>
-                        <input
-                            value={columnFilters.filter_elevation}
-                            onChange={(e) => setColumnFilters(prev => ({ ...prev, filter_elevation: e.target.value }))}
-                            placeholder="Filter by elevation..."
-                        />
-                    </th>
-                        <th>Building</th>
-                        <th>Elevation</th>
-                        <th>Section</th>
-                        <th>Place</th>
-                        <th>Pose Code</th>
-                        <th>Manufacturing Code</th>
-                        <th>Material</th>
-                        <th>Description</th>
-                        <th>Width</th>
-                        <th>Depth</th>
-                        <th>Height</th>
-                        <th>Quantity</th>
-                        <th>Unit</th>
-                        <th>Multiplier</th>
-                        <th>Multiplier2</th>
-                        <th>Take Out</th>
-                        {/* ... other headers */}
-                    </tr>
-                </thead>
-                <tbody>
-                    {isAdding && (
-                        
-                        <tr>
-                             <td>
-                                    <Select
-                                        value={buildingOptions.find(option => option.value === selectedBuilding)}
-                                        onChange={(option) => handleBuildingChange(option.value)}
-                                        options={buildingOptions}
-                                        placeholder="Select Building"
-                                        styles={customStyles}
-
-                                    />
-                                </td>
-                                <td>
-                                    <Select
-                                        value={elevationOptions.find(option => option.value === selectedElevation)}
-                                        onChange={(option) => handleElevationChange(option.value)}
-                                        options={elevationOptions}
-                                        placeholder="Select Elevation"
-                                        isDisabled={!selectedBuilding}
-                                        styles={customStyles}
-
-                                    />
-                                </td>
-                                <td>
-                                    <Select
-                                        value={sectionOptions.find(option => option.value === selectedSection)}
-                                        onChange={(option) => handleSectionChange(option.value)}
-                                        options={sectionOptions}
-                                        placeholder="Select Section"
-                                        isDisabled={!selectedElevation}
-                                        styles={customStyles}
-
-                                    />
-                                </td>
-                                <td>
-                                    <Select
-                                        value={placeOptions.find(option => option.value === selectedPlace)}
-                                        onChange={(option) => setSelectedPlace(option.value)}
-                                        options={placeOptions}
-                                        placeholder="Select Place"
-                                        isDisabled={!selectedSection}
-                                        styles={customStyles}
-
-                                    />
-                                </td>
-                            <td>
-                                <Input type="text" placeholder="Pose Code" value={poseCode} onChange={(e) => setPoseCode(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Manufacturing Code" value={manufacturingCode} onChange={(e) => setManufacturingCode(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Material" value={material} onChange={(e) => setMaterial(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Width" value={width} onChange={(e) => setWidth(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Depth" value={depth} onChange={(e) => setDepth(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Height" value={height} onChange={(e) => setHeight(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Quantity" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Unit" value={unit} onChange={(e) => setUnit(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Multiplier" value={multiplier} onChange={(e) => setMultiplier(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Multiplier2" value={multiplier2} onChange={(e) => setMultiplier2(e.target.value)} />
-                            </td>
-                            <td>
-                                <Input type="text" placeholder="Take Out" value={takeOut} onChange={(e) => setTakeOut(e.target.value)} />
-                            </td>
-                            <td>
-                                <Button onClick={handleSubmit}>Submit</Button>
-                            </td>
-                        </tr>
-                    )}
-                     
-        
-                     {rows.map(row => (
-                <tr key={row[0]}>
-                    {editingRowId === row[0] ? (
-                        
-                        <>
-                        <td>
-                            
-                    
-                        <Select
-   value={buildingOptions.find(option => option.value === editingRowData.selectedEditBuilding)}
-   onChange={(option) => handleBuildingChange(option.value)}
-   options={buildingOptions}
-   placeholder="Select Building"
-   styles={customStyles}
-/>
-                           </td>
-                           <td>
-                           <Select
-   value={elevationOptions.find(option => option.value === editingRowData.selectedEditElevation)}
-   onChange={(option) => handleElevationChange(option.value)}
-   options={elevationOptions}
-   placeholder="Select Elevation"
-   isDisabled={!editingRowData.selectedEditBuilding}
-   styles={customStyles}
-/>
-                           </td>
-                           <td>
-                           <Select
-   value={sectionOptions.find(option => option.value === editingRowData.selectedEditSection)}
-   onChange={(option) => handleSectionChange(option.value)}
-   options={sectionOptions}
-   placeholder="Select Section"
-   isDisabled={!editingRowData.selectedEditElevation}
-   styles={customStyles}
-/>
-                           </td>
-                           <td>
-                           <Select
-   value={placeOptions.find(option => option.value === editingRowData.selectedEditPlace)}
-   onChange={(option) => handlePlaceChange(option.value)}
-   options={placeOptions}
-   placeholder="Select Place"
-   isDisabled={!editingRowData.selectedEditSection}
-   styles={customStyles}
-/>
-                           </td>
-                           <td>
-    <Input 
-        type="text" 
-        placeholder="Manufacturing Code" 
-        value={editingRowData.editManufacturingCode} 
-        onChange={(e) => setEditingRowData({...editingRowData, editManufacturingCode: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Material" 
-        value={editingRowData.editMaterial} 
-        onChange={(e) => setEditingRowData({...editingRowData, editMaterial: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Description" 
-        value={editingRowData.editDescription} 
-        onChange={(e) => setEditingRowData({...editingRowData, editDescription: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Width" 
-        value={editingRowData.editWidth} 
-        onChange={(e) => setEditingRowData({...editingRowData, editWidth: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Depth" 
-        value={editingRowData.editDepth} 
-        onChange={(e) => setEditingRowData({...editingRowData, editDepth: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Height" 
-        value={editingRowData.editHeight} 
-        onChange={(e) => setEditingRowData({...editingRowData, editHeight: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Quantity" 
-        value={editingRowData.editQuantity} 
-        onChange={(e) => setEditingRowData({...editingRowData, editQuantity: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Unit" 
-        value={editingRowData.editUnit} 
-        onChange={(e) => setEditingRowData({...editingRowData, editUnit: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Multiplier" 
-        value={editingRowData.editMultiplier} 
-        onChange={(e) => setEditingRowData({...editingRowData, editMultiplier: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Multiplier2" 
-        value={editingRowData.editMultiplier2} 
-        onChange={(e) => setEditingRowData({...editingRowData, editMultiplier2: e.target.value})} 
-    />
-</td>
-<td>
-    <Input 
-        type="text" 
-        placeholder="Take Out" 
-        value={editingRowData.editTakeOut} 
-        onChange={(e) => setEditingRowData({...editingRowData, editTakeOut: e.target.value})} 
-    />
-</td>
-
-                       <td>
-                           <Button onClick={handleSubmit}>Submit</Button>
-                       </td>
-                   
-                       
-                        <>
-                            {/* ... Edit view with inputs ... */}
-                            <td>
-                                <button onClick={() => {
-                                    // Save logic here...
-                                    setEditingRowId(null); // Exit edit mode for this row after saving
-                                }}>Save</button>
-                            </td>
-                            
-                        </>
-                        </>
-                    ) : (
-                        <>
-                              {filteredRows.map(row => (
-                    <tr key={row[0]}>
-                        {row.map((entry, entryIndex) => (
-                            <td key={entryIndex}>{entry}</td>
-                        ))}
-                    </tr>
-                ))}
-                            <td>
-                            <button onClick={() => {
-    setEditingRowId(row[0]);
-    setEditingRowData({
-        selectedEditBuilding: row[1],
-        selectedEditElevation: row[2],
-        selectedEditSection: row[3],
-        selectedEditPlace: row[4],
-        editPoseCode: row[5],
-        editManufacturingCode: row[6],
-        editMaterial: row[7],
-        editDescription: row[8],
-        editWidth: row[9],
-        editDepth: row[10],
-        editHeight: row[11],
-        editQuantity: row[12],
-        editUnit: row[13],
-        editMultiplier: row[14],
-        editMultiplier2: row[15],
-        editTakeOut: row[16],
-        // ... adjust if needed based on your actual structure ...
-    });
-}}>Edit</button>
-
-
-                            </td>
-                        </>
-                    )}
-                </tr>
-            ))}       
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colSpan="17">
-                            {!isAdding && <Button color="primary" onClick={() => setShowPopup(true)}>+ Add</Button>}
-                        </td>
-                    </tr>
-                </tfoot>
-            </Table>
+            
 
             {showPopup &&(
-       <div className="popup">
-              <Card style={{ maxWidth: '500px' }}>
+     <div className="backdrop">
+       <div className="popup-qto">
+              <Card>
           <CardHeader>
             <CardTitle tag="h4">Metraj ekle</CardTitle>
           </CardHeader>
@@ -636,6 +364,7 @@ function QTOForm() {
             placeholder="Select Elevation"
             isDisabled={!selectedBuilding}
             styles={customStyles}
+            menuPortalTarget={document.body}
         />
     </div>
 
@@ -648,6 +377,7 @@ function QTOForm() {
             placeholder="Select Section"
             isDisabled={!selectedElevation}
             styles={customStyles}
+            menuPortalTarget={document.body}
         />
     </div>
 
@@ -660,6 +390,7 @@ function QTOForm() {
             placeholder="Select Place"
             isDisabled={!selectedSection}
             styles={customStyles}
+            menuPortalTarget={document.body}
         />
     </div>
 
@@ -668,7 +399,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Pose Code" 
-            value={poseCode} 
+            
             onChange={(e) => setPoseCode(e.target.value)} 
         />
     </div>
@@ -678,7 +409,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Manufacturing Code" 
-            value={manufacturingCode} 
+            
             onChange={(e) => setManufacturingCode(e.target.value)} 
         />
     </div>
@@ -688,7 +419,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Material" 
-            value={material} 
+             
             onChange={(e) => setMaterial(e.target.value)} 
         />
     </div>
@@ -698,7 +429,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Description" 
-            value={description} 
+             
             onChange={(e) => setDescription(e.target.value)} 
         />
     </div>
@@ -708,7 +439,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Width" 
-            value={width} 
+             
             onChange={(e) => setWidth(e.target.value)} 
         />
     </div>
@@ -718,7 +449,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Depth" 
-            value={depth} 
+            
             onChange={(e) => setDepth(e.target.value)} 
         />
     </div>
@@ -728,7 +459,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Height" 
-            value={height} 
+             
             onChange={(e) => setHeight(e.target.value)} 
         />
     </div>
@@ -738,7 +469,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Quantity" 
-            value={quantity} 
+            
             onChange={(e) => setQuantity(e.target.value)} 
         />
     </div>
@@ -748,7 +479,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Unit" 
-            value={unit} 
+            
             onChange={(e) => setUnit(e.target.value)} 
         />
     </div>
@@ -758,7 +489,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Multiplier" 
-            value={multiplier} 
+             
             onChange={(e) => setMultiplier(e.target.value)} 
         />
     </div>
@@ -768,7 +499,7 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Multiplier2" 
-            value={multiplier2} 
+            
             onChange={(e) => setMultiplier2(e.target.value)} 
         />
     </div>
@@ -778,14 +509,14 @@ function QTOForm() {
         <Input 
             type="text" 
             placeholder="Take Out" 
-            value={takeOut} 
+            
             onChange={(e) => setTakeOut(e.target.value)} 
         />
     </div>
 </CardBody>
 
           <CardFooter>
-          <Button onClick={handleSubmit}>Onayla</Button>
+          <Button  className="btn-round" color="success" type="submit" onClick={handleSubmit}>Onayla</Button>
               
             
             <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
@@ -795,8 +526,18 @@ function QTOForm() {
         </Card>
 
             </div>
+            </div>
 )}
 
+
+<Card>
+              <CardHeader>
+                <CardTitle tag='h4'>METRAJ GİRİŞ</CardTitle>
+              </CardHeader>
+              <CardBody>
+              {!isAdding && <Button  className="my-button-class" color="primary" onClick={() => setShowPopup(true)}>+ EKLE</Button>}
+              </CardBody>
+            </Card>
              <Card >
               
               <CardBody >
@@ -962,7 +703,7 @@ total: row[17],
                 />
               </CardBody>
             </Card>
-            </div>
+           
         </div>
     );
 }

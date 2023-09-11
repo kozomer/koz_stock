@@ -461,7 +461,9 @@ const handleAddFileClick = () => {
             onChange={(e) => setBrand(e.target.value)}
           />
         </FormGroup>
+        </div>
 
+        <div className="form-group-col">
         <label>Seri Numarası</label>
         <FormGroup>
           <Input
@@ -497,7 +499,10 @@ const handleAddFileClick = () => {
             onChange={(e) => setUnit(e.target.value)}
           />
         </FormGroup>
+        </div>
+         
 
+        <div className="form-group-col">
         <label>Depo</label>
         <FormGroup>
           <Input
@@ -568,43 +573,7 @@ const handleAddFileClick = () => {
     <CardTitle tag='h4'>AMBAR</CardTitle>
   </CardHeader>
   <CardBody>
-    <div className="upload-container">
-      {!showUploadDiv && (
-        <div className="d-flex justify-content-between align-items-center">
-          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-            <i className="fa fa-plus-circle mr-1"></i>
-            Dosya Ekle
-          </Button>
-          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-            <i className="fa fa-download mr-1"></i>
-            Dışa Aktar
-          </Button>
-        </div>
-      )}
-      {showUploadDiv && (
-        <div>
-          <div className="d-flex justify-content-between align-items-center">
-            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-              <i className="fa fa-plus-circle mr-1"></i>
-              Dosya Ekle
-            </Button>
-            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-              <i className="fa fa-download mr-1"></i>
-              Dışa Aktar
-            </Button>
-          </div>
-          <div className="mt-3">
-            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Yükle
-            </Button>
-            <div className="spinner-container">
-              {isLoading && <div className="loading-spinner"></div>}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    
   </CardBody>
 </Card>
         <Row>

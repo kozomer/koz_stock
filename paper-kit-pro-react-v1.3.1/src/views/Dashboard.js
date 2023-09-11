@@ -70,6 +70,7 @@ export const notifications = [];
 
 
 function Dashboard() {
+  /*
   const notificationAlert = React.useRef();
   const [filterOption, setFilterOption] = useState("monthly");
   const [filterOptionCust, setFilterOptionCust] = useState("monthly");
@@ -1303,7 +1304,8 @@ function Dashboard() {
             </Card>
           </Col>
         </Row>
-        */}
+        
+        /*
         <Row>
           <Col md="4">
             <Button
@@ -1321,6 +1323,7 @@ function Dashboard() {
       </div>
     </>
   );
+  */
 }
 
 export default Dashboard;

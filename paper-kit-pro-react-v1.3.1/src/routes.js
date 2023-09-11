@@ -45,7 +45,7 @@ import StaffPerformance from "views/tables/StaffPerfomance";
 import Suppliers from "views/tables/Suppliers";
 import StockAccount from "views/tables/StockAccount";
 import Consumers from "views/tables/Consumers";
-import Deneme from "views/tables/Deneme";
+import User from "views/tables/User";
 import Search from "views/tables/Seach";
 import QTO from "views/tables/QuantityTakeOff";
 
@@ -190,7 +190,7 @@ const routes = [
     path: "/deneme",
     name: "Kullanıcı",
     icon: "nc-icon nc-circle-10",
-    component: Deneme,
+    component: User,
     layout: "/admin",
    
   },
