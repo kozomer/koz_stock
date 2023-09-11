@@ -3,7 +3,7 @@ import { Card, CardHeader, CardBody, Button, Row, Col, Container } from 'reactst
 import { useHistory } from 'react-router-dom';
 import project1Image from '../../assets/img/kozoran.png';
 import project2Image from '../../assets/img/koz_logo.png';
-
+import '../../assets/css/Table.css';
 import localforage from 'localforage';
 const projects = [
   { project_id: 1, title:'', imageUrl: project1Image },
@@ -48,30 +48,26 @@ function SelectionPage() {
     }
   
     return (
-      <Container style={{ display: 'flex', justifyContent: 'center' }}>
+      <Container className="container">
         <Row>
           {projects.map((project) => (
-            <Col xs="12" sm="6" md={projects.length > 2 ? "4" : "6"} key={project.project_id} style={{ marginBottom: '30px' }}> 
-              <Card style={{ width: '100%', position: 'relative' }}> 
-                <div style={{ 
-                  position: 'absolute', 
-                  top: 0,
-                  left: 0,
-                  height: '100%',
-                  width: '100%',
+            <Col xs="12" sm="6" md={projects.length > 2 ? "4" : "6"} key={project.project_id} className="column"> 
+              <Card className="cardStyle"> 
+              <div className="cardHeader">{title}</div>
+                <div className="backgroundImage" style={{ 
+                  
+                 
                   backgroundImage: `url(${project.imageUrl})`,
-                  backgroundPosition: 'center',
-                  backgroundSize: 'cover',
-                  filter: 'blur(1px)',
+                 
                 }} />
-                <div style={{ position: 'relative', backgroundColor: 'rgba(255, 255, 255, 0.7)', padding: '30px' }}>
+                <div className="cardInner">
                   <CardHeader>
                     <h3 className="header text-center">{project.title}</h3>
                   </CardHeader>
                   <CardBody>
                     {/* ... */}
                   </CardBody>
-                  <div className="d-flex justify-content-center" style={{ marginTop: '20px' }}>
+                  <div className="buttonContainer">
                     <Button color="primary" onClick={() => handleSelectProject(project)}>
                       Select
                     </Button>
