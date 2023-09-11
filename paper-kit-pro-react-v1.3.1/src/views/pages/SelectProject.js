@@ -48,7 +48,7 @@ function SelectionPage() {
     }
   
     return (
-      <Container className="container">
+      <Container className="containers">
         <Row>
           {projects.map((project) => (
             <Col xs="12" sm="6" md={projects.length > 2 ? "4" : "6"} key={project.project_id} className="column"> 
