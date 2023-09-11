@@ -2142,8 +2142,14 @@ class AddQTOView(APIView):
             # You'd fetch the instances using the IDs
             building = Building.objects.get(id=building_id, project=project)
             elevation_or_floor = ElevationOrFloor.objects.get(id=elevation_or_floor_id, building=building)
-            section = Section.objects.get(id=section_id, elevation_or_floor=elevation_or_floor)
-            place = Place.objects.get(id=place_id, section=section)
+            try:
+                section = Section.objects.get(id=section_id, elevation_or_floor=elevation_or_floor)
+            except Place.DoesNotExist:
+                section = None
+            try:
+                place = Place.objects.get(id=place_id, section=section)
+            except Place.DoesNotExist:
+                place = None
 
             # Rest of the fields
             pose_code = request.data.get('pose_code')
@@ -2247,7 +2253,11 @@ class QTOView(APIView):
             # Filter QTO objects by the user's current project
             qtos = QuantityTakeOff.objects.filter(project=project)
 
-            qto_entries=  [[qto.id, qto.building.name, qto.elevation_or_floor.name, qto.section.name,qto.place.name,
+            qto_entries=  [[qto.id, 
+                            qto.building.name if qto.building else None,
+                            qto.elevation_or_floor.name if qto.elevation_or_floor else None, 
+                            qto.section.name if qto.section else None, 
+                            qto.place.name if qto.place else None,
                 qto.pose_code, qto.manufacturing_code, qto.material, qto.description, qto.width, qto.depth, qto.height, 
                 qto.quantity, qto.unit, qto.multiplier, qto.multiplier2, qto.take_out, qto.total] for qto in qtos]
                 

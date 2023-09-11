@@ -53,7 +53,7 @@ function SelectionPage() {
           {projects.map((project) => (
             <Col xs="12" sm="6" md={projects.length > 2 ? "4" : "6"} key={project.project_id} className="column"> 
               <Card className="cardStyle"> 
-              <div className="cardHeader">{title}</div>
+              <div className="cardHeader">assa</div>
                 <div className="backgroundImage" style={{ 
                   
                  
