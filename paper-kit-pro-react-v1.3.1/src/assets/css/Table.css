@@ -1,6 +1,60 @@
+.custom-file-upload {
+    border: 1px solid #ccc;
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    color: #333;
+    background-color: #fff;
+    border-radius: 5px;
+  }
+  
+  .custom-file-upload:hover {
+    background-color: #eee;
+  }
+  
+  .btn-upload {
+    margin-left: 50px;
+    background-color: #51cbce !important;
+    visibility: visible !important;
+  }
+ 
+  .file-name {
+    margin: 0 10px;
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 300px;
+    white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  }
+  
+.my-button-class {
+  background-color: #51cbce!important;
+ 
+  /* Other styles as needed */
+}
+.my-button-class:hover {
+  background-color: red !important;
+ 
+  /* Other styles as needed */
+}
+.react-select {
+  width:100px !important; /* adjust this value to the desired width */
+  margin-right:30px;
+  margin-left: 30px;
 
-/* Selection Page */
-.container {
+ 
+}
+
+.nav-link {
+  display: none;
+}
+
+/*Selection Page */
+.containers {
   display: flex;
   justify-content: center;
   padding-top: 50px;
@@ -66,66 +120,6 @@
   background-color: #0056b3;
 }
 
-
-
-
-/* */
-
-
-.custom-file-upload {
-    border: 1px solid #ccc;
-    display: inline-block;
-    padding: 6px 12px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    text-align: center;
-    color: #333;
-    background-color: #fff;
-    border-radius: 5px;
-  }
-  
-  .custom-file-upload:hover {
-    background-color: #eee;
-  }
-  
-  .btn-upload {
-    margin-left: 50px;
-    background-color: #51cbce !important;
-    visibility: visible !important;
-  }
- 
-  .file-name {
-    margin: 0 10px;
-    display: inline-block;
-    vertical-align: middle;
-    max-width: 300px;
-    white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  }
-  
-.my-button-class {
-  background-color: #51cbce!important;
- 
-  /* Other styles as needed */
-}
-.my-button-class:hover {
-  background-color: red !important;
- 
-  /* Other styles as needed */
-}
-.react-select {
-  width:100px !important; /* adjust this value to the desired width */
-  margin-right:30px;
-  margin-left: 30px;
-
- 
-}
-
-.nav-link {
-  display: none;
-}
 
 
 /* Popup Uploaded File */ 
