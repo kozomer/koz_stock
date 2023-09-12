@@ -45,15 +45,8 @@
   width:100px !important; /* adjust this value to the desired width */
   margin-right:30px;
   margin-left: 30px;
-
- 
 }
-
-.nav-link {
-  display: none;
-}
-
-/*Selection Page */
+/* Selection Page */
 .containers {
   display: flex;
   justify-content: center;
