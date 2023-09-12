@@ -2334,6 +2334,36 @@ class EditQTOView(APIView):
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
+class DeleteQTOView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)  # Assuming you want the same permissions
+    authentication_classes = (JWTAuthentication,)  # Assuming you're using JWT for auth
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            qto_id = request.data.get('qto_id')
+            
+            if not qto_id:
+                return JsonResponse({'error': _("QTO ID not provided.")}, status=400)
+                
+            qto_instance = QuantityTakeOff.objects.filter(project=request.user.current_project).get(id=qto_id)
+            
+            # Delete the QTO instance
+            qto_instance.delete()
+
+            return JsonResponse({'message': _("The QTO has been successfully deleted.")}, status=200)
+
+        except QuantityTakeOff.DoesNotExist:
+            return JsonResponse({'error': _("QTO not found.")}, status=400)
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+        
 
 class BuildingsForProjectView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
