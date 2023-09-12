@@ -94,6 +94,7 @@ function QTOForm() {
 
     const handleBuildingChange = async (buildingId) => {
         setSelectedBuilding(buildingId);
+      
         console.log(buildingId);
         const access_token = await localforage.getItem('access_token'); 
     
@@ -142,6 +143,7 @@ function QTOForm() {
 
     const handleSectionChange = async (sectionId) => {
         setSelectedSection(sectionId);
+       
         const access_token = await localforage.getItem('access_token'); 
 
         try {
@@ -161,6 +163,32 @@ function QTOForm() {
             console.error("Error fetching places:", error);
         }
     };
+
+    // When 'selectedBuilding' changes, reset related states
+useEffect(() => {
+    console.log("sadsa")
+    if (selectedBuilding) {
+        setSelectedElevation(null);
+        setSelectedSection(null);
+        setSelectedPlace(null);
+    }
+}, [selectedBuilding]);
+
+// When 'selectedElevation' changes, reset related states
+useEffect(() => {
+    if (selectedElevation) {
+        setSelectedSection(null);
+        setSelectedPlace(null);
+    }
+}, [selectedElevation]);
+
+// When 'selectedSection' changes, reset 'selectedPlace'
+useEffect(() => {
+    if (selectedSection) {
+        setSelectedPlace(null);
+    }
+}, [selectedSection]);
+
 
     const handleSubmit = async () => {
         const access_token = await localforage.getItem('access_token'); 
@@ -196,6 +224,22 @@ function QTOForm() {
                 successUpload(data.message);
                 setIsAdding(false); 
                 setDataChanged(true);
+                setSelectedBuilding(null);  // or whatever default value you want
+                setSelectedElevation(null);
+                setSelectedSection(null);
+                setSelectedPlace(null);
+                setPoseCode('');
+                setManufacturingCode('');
+                setMaterial('');
+                setDescription('');
+                setWidth('');
+                setDepth('');
+                setHeight('');
+                setQuantity('');
+                setUnit('');
+                setMultiplier('');
+                setMultiplier2('');
+                setTakeOut('');
 
             } else {
                 errorUpload(data.error);
@@ -346,6 +390,7 @@ function QTOForm() {
     <div className="form-item">
         <label>Bina Adı</label>
         <Select
+            key={selectedBuilding}
             value={buildingOptions.find(option => option.value === selectedBuilding)}
             onChange={(option) => handleBuildingChange(option.value)}
             options={buildingOptions}
@@ -358,6 +403,7 @@ function QTOForm() {
     <div className="form-item">
         <label>Kat Adı</label>
         <Select
+            key={selectedElevation}
             value={elevationOptions.find(option => option.value === selectedElevation)}
             onChange={(option) => handleElevationChange(option.value)}
             options={elevationOptions}
@@ -371,6 +417,7 @@ function QTOForm() {
     <div className="form-item">
         <label>Bölüm Adı</label>
         <Select
+             key={selectedSection}
             value={sectionOptions.find(option => option.value === selectedSection)}
             onChange={(option) => handleSectionChange(option.value)}
             options={sectionOptions}
@@ -384,6 +431,7 @@ function QTOForm() {
     <div className="form-item">
         <label>Yer Adı</label>
         <Select
+             key={selectedPlace}
             value={placeOptions.find(option => option.value === selectedPlace)}
             onChange={(option) => setSelectedPlace(option.value)}
             options={placeOptions}
