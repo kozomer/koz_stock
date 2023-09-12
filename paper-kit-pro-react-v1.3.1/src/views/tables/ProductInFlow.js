@@ -286,14 +286,27 @@ const DataTable = () => {
     deleteFunc();
   }, [deleteConfirm]);
 
+  /* Helper functions to find tax codes by names */
+  const getTaxCodeByName = (name) => {
+    const matchingConsumer = consumerList.find(consumer => consumer[2] === name);
+    return matchingConsumer ? String(matchingConsumer[1]) : '';
+  }
+
+
+  
+  /* */
+
   useEffect(() => {
     if (productData) {
-      console.log(productData[2])
+      console.log(productData[4])
       setId(productData[0]);
       setDate(productData[1]);
       setProductCode(productData[2]);
-      setProviderCompanyTaxCode(productData[4]);
-      setRecieverCompanyTaxCode(productData[7])
+      
+      setProviderCompanyTaxCode(String(productData[4]));
+
+      const taxCode = getTaxCodeByName(productData[7]);
+      setRecieverCompanyTaxCode(taxCode);
       setStatus(productData[8])
       setBarcode(productData[3]);
       setPlaceOfUse(productData[9]);
@@ -352,7 +365,9 @@ const DataTable = () => {
     value: consumer[1] !== undefined ? String(consumer[1]) : '',
     label: consumer[1] !== undefined && consumer[2] !== undefined ? `${consumer[1]} - ${consumer[2]}` : '',
   }));
-
+  console.log("recieverCompanyTaxCode:", providerCompanyTaxCode);
+  console.log("Matching Option:", supplierOptions.find(option => option.value ===  providerCompanyTaxCode));
+   console.log("Supplier Options:",supplierOptions)
 
   const handleEdit = async (event) => {
     event.preventDefault();
@@ -729,7 +744,7 @@ const DataTable = () => {
                           <FormGroup>
                             <Select
                               name="product_code"
-
+                              value={productOptions.find(option => option.value === productCode)}
                               options={productOptions}
                               onChange={(selectedOption) => setProductCode(selectedOption.value)}
                             />
@@ -769,7 +784,7 @@ const DataTable = () => {
                           <FormGroup>
                             <Select
                               name="provider_tax_code"
-
+                              value={supplierOptions.find(option => option.value === providerCompanyTaxCode)}
                               options={supplierOptions}
                               onChange={(selectedOption) => setProviderCompanyTaxCode(selectedOption ? selectedOption.value : '')}
                             />
@@ -782,7 +797,7 @@ const DataTable = () => {
                           <FormGroup>
                             <Select
                               name="receiver_tax_code"
-
+                              value={consumerOptions.find(option => option.value === recieverCompanyTaxCode)}
                               options={consumerOptions}
                               onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
                             />
