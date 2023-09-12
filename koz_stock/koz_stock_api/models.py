@@ -52,6 +52,7 @@ class QuantityTakeOff(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
     pose_code = models.CharField(max_length=200)
+    pose_number = models.IntegerField(null=True)
     manufacturing_code = models.CharField(max_length=200)
     material = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)

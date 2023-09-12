@@ -2153,6 +2153,7 @@ class AddQTOView(APIView):
 
             # Rest of the fields
             pose_code = request.data.get('pose_code')
+            pose_number = request.data.get('pose_number')
             manufacturing_code = request.data.get('manufacturing_code')
             material = request.data.get('material')
             description = request.data.get('description')
@@ -2168,6 +2169,7 @@ class AddQTOView(APIView):
 
             qto = QuantityTakeOff(
                 pose_code=pose_code,
+                pose_number=pose_number,
                 manufacturing_code=manufacturing_code,
                 material=material,
                 description=description,
@@ -2191,6 +2193,147 @@ class AddQTOView(APIView):
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
+class AddExcelQTOView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            if 'file' not in request.FILES:
+                return JsonResponse({'error': _("No file uploaded")}, status=400)
+            
+            file = request.FILES['file']
+            kind = filetype.guess(file.read())
+            
+            if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+                return JsonResponse({'error': _("The uploaded file is not a valid Excel file")}, status=400)
+
+            data = pd.read_excel(file)
+            if data.empty:
+                return JsonResponse({'error': _("The uploaded file is empty")}, status=400)
+
+            count = 0
+            for i, row in data.iterrows():
+
+                # Fetching based on hierarchy and names
+                try:
+                    project = Project.objects.get(name=row["Project Name"])
+
+                    building = Building.objects.get(name=row["Building Name"], project=project) if "Building Name" in row and pd.notna(row["Building Name"]) else None
+
+                    elevation_or_floor = ElevationOrFloor.objects.get(name=row["Elevation or Floor Name"], building=building) if "Elevation or Floor Name" in row and pd.notna(row["Elevation or Floor Name"]) else None
+
+                    section = Section.objects.get(name=row["Section Name"], elevation_or_floor=elevation_or_floor) if "Section Name" in row and pd.notna(row["Section Name"]) else None
+
+                    place = Place.objects.get(name=row["Place Name"], section=section) if "Place Name" in row and pd.notna(row["Place Name"]) else None
+
+                except Project.DoesNotExist:
+                    return JsonResponse({'error': _("No project found with name '%s'") % row['Project Name']}, status=400)
+                except Building.DoesNotExist:
+                    return JsonResponse({'error': f"No building found with name '{row['Building Name']}' for project '{row['Project Name']}'"}, status=400)
+                except ElevationOrFloor.DoesNotExist:
+                    return JsonResponse({'error': f"No elevation or floor found with name '{row['Elevation or Floor Name']}' for building '{row['Building Name']}'"}, status=400)
+                except Section.DoesNotExist:
+                    return JsonResponse({'error': f"No section found with name '{row['Section Name']}' for elevation/floor '{row['Elevation or Floor Name']}'"}, status=400)
+                except Place.DoesNotExist:
+                    return JsonResponse({'error': f"No place found with name '{row['Place Name']}' for section '{row['Section Name']}'"}, status=400)
+
+                qto = QuantityTakeOff(
+                        project=project,
+                        building=building,
+                        elevation_or_floor=elevation_or_floor,
+                        section=section,
+                        place=place,
+                        pose_code=row["Pose Code"],
+                        pose_number=row["Pose Number"],
+                        manufacturing_code=row["Manufacturing Code"],
+                        material=row["Material"],
+                        description=row["Description"] if "Description" in row and pd.notna(row["Description"]) else None,
+                        width=row["Width"],
+                        depth=row["Depth"],
+                        height=row["Height"],
+                        quantity=row["Quantity"],
+                        unit=row["Unit"],
+                        multiplier=row["Multiplier"] if "Multiplier" in row and pd.notna(row["Multiplier"]) else 1,
+                        multiplier2=row["Multiplier2"] if "Multiplier2" in row and pd.notna(row["Multiplier2"]) else 1,
+                        take_out=row["Take Out"],
+                        total=row["Total"]
+                    )
+
+                qto.save()
+                count += 1
+
+            return JsonResponse({'message': f"{count} QTO entries added successfully"}, status=200)
+
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+
+class EditQTOView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)  # Assuming you want the same permissions
+    authentication_classes = (JWTAuthentication,)  # Assuming you're using JWT for auth
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            old_id = data.get('old_id')
+            qto_instance = QuantityTakeOff.objects.filter(project=request.user.current_project).get(id=old_id)
+            
+            # Delete the old QTO instance
+            qto_instance.delete()
+
+            # Create a new QTO instance
+            project_id = data.get('project_id')
+            project = Project.objects.get(id=project_id) if project_id else None
+
+            building_id = data.get('building_id')
+            building = Building.objects.get(id=building_id) if building_id else None
+
+            elevation_or_floor_id = data.get('elevation_or_floor_id')
+            elevation_or_floor = ElevationOrFloor.objects.get(id=elevation_or_floor_id) if elevation_or_floor_id else None
+
+            section_id = data.get('section_id')
+            section = Section.objects.get(id=section_id) if section_id else None
+
+            place_id = data.get('place_id')
+            place = Place.objects.get(id=place_id) if place_id else None
+
+            qto_data = {
+                'project': project,
+                'building': building,
+                'elevation_or_floor': elevation_or_floor,
+                'section': section,
+                'place': place,
+                # ... and so on for the other fields ...
+            }
+
+            for field in ['pose_code', 'pose_number', 'manufacturing_code', 'material', 'description', 'width', 'depth', 'height', 'quantity', 'unit', 'multiplier', 'multiplier2', 'take_out', 'total']:
+                value = data.get(field.replace('_', ' '))  # Converting to "Pose Code" format
+                if value is not None and value != '':
+                    qto_data[field] = value
+
+            new_qto_instance = QuantityTakeOff.objects.create(**qto_data)
+
+            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
+
+        except QuantityTakeOff.DoesNotExist:
+            return JsonResponse({'error': _("QTO not found.")}, status=400)
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+
 
 class BuildingsForProjectView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
@@ -2258,7 +2401,7 @@ class QTOView(APIView):
                             qto.elevation_or_floor.name if qto.elevation_or_floor else None, 
                             qto.section.name if qto.section else None, 
                             qto.place.name if qto.place else None,
-                qto.pose_code, qto.manufacturing_code, qto.material, qto.description, qto.width, qto.depth, qto.height, 
+                qto.pose_code, qto.pose_number, qto.manufacturing_code, qto.material, qto.description, qto.width, qto.depth, qto.height, 
                 qto.quantity, qto.unit, qto.multiplier, qto.multiplier2, qto.take_out, qto.total] for qto in qtos]
                 
             
@@ -2487,11 +2630,11 @@ class QTOView(APIView):
 #     permission_classes = (IsAuthenticated,)
 #     authentication_classes = (JWTAuthentication,)
 
-    # def handle_exception(self, exc):
-    #     if isinstance(exc, (NotAuthenticated, PermissionDenied)):
-    #         return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+#     def handle_exception(self, exc):
+#         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+#             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
 
-    #     return super().handle_exception(exc)
+#         return super().handle_exception(exc)
 
 #     def post(self, request, *args, **kwargs):
 #         try:
