@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form,CardFooter, CardTitle,CardHeader,CardBody,Dropdown, DropdownToggle, DropdownMenu, DropdownItem,DropdownContext , Input, Button, Table } from 'reactstrap';
+import { Card, Form,FormGroup,CardFooter, CardTitle,CardHeader,CardBody,Dropdown, DropdownToggle, DropdownMenu, DropdownItem,DropdownContext , Input, Button, Table } from 'reactstrap';
 import localforage from 'localforage';
 import Select from 'react-select';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
+import { total } from 'react-big-calendar/lib/utils/dates';
 
 
 function QTOForm() {
@@ -22,10 +23,12 @@ function QTOForm() {
 
     const [dataChanged, setDataChanged] = useState(false);
     const [renderEdit, setRenderEdit] = useState(false);
-
+    const [productData, setProductData] = useState(null);
 
     // Additional fields for QuantityTakeOff
+    const [id, setId] = useState('');
     const [poseCode, setPoseCode] = useState('');
+    const [poseNumber, setPoseNumber] = useState('');
     const [manufacturingCode, setManufacturingCode] = useState('');
     const [material, setMaterial] = useState('');
     const [description, setDescription] = useState('');
@@ -37,30 +40,13 @@ function QTOForm() {
     const [multiplier, setMultiplier] = useState('');
     const [multiplier2, setMultiplier2] = useState('');
     const [takeOut, setTakeOut] = useState('');
+    const [total, setTotal] = useState('');
     const [isAdding, setIsAdding] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [rows, setRows] = useState([]);
 
     const [editingRowId, setEditingRowId] = useState(null); // A new state
 
-    const [editingRowData, setEditingRowData] = useState({
-        selectedEditBuilding: null,
-        editPoseCode: '',
-        editManufacturingCode: '',
-        editMaterial: '',
-        editDescription: '',
-        editWidth: '',
-        editDepth: '',
-        editHeight: '',
-        editQuantity: '',
-        editUnit: '',
-        editMultiplier: '',
-        editMultiplier2: '',
-        editTakeOut: '',
-     
-        
-        //... other fields ...
-    });
     
     
     const [alert, setAlert] = useState(null);
@@ -85,7 +71,7 @@ function QTOForm() {
               }});
 
                           const data = await response.json();
-                          console.log(data)
+                          console.log("Fetched data1:", data);
             setBuildings(data);
         } catch (error) {
             console.error("Error fetching buildings:", error);
@@ -94,9 +80,89 @@ function QTOForm() {
 
     const handleBuildingChange = async (buildingId) => {
         setSelectedBuilding(buildingId);
-      
-        console.log(buildingId);
+        console.log("buildingId:", buildingId);
+        console.log('Starting handleBuildingChange');
         const access_token = await localforage.getItem('access_token'); 
+    
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/floors_for_building/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + String(access_token)
+                },
+                body: JSON.stringify({
+                    building_id: buildingId
+                })
+            });
+            
+            const data = await response.json();
+            console.log("Fetched data2:", data);
+            setElevations(data);
+        } catch (error) {
+            console.error("Error fetching elevations:", error);
+        }
+        console.log('Starting handleBuildingChange');
+    };
+    
+
+    const handleElevationChange = async (elevationId) => {
+        setSelectedElevation(elevationId);
+        const access_token = await localforage.getItem('access_token'); 
+        console.log("elevationId:", elevationId);
+        console.log('Starting handleElevationChange');
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/sections_for_floor/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + String(access_token)
+                },
+                body: JSON.stringify({
+                    elevation_id: elevationId
+                })
+            });
+            const data = await response.json();
+            console.log("Fetched data3:", data);
+            setSections(data);
+        } catch (error) {
+            console.error("Error fetching sections:", error);
+        }
+        console.log('Ending handleElevationChange');
+    };
+
+    const handleSectionChange = async (sectionId) => {
+        setSelectedSection(sectionId);
+        console.log("sectionId:", sectionId);
+        console.log('Starting  handleSectionChange');
+        const access_token = await localforage.getItem('access_token'); 
+
+        try {
+            const response = await fetch('http://127.0.0.1:8000/api/places_for_section/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + String(access_token)
+                },
+                body: JSON.stringify({
+                    section_id: sectionId
+                })
+            });
+            const data = await response.json();
+            console.log("Fetched data4:", data);
+            setPlaces(data);
+        } catch (error) {
+            console.error("Error fetching places:", error);
+        }
+        console.log('Ending  handleSectionChange');
+    };
+
+
+
+    const fetchElevations = async (buildingId) => {
+        setSelectedBuilding(buildingId);
+      
+               const access_token = await localforage.getItem('access_token'); 
     
         try {
             const response = await fetch('http://127.0.0.1:8000/api/floors_for_building/', {
@@ -117,53 +183,6 @@ function QTOForm() {
             console.error("Error fetching elevations:", error);
         }
     };
-    
-
-    const handleElevationChange = async (elevationId) => {
-        setSelectedElevation(elevationId);
-        const access_token = await localforage.getItem('access_token'); 
-    
-        try {
-            const response = await fetch('http://127.0.0.1:8000/api/sections_for_floor/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + String(access_token)
-                },
-                body: JSON.stringify({
-                    elevation_id: elevationId
-                })
-            });
-            const data = await response.json();
-            setSections(data);
-        } catch (error) {
-            console.error("Error fetching sections:", error);
-        }
-    };
-
-    const handleSectionChange = async (sectionId) => {
-        setSelectedSection(sectionId);
-       
-        const access_token = await localforage.getItem('access_token'); 
-
-        try {
-            const response = await fetch('http://127.0.0.1:8000/api/places_for_section/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + String(access_token)
-                },
-                body: JSON.stringify({
-                    section_id: sectionId
-                })
-            });
-            const data = await response.json();
-            setPlaces(data);
-        } catch (error) {
-            console.error("Error fetching places:", error);
-        }
-    };
-
     // When 'selectedBuilding' changes, reset related states
 useEffect(() => {
     console.log("sadsa")
@@ -224,6 +243,8 @@ useEffect(() => {
                 successUpload(data.message);
                 setIsAdding(false); 
                 setDataChanged(true);
+
+                
                 setSelectedBuilding(null);  // or whatever default value you want
                 setSelectedElevation(null);
                 setSelectedSection(null);
@@ -240,6 +261,7 @@ useEffect(() => {
                 setMultiplier('');
                 setMultiplier2('');
                 setTakeOut('');
+                
 
             } else {
                 errorUpload(data.error);
@@ -254,6 +276,11 @@ useEffect(() => {
     const sectionOptions = sections.map(s => ({ value: s.id, label: s.name }));
     const placeOptions = places.map(p => ({ value: p.id, label: p.name }));
 
+
+    console.log("selectedSection:", selectedSection);
+    console.log("Matching Option:", sectionOptions.find(option => option.value ===  selectedSection));
+     console.log("Section Options:",sectionOptions)
+
     useEffect(() => {
         fetchBuildings();
        
@@ -261,7 +288,24 @@ useEffect(() => {
 
     const handleCancel = () => {
         setShowPopup(false);
-     
+        setShowEditPopup(false);
+        setSelectedBuilding(null);  // or whatever default value you want
+        setSelectedElevation(null);
+        setSelectedSection(null);
+        setSelectedPlace(null);
+        setPoseCode('');
+        setManufacturingCode('');
+        setMaterial('');
+        setDescription('');
+        setWidth('');
+        setDepth('');
+        setHeight('');
+        setQuantity('');
+        setUnit('');
+        setMultiplier('');
+        setMultiplier2('');
+        setTakeOut('');
+        
       };
   
     
@@ -275,7 +319,9 @@ useEffect(() => {
                     'Authorization': 'Bearer ' + String(access_token)
                 }
             });
+
             const data = await response.json();
+            
             setDataTable(data);
             setDataChanged(false);
         } catch (error) {
@@ -294,44 +340,7 @@ useEffect(() => {
       };
 
 
-      const [columnFilters, setColumnFilters] = useState({
-        filter_building: '',
-        filter_elevation: '',
-        filter_section: '',
-        filter_place: '',
-        filter_poseCode: '',
-        filter_manufacturingCode: '',
-        filter_material: '',
-        filter_description: '',
-        filter_width: '',
-        filter_depth: '',
-        filter_height: '',
-        filter_quantity: '',
-        filter_unit: '',
-        filter_multiplier: '',
-        filter_multiplier2: '',
-        filter_takeOut: ''
-    });
-    
-    const filteredRows = rows.filter(row => 
-        (!columnFilters.filter_building || row[0].toString().toLowerCase().includes(columnFilters.filter_building.toLowerCase())) &&
-        (!columnFilters.filter_elevation || row[1].toString().toLowerCase().includes(columnFilters.filter_elevation.toLowerCase())) &&
-        (!columnFilters.filter_section || row[2].toString().toLowerCase().includes(columnFilters.filter_section.toLowerCase())) &&
-        (!columnFilters.filter_place || row[3].toString().toLowerCase().includes(columnFilters.filter_place.toLowerCase())) &&
-        (!columnFilters.filter_poseCode || row[4].toString().toLowerCase().includes(columnFilters.filter_poseCode.toLowerCase())) &&
-        (!columnFilters.filter_manufacturingCode || row[5].toString().toLowerCase().includes(columnFilters.filter_manufacturingCode.toLowerCase())) &&
-        (!columnFilters.filter_material || row[6].toString().toLowerCase().includes(columnFilters.filter_material.toLowerCase())) &&
-        (!columnFilters.filter_description || row[7].toString().toLowerCase().includes(columnFilters.filter_description.toLowerCase())) &&
-        (!columnFilters.filter_width || row[8].toString().toLowerCase().includes(columnFilters.filter_width.toLowerCase())) &&
-        (!columnFilters.filter_depth || row[9].toString().toLowerCase().includes(columnFilters.filter_depth.toLowerCase())) &&
-        (!columnFilters.filter_height || row[10].toString().toLowerCase().includes(columnFilters.filter_height.toLowerCase())) &&
-        (!columnFilters.filter_quantity || row[11].toString().toLowerCase().includes(columnFilters.filter_quantity.toLowerCase())) &&
-        (!columnFilters.filter_unit || row[12].toString().toLowerCase().includes(columnFilters.filter_unit.toLowerCase())) &&
-        (!columnFilters.filter_multiplier || row[13].toString().toLowerCase().includes(columnFilters.filter_multiplier.toLowerCase())) &&
-        (!columnFilters.filter_multiplier2 || row[14].toString().toLowerCase().includes(columnFilters.filter_multiplier2.toLowerCase())) &&
-        (!columnFilters.filter_takeOut || row[15].toString().toLowerCase().includes(columnFilters.filter_takeOut.toLowerCase()))
-    );
-    
+      
 
     const successUpload = (s) => {
         setAlert(
@@ -369,6 +378,115 @@ useEffect(() => {
       const hideAlert = () => {
         setAlert(null);
       };
+
+      const getBuildingIdByName = (name) => {
+        const building = buildingOptions.find(option => option.label === name);
+        return building ? building.value : null;
+    }
+    
+
+    const getElevationIdByName = (name) => {
+        const elevation = elevationOptions.find(option => option.label === name);
+        return elevation ? elevation.value : null;
+    }
+    
+    const getSectionIdByName = (name) => {
+        const section = sectionOptions.find(option => option.label === name);
+        return section ? section.value : null;
+    }
+    
+    const getPlaceIdByName = (name) => {
+        const place = placeOptions.find(option => option.label === name);
+        return place ? place.value : null;
+    }
+
+
+      useEffect(() => {
+        if (productData) {// Ensure all 19 fields are present
+
+            console.log("product data:",productData)
+            setId(productData[0]);
+            // For the building_name, elevation_or_floor_name, etc., you'll have to find the corresponding ids 
+            // from your options list. Assuming you have something like
+            const buildingId = getBuildingIdByName(productData[1]);
+            setSelectedBuilding(buildingId);
+            
+           
+            
+            setPoseCode(productData[5]);
+            setPoseNumber(productData[6]);
+            setManufacturingCode(productData[7]);
+            setMaterial(productData[8]);
+            setDescription(productData[9]);
+            setWidth(productData[10]);
+            setDepth(productData[11]);
+            setHeight(productData[12]);
+            setQuantity(productData[13]);
+            setUnit(productData[14]);
+            setMultiplier(productData[15]);
+            setMultiplier2(productData[16]);
+            setTakeOut(productData[17]);
+            setTotal(productData[18]);
+        }
+    }, [productData]);
+      
+      const handleClick = (row) => {
+        setProductData(row);
+        setShowEditPopup(true);
+      };
+
+  
+    
+
+      const handleEdit = async (event) => {
+        event.preventDefault();
+    
+        
+    
+        const access_token = await localforage.getItem('access_token');
+        const updatedData = {
+          old_id: id,
+          new_product_code: productCode,
+          new_supplier_tax_code: providerCompanyTaxCode,
+          new_receiver_tax_code: recieverCompanyTaxCode,
+          date,
+          status,
+          place_of_use: placeOfUse,
+          amount,
+          barcode
+        };
+    
+        fetch(`http://127.0.0.1:8000/api/edit_product_inflow/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            'Authorization': 'Bearer ' + String(access_token)
+          },
+          body: JSON.stringify(updatedData)
+        })
+          .then(response => response.json().then(data => ({ status: response.status, body: data })))
+          .then(({ status, body }) => {
+            if (status === 200) { // Assuming 200 is the success status code
+              console.log("Inflow edited successfully");
+              successUpload(body.message);
+              setUpdatedProductData(updatedData);
+    
+              setDataChanged(true);
+              setShowEditPopup(false);
+    
+    
+            } else {
+              console.log("Failed to edit inflow", body.error);
+              errorUpload(body.error);
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            errorUpload(error.message);
+          });
+      };
+    
+      
     
     return (
         <div className='content'> 
@@ -561,6 +679,8 @@ useEffect(() => {
             onChange={(e) => setTakeOut(e.target.value)} 
         />
     </div>
+
+ 
 </CardBody>
 
           <CardFooter>
@@ -577,7 +697,219 @@ useEffect(() => {
             </div>
 )}
 
+{showEditPopup &&(
+  
+       <div className="popup">
+              <Card>
+          <CardHeader>
+            <CardTitle tag="h4">Metraj Düzenle</CardTitle>
+          </CardHeader>
+          <CardBody >
+          
+    <div className="form-group-col">
+        <label>Bina Adı</label>
+        <Select
+            name="building_name"
+            value={buildingOptions.find(option => option.value === selectedBuilding)}
+            onChange={(option) => handleBuildingChange(option.value)}
+            options={buildingOptions}
+            placeholder="Select Building"
+           
+        />
+   
 
+    
+        <label>Kat Adı</label>
+        <Select
+            name="floor_name"
+            value={elevationOptions.find(option => option.value === selectedElevation)}
+            onChange={(option) => handleElevationChange(option.value)}
+            options={elevationOptions}
+            placeholder="Select Elevation"
+            isDisabled={!selectedBuilding}
+           
+        />
+    
+
+   
+        <label>Bölüm Adı</label>
+        <Select
+            
+            value={sectionOptions.find(option => option.value === selectedSection)}
+            onChange={(option) => handleSectionChange(option.value)}
+            options={sectionOptions}
+            placeholder="Select Section"
+            isDisabled={!selectedElevation}
+           
+        />
+   
+
+   
+        <label>Yer Adı</label>
+        <Select
+           
+            value={placeOptions.find(option => option.value === selectedPlace)}
+            onChange={(option) => setSelectedPlace(option.value)}
+            options={placeOptions}
+            placeholder="Select Place"
+            isDisabled={!selectedSection}
+           
+        />
+    </div>
+
+    <div className="form-group-col">
+        <label>Poz Kodu</label>
+        <Input 
+            type="text" 
+            placeholder="Pose Code" 
+            value={poseCode}
+            onChange={(e) => setPoseCode(e.target.value)} 
+        />
+    
+ <label>Poz Numarası</label>
+        <Input 
+            type="text" 
+            placeholder="Pose Number" 
+            value={poseNumber}
+            onChange={(e) => setPoseNumber(e.target.value)} 
+        />
+    
+  
+        <label>Üretim Kodu</label>
+        <Input 
+            type="text" 
+            placeholder="Manufacturing Code" 
+            value={manufacturingCode}
+            onChange={(e) => setManufacturingCode(e.target.value)} 
+        />
+    
+
+   
+        <label>Malzeme</label>
+        <Input 
+            type="text" 
+            placeholder="Material" 
+             value={material}
+            onChange={(e) => setMaterial(e.target.value)} 
+        />
+    
+
+   
+        <label>Açıklama</label>
+        <Input 
+            type="text" 
+            placeholder="Description" 
+             value={description}
+            onChange={(e) => setDescription(e.target.value)} 
+        />
+    </div>
+
+    <div className="form-group-col">
+        <label>Genişlik</label>
+        <Input 
+            type="text" 
+            placeholder="Width" 
+             value={width}
+            onChange={(e) => setWidth(e.target.value)} 
+        />
+   
+
+    
+        <label>Derinlik</label>
+        <Input 
+            type="text" 
+            placeholder="Depth" 
+            value={depth}
+            onChange={(e) => setDepth(e.target.value)} 
+        />
+  
+
+   
+        <label>Yükseklik</label>
+        <Input 
+            type="text" 
+            placeholder="Height" 
+             value={height}
+            onChange={(e) => setHeight(e.target.value)} 
+        />
+    
+
+    
+        <label>Miktar</label>
+        <Input 
+            type="text" 
+            placeholder="Quantity" 
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)} 
+        />
+    </div>
+
+    <div className="form-group-col">
+        <label>Birim</label>
+        <Input 
+            type="text" 
+            placeholder="Unit" 
+            value={unit}
+            onChange={(e) => setUnit(e.target.value)} 
+        />
+   
+
+    
+        <label>Çarpan</label>
+        <Input 
+            type="text" 
+            placeholder="Multiplier" 
+             value={multiplier}
+            onChange={(e) => setMultiplier(e.target.value)} 
+        />
+   
+
+    
+        <label>Çarpan2</label>
+        <Input 
+            type="text" 
+            placeholder="Multiplier2" 
+            value={multiplier2}
+            onChange={(e) => setMultiplier2(e.target.value)} 
+        />
+    
+
+   
+        <label>Alma</label>
+        <Input 
+            type="text" 
+            placeholder="Take Out" 
+            value={takeOut}
+            onChange={(e) => setTakeOut(e.target.value)} 
+
+            
+        />
+
+<div className="form-item">
+        <label>Toplam</label>
+        <Input 
+            type="text" 
+            placeholder="Toplam" 
+            value={total}
+            onChange={(e) => setTotal(e.target.value)} 
+        />
+    </div>
+    </div>
+</CardBody>
+
+          <CardFooter>
+          <Button  className="btn-round" color="success" type="submit" onClick={handleSubmit}>Onayla</Button>
+              
+            
+            <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
+              İptal Et
+            </Button>
+          </CardFooter>
+        </Card>
+
+            </div>
+         
+)}
 <Card>
               <CardHeader>
                 <CardTitle tag='h4'>METRAJ GİRİŞ</CardTitle>
@@ -599,18 +931,19 @@ elevation_or_floor_name: row[2],
 section_name: row[3],
 place_name: row[4],
 pose_code: row[5],
-manufacturing_code: row[6],
-material: row[7],
-description: row[8],
-width: row[9],
-depth: row[10],
-height: row[11],
-quantity: row[12],
-unit: row[13],
-multiplier: row[14],
-multiplier2: row[15],
-take_out: row[16],
-total: row[17],
+pose_number: row[6],
+manufacturing_code: row[7],
+material: row[8],
+description: row[9],
+width: row[10],
+depth: row[11],
+height: row[12],
+quantity: row[13],
+unit: row[14],
+multiplier: row[15],
+multiplier2: row[16],
+take_out: row[17],
+total: row[18],
 
                    
                     
@@ -688,6 +1021,10 @@ total: row[17],
                     {
                         Header: 'Poz Kodu',
                         accessor: 'pose_code',
+                    },
+                    {
+                        Header: 'Poz Numarası',
+                        accessor: 'pose_number',
                     },
                     {
                         Header: 'Üretim Kodu',

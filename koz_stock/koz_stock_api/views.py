@@ -2311,7 +2311,7 @@ class EditQTOView(APIView):
             place = Place.objects.get(id=place_id) if place_id else None
 
             qto_data = {
-                'project': project,
+                'project': request.user.project,
                 'building': building,
                 'elevation_or_floor': elevation_or_floor,
                 'section': section,
