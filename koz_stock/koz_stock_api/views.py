@@ -2269,7 +2269,7 @@ class AddExcelQTOView(APIView):
 
                 # Fetching based on hierarchy and names
                 try:
-                    project = Project.objects.get(name=row["Project Name"])
+                    project = request.user.current_project
 
                     building = Building.objects.get(name=row["Building Name"], project=project) if "Building Name" in row and pd.notna(row["Building Name"]) else None
 
@@ -2333,16 +2333,18 @@ class EditQTOView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
+            
             data = request.data
+            print(data)
             old_id = data.get('old_id')
             qto_instance = QuantityTakeOff.objects.filter(project=request.user.current_project).get(id=old_id)
             
             # Delete the old QTO instance
             qto_instance.delete()
 
-            # Create a new QTO instance
-            project_id = data.get('project_id')
-            project = Project.objects.get(id=project_id) if project_id else None
+            # # Create a new QTO instance
+            # project_id = data.get('project_id')
+            # project = Project.objects.get(id=project_id) if project_id else None
 
             building_id = data.get('building_id')
             building = Building.objects.get(id=building_id) if building_id else None
@@ -2357,7 +2359,7 @@ class EditQTOView(APIView):
             place = Place.objects.get(id=place_id) if place_id else None
 
             qto_data = {
-                'project': request.user.project,
+                'project': request.user.current_project,
                 'building': building,
                 'elevation_or_floor': elevation_or_floor,
                 'section': section,
@@ -2366,7 +2368,7 @@ class EditQTOView(APIView):
             }
 
             for field in ['pose_code', 'pose_number', 'manufacturing_code', 'material', 'description', 'width', 'depth', 'height', 'quantity', 'unit', 'multiplier', 'multiplier2', 'take_out', 'total']:
-                value = data.get(field.replace('_', ' '))  # Converting to "Pose Code" format
+                value = data.get(field)  # Converting to "Pose Code" format
                 if value is not None and value != '':
                     qto_data[field] = value
 

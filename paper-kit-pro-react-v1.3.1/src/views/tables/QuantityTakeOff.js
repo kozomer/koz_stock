@@ -9,6 +9,7 @@ import { total } from 'react-big-calendar/lib/utils/dates';
 
 
 function QTOForm() {
+    const [file, setFile] = useState(null);
     const [showEditPopup, setShowEditPopup] = useState(false);
     const [dataTable, setDataTable] = useState([]);
     const [buildings, setBuildings] = useState([]);
@@ -20,11 +21,16 @@ function QTOForm() {
     const [selectedElevation, setSelectedElevation] = useState(null);
     const [selectedSection, setSelectedSection] = useState(null);
     const [selectedPlace, setSelectedPlace] = useState(null);
-
+    const [isLoading, setIsLoading] = useState(false);
     const [dataChanged, setDataChanged] = useState(false);
     const [renderEdit, setRenderEdit] = useState(false);
     const [productData, setProductData] = useState(null);
+    const [showUploadDiv, setShowUploadDiv] = useState(false);
+    const [timeoutId, setTimeoutId] = useState(null);
 
+    
+    const [deleteData, setDeleteData] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState(false);
     // Additional fields for QuantityTakeOff
     const [id, setId] = useState('');
     const [poseCode, setPoseCode] = useState('');
@@ -321,7 +327,7 @@ useEffect(() => {
             });
 
             const data = await response.json();
-            
+            console.log("data table:",data)
             setDataTable(data);
             setDataChanged(false);
         } catch (error) {
@@ -378,28 +384,104 @@ useEffect(() => {
       const hideAlert = () => {
         setAlert(null);
       };
+      const warningWithConfirmAndCancelMessage = () => {
 
-      const getBuildingIdByName = (name) => {
-        const building = buildingOptions.find(option => option.label === name);
-        return building ? building.value : null;
-    }
+        setAlert(
+    
+          <ReactBSAlert
+            warning
+            style={{ display: "block", marginTop: "-100px" }}
+            title="Are you sure?"
+            onConfirm={() => {
+              setDeleteConfirm(true);
+              successDelete()
+            }}
+            onCancel={() => {
+              setDeleteConfirm(false);
+              cancelDelete()
+            }}
+            confirmBtnBsStyle="info"
+            cancelBtnBsStyle="danger"
+            confirmBtnText="Yes, delete it!"
+            cancelBtnText="Cancel"
+            showCancel
+            btnSize=""
+          >
+            Are you sure to delete this row?
+          </ReactBSAlert>
+        );
+    
+      };
+
+
+      useEffect(() => {
+        async function deleteFunc() {
+          if (deleteConfirm) {
+            const access_token = await localforage.getItem('access_token');
+            console.log(deleteData)
+            
+            try {
+              const response = await fetch(`http://127.0.0.1:8000/api/delete_qto/`, {
+                method: "POST",
+                body: JSON.stringify(deleteData),
+                headers: {
+                  'Authorization': 'Bearer ' + String(access_token),
+                  'Content-Type': 'application/json',
+                }
+              });
+    
+              const responseData = await response.json();  // Parse the response data
+    
+              if (!response.ok) {
+                errorUpload(responseData.error);
+              } else {
+                successUpload(responseData.message);
+              }
+            } catch (e) {
+              // If the fetch itself fails, for example due to network errors
+              errorUpload(e.toString());
+            }
+    
+            setDataChanged(!dataChanged);
+            setDeleteConfirm(false);
+          }
+        }
+    
+        deleteFunc();
+      }, [deleteConfirm]);
+     
     
 
-    const getElevationIdByName = (name) => {
-        const elevation = elevationOptions.find(option => option.label === name);
-        return elevation ? elevation.value : null;
-    }
-    
-    const getSectionIdByName = (name) => {
-        const section = sectionOptions.find(option => option.label === name);
-        return section ? section.value : null;
-    }
-    
-    const getPlaceIdByName = (name) => {
-        const place = placeOptions.find(option => option.label === name);
-        return place ? place.value : null;
-    }
-
+    const successDelete = () => {
+        setAlert(
+          <ReactBSAlert
+            success
+            style={{ display: "block", marginTop: "-100px" }}
+            title="Deleted!"
+            onConfirm={() => hideAlert()}
+            onCancel={() => hideAlert()}
+            confirmBtnBsStyle="info"
+            btnSize=""
+          >
+            Your row has been deleted.
+          </ReactBSAlert>
+        );
+      };
+      const cancelDelete = () => {
+        setAlert(
+          <ReactBSAlert
+            danger
+            style={{ display: "block", marginTop: "-100px" }}
+            title="Cancelled"
+            onConfirm={() => hideAlert()}
+            onCancel={() => hideAlert()}
+            confirmBtnBsStyle="info"
+            btnSize=""
+          >
+            Your row is safe :)
+          </ReactBSAlert>
+        );
+      };
 
       useEffect(() => {
         if (productData) {// Ensure all 19 fields are present
@@ -408,9 +490,22 @@ useEffect(() => {
             setId(productData[0]);
             // For the building_name, elevation_or_floor_name, etc., you'll have to find the corresponding ids 
             // from your options list. Assuming you have something like
-            const buildingId = getBuildingIdByName(productData[1]);
-            setSelectedBuilding(buildingId);
-            
+            const buildingId=productData[1].id
+            handleBuildingChange(buildingId).then(() => {
+                const elevationId = productData[2].id
+                setSelectedElevation(elevationId);
+    
+                handleElevationChange(elevationId).then(() => {
+                    const sectionId = productData[3].id
+                    setSelectedSection(sectionId);
+                    
+    
+                    handleSectionChange(sectionId).then(() => {
+                        const placeId = productData[4].id
+                        setSelectedPlace(placeId);
+                    });
+                });
+            })
            
             
             setPoseCode(productData[5]);
@@ -441,22 +536,32 @@ useEffect(() => {
       const handleEdit = async (event) => {
         event.preventDefault();
     
-        
+        console.log(selectedBuilding)
     
         const access_token = await localforage.getItem('access_token');
         const updatedData = {
           old_id: id,
-          new_product_code: productCode,
-          new_supplier_tax_code: providerCompanyTaxCode,
-          new_receiver_tax_code: recieverCompanyTaxCode,
-          date,
-          status,
-          place_of_use: placeOfUse,
-          amount,
-          barcode
+          building_id: selectedBuilding,
+          elevation_or_floor_id: selectedElevation,
+          section_id: selectedSection,
+          place_id: selectedPlace,
+          pose_code:poseCode,
+          pose_number:poseNumber,
+          manufacturing_code: manufacturingCode,
+          material:material,
+          description:description,
+          width:width,
+          depth:depth,
+          heigth:height,
+          quantity:quantity,
+          unit:unit,
+          multiplier:multiplier,
+          multiplier2:multiplier2,
+          take_out:takeOut,
+          total:total,
         };
     
-        fetch(`http://127.0.0.1:8000/api/edit_product_inflow/`, {
+        fetch(`http://127.0.0.1:8000/api/edit_qto/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -469,7 +574,7 @@ useEffect(() => {
             if (status === 200) { // Assuming 200 is the success status code
               console.log("Inflow edited successfully");
               successUpload(body.message);
-              setUpdatedProductData(updatedData);
+            
     
               setDataChanged(true);
               setShowEditPopup(false);
@@ -486,8 +591,70 @@ useEffect(() => {
           });
       };
     
+
+      const handleAddFileClick = () => {
+        clearTimeout(timeoutId); // Clear any existing timeout
+        setTimeoutId(setTimeout(() => setShowUploadDiv(true), 500));
+       
+        
+      }
       
+      const handleUploadClick = async () => {
+        setIsLoading(true);
+        const formData = new FormData();
+        formData.append('file', file);
+        const access_token = await localforage.getItem('access_token');
+        fetch('http://127.0.0.1:8000/api/add_excel_qto/', {
+          method: 'POST',
+          body: formData,
+          
+          headers: {
+              
+            'Authorization': 'Bearer '+ String(access_token)
+          },
+        })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then(data => {
+              console.log(data.error)
+              setIsLoading(false);
+              errorUpload(data.error);
+            });
+          }
+         
+          else{
+            return response.json().then(data => {
+          setIsLoading(false);
+          successUpload(data.message);
+          
+          
+          fetch('http://127.0.0.1:8000/api/qto/',{
+            headers: {
+              'Authorization': 'Bearer '+ String(access_token)
+            }
+          })
+            .then((response) => response.json())
+            
+            .then((data) =>
+              
+             setDataTable(data));
+           
+           
+        })
+        
+        .finally(() => {
+          setShowUploadDiv(false);
+          
+        });
+      
+      }
+      })
     
+      };
+
+      const handleFileInputChange = (e) => {
+        setFile(e.target.files[0]);
+      };
     return (
         <div className='content'> 
            {alert}
@@ -892,13 +1059,14 @@ useEffect(() => {
             placeholder="Toplam" 
             value={total}
             onChange={(e) => setTotal(e.target.value)} 
+            disabled
         />
     </div>
     </div>
 </CardBody>
 
           <CardFooter>
-          <Button  className="btn-round" color="success" type="submit" onClick={handleSubmit}>Onayla</Button>
+          <Button  className="btn-round" color="success" type="submit" onClick={handleEdit}>Onayla</Button>
               
             
             <Button className="btn-round" color="danger" type="submit" onClick={handleCancel}>
@@ -915,7 +1083,43 @@ useEffect(() => {
                 <CardTitle tag='h4'>METRAJ GİRİŞ</CardTitle>
               </CardHeader>
               <CardBody>
-              {!isAdding && <Button  className="my-button-class" color="primary" onClick={() => setShowPopup(true)}>+ EKLE</Button>}
+              <div className="upload-container">
+              {!showUploadDiv && (
+        <div className="d-flex justify-content-between align-items-center">
+          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+            <i className="fa fa-plus-circle mr-1"></i>
+            Add File
+          </Button>
+          {!isAdding && <Button  className="my-button-class" color="primary" onClick={() => setShowPopup(true)}>+ EKLE</Button>}
+        </div>
+      )}
+
+
+
+              {showUploadDiv && (
+        <div>
+          <div className="d-flex justify-content-between align-items-center">
+            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+              <i className="fa fa-plus-circle mr-1"></i>
+              Add File
+            </Button>
+            {!isAdding && <Button  className="my-button-class" color="primary" onClick={() => setShowPopup(true)}>+ EKLE</Button>}
+          </div>
+          <div className="mt-3">
+            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
+            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
+              Upload
+            </Button>
+            <div className="spinner-container">
+              {isLoading && <div className="loading-spinner"></div>}
+            </div>
+          </div>
+        </div>
+      )}
+         </div>    
+              
+
+              
               </CardBody>
             </Card>
              <Card >
@@ -926,10 +1130,10 @@ useEffect(() => {
                 <ReactTable
                   data={dataTable.map((row,index) => ({
                     id: row[0],
-building_name: row[1],
-elevation_or_floor_name: row[2],
-section_name: row[3],
-place_name: row[4],
+                    building_name: row[1] ? row[1].name : null,
+                    elevation_or_floor_name: row[2] ? row[2].name : null,
+                    section_name: row[3] ? row[3].name : null,
+                    place_name: row[4] ? row[4].name : null, // Added a check here
 pose_code: row[5],
 pose_number: row[6],
 manufacturing_code: row[7],
@@ -978,7 +1182,7 @@ total: row[18],
                                warningWithConfirmAndCancelMessage() 
                                const rowToDelete = {...row};
                                const data = {
-                               id: rowToDelete[0],
+                               qto_id: rowToDelete[0],
 
                               };
                               setDeleteData(data);

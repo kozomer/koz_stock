@@ -23,7 +23,7 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                     CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, ProductGroupsView, EditProductGroupView, DeleteProductGroupView,
                                     CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
                                     AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView, SupplierConsumerProductSearchView,
-                                    AddQTOView, BuildingsForProjectView, ElevationsForBuildingView, SectionsForElevationView, PlacesForSectionView, QTOView  )
+                                    AddQTOView,EditQTOView, BuildingsForProjectView, ElevationsForBuildingView, SectionsForElevationView, PlacesForSectionView, QTOView, AddExcelQTOView, DeleteQTOView, AddExcelProjectView  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -46,6 +46,7 @@ urlpatterns = [
     path('api/projects/', GetProjectsView.as_view(), name='get-projects'),
     path('api/set_current_project/', SetCurrentProjectView.as_view(), name='set-current-project'),
     path('api/create_project/', CreateProjectView.as_view(), name='create_project'),
+    path('api/create_excel_project/', AddExcelProjectView.as_view(), name='create_excel_project'),
 
     path('api/create_user/', CreateUserView.as_view(), name='create-user'),
     path('api/collapsed_users/',CollapsedUserView.as_view(), name='collapsed-users'),
@@ -102,14 +103,17 @@ urlpatterns = [
     
     path('api/search_supplier_consumer_product/', SupplierConsumerProductSearchView.as_view(), name='search_supplier_consumer_product'),
 
-    path('api/add_qto/', AddQTOView.as_view(), name='add_qto'),
+    
     path('api/buildings_for_project/', BuildingsForProjectView.as_view(), name='buildings_for_project'),
     path('api/floors_for_building/', ElevationsForBuildingView.as_view(), name='floors_for_building'),
     path('api/sections_for_floor/', SectionsForElevationView.as_view(), name='sections_for_floor'),
     path('api/places_for_section/', PlacesForSectionView.as_view(), name='places_for_section'),
+    
+    path('api/add_qto/', AddQTOView.as_view(), name='add_qto'),
     path('api/qto/', QTOView.as_view(), name='qto'),
-
-
+    path('api/edit_qto/', EditQTOView.as_view(), name='edit_qto'),
+    path('api/add_excel_qto/', AddExcelQTOView.as_view(), name='add_excel_qto'),
+    path('api/delete_qto/', DeleteQTOView.as_view(), name='delete_qto'),
 
 
 
