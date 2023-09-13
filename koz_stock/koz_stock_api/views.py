@@ -142,6 +142,52 @@ class CreateProjectView(APIView):
 
         return JsonResponse({'message': _('Project created and assigned to all users successfully')})
 
+class AddExcelProjectView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            if 'file' not in request.FILES:
+                return JsonResponse({'error': _("No file uploaded")}, status=400)
+            
+            file = request.FILES['file']
+            kind = filetype.guess(file.read())
+            
+            if kind is None or kind.mime not in ['application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet']:
+                return JsonResponse({'error': _("The uploaded file is not a valid Excel file")}, status=400)
+
+            data = pd.read_excel(file)
+            if data.empty:
+                return JsonResponse({'error': _("The uploaded file is empty")}, status=400)
+
+            count = 0
+            for i, row in data.iterrows():
+
+                # Fetching or Creating based on hierarchy and names
+                project, _ = Project.objects.get_or_create(name=row["Project Name"], company=request.user.company)
+
+                building, _ = Building.objects.get_or_create(name=row["Building Name"], project=project) if "Building Name" in row and pd.notna(row["Building Name"]) else (None, None)
+
+                elevation_or_floor, _ = ElevationOrFloor.objects.get_or_create(name=row["Elevation or Floor Name"], building=building) if "Elevation or Floor Name" in row and pd.notna(row["Elevation or Floor Name"]) else (None, None)
+
+                section, _ = Section.objects.get_or_create(name=row["Section Name"], elevation_or_floor=elevation_or_floor) if "Section Name" in row and pd.notna(row["Section Name"]) else (None, None)
+
+                place, _ = Place.objects.get_or_create(name=row["Place Name"], section=section) if "Place Name" in row and pd.notna(row["Place Name"]) else (None, None)
+
+                count += 1
+
+            return JsonResponse({'message': f"{count} Project hierarchy entries added successfully"}, status=200)
+
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+
 class GetProjectsView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
@@ -2427,10 +2473,10 @@ class QTOView(APIView):
             qtos = QuantityTakeOff.objects.filter(project=project)
 
             qto_entries=  [[qto.id, 
-                            qto.building.name if qto.building else None,
-                            qto.elevation_or_floor.name if qto.elevation_or_floor else None, 
-                            qto.section.name if qto.section else None, 
-                            qto.place.name if qto.place else None,
+                            {'id': qto.building.id, 'name': qto.building.name} if qto.building else None,
+                            {'id': qto.elevation_or_floor.id, 'name': qto.elevation_or_floor.name} if qto.elevation_or_floor else None, 
+                            {'id': qto.section.id, 'name': qto.section.name} if qto.section else None, 
+                            {'id': qto.place.id, 'name': qto.place.name} if qto.place else None,
                 qto.pose_code, qto.pose_number, qto.manufacturing_code, qto.material, qto.description, qto.width, qto.depth, qto.height, 
                 qto.quantity, qto.unit, qto.multiplier, qto.multiplier2, qto.take_out, qto.total] for qto in qtos]
                 
