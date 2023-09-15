@@ -577,35 +577,10 @@ const DataTable = () => {
             <i className="fa fa-plus-circle mr-1"></i>
             Yeni Tedarikçi Ekle
           </Button>
-          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-            <i className="fa fa-download mr-1"></i>
-            Dışa Aktar
-          </Button>
+         
         </div>
       )}
-      {showUploadDiv && (
-        <div>
-          <div className="d-flex justify-content-between align-items-center">
-            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-              <i className="fa fa-plus-circle mr-1"></i>
-              Dosya Yükle
-            </Button>
-            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-              <i className="fa fa-download mr-1"></i>
-              Dışa Aktar
-            </Button>
-          </div>
-          <div className="mt-3">
-            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Yükle
-            </Button>
-            <div className="spinner-container">
-              {isLoading && <div className="loading-spinner"></div>}
-            </div>
-          </div>
-        </div>
-      )}
+     
     </div>
   </CardBody>
 </Card>

@@ -283,3 +283,20 @@
 .scrollable-table td:last-child {
   border-right: none;
 }
+
+
+/* Seperator for disabled forms for Stock Account */
+.separator {
+  border-bottom: 1px solid #ccc;  /* You can choose any color you prefer */
+  display: block;
+  margin-bottom: 5px; /* Adjust spacing if necessary */
+}
+.circle-value {
+  border: 2px solid #ccc; 
+  border-radius: 50%; 
+  width: fit-content;
+  padding: 5px 10px; /* Adjust padding to get the desired space inside the circle */
+  text-align: center;
+  display: inline-block;
+  margin-bottom: 5px; 
+}

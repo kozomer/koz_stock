@@ -246,7 +246,7 @@ const handleInputChange = (event) => {
       <ReactBSAlert
         warning
         style={{ display: "block", marginTop: "-100px" }}
-        title="Are you sure?"
+        title="Emin misiniz?"
         onConfirm={() =>{ 
         setDeleteConfirm(true);
         successDelete()}}
@@ -261,7 +261,7 @@ const handleInputChange = (event) => {
         showCancel
         btnSize=""
       >
-       Are you sure to delete this row?
+       Bu ürünü silerseniz, ambardan da silinecektir!
       </ReactBSAlert>
     );
     

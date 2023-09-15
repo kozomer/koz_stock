@@ -36,13 +36,7 @@ const DataTable = () => {
   const [recieverCompanyName, setRecieverCompanyName] = useState('');
   const [status, setStatus] = useState('');
   const [placeOfUse, setPlaceOfUse] = useState('');
-  const [group, setGroup] = useState(null);
-  const [subgroup, setSubgroup] = useState(null);
-  const [brand, setBrand] = useState(null);
-  const [serialNumber, setSerialNumber] = useState(null);
-  const [model, setModel] = useState(null);
-  const [description, setDescription] = useState(null);
-  const [unit, setUnit] = useState(null);
+
   const [amount, setAmount] = useState('');
   const [selectedFiles, setSelectedFiles] = useState(null);
   const [productList, setProductList] = useState([]);
@@ -476,6 +470,19 @@ const DataTable = () => {
   const handleCancel = () => {
     setShowPopup(false);
     setShowEditPopup(false)
+    setId('');
+    setDate('');
+    setProductCode('');
+    
+    setProviderCompanyTaxCode('');
+
+    
+    setRecieverCompanyTaxCode('');
+    setStatus('')
+    setBarcode('');
+    setPlaceOfUse('');
+    setAmount('');
+
 
   };
 
@@ -628,14 +635,16 @@ const DataTable = () => {
         />
       </FormGroup>
 
-                          <label>Barkod</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              defaultValue={barcode}
-                              onChange={(e) => setBarcode(e.target.value)}
-                            />
-                          </FormGroup>
+      <label>Alıcı Vergi No</label>
+      <FormGroup>
+      <Select
+  name="receiver_tax_code"
+  
+  options={consumerOptions}
+  onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+/>
+      </FormGroup>
+                         
 
                           <label>Tedarikçi Vergi No</label>
                           <FormGroup>
@@ -649,16 +658,15 @@ const DataTable = () => {
 
                         </div>
                         <div className="form-group-col">
-                        <label>Alıcı Vergi No</label>
-      <FormGroup>
-      <Select
-  name="receiver_tax_code"
-  
-  options={consumerOptions}
-  onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
-/>
-      </FormGroup>
-
+                     
+                        <label>Barkod</label>
+                          <FormGroup>
+                            <Input
+                              type="text"
+                              defaultValue={barcode}
+                              onChange={(e) => setBarcode(e.target.value)}
+                            />
+                          </FormGroup>
 
                           <label>Durum</label>
                           <FormGroup>
@@ -740,6 +748,17 @@ const DataTable = () => {
                     <Form onSubmit={handleEdit}>
                       <div>
                         <div className="form-group-col">
+
+                        <label>Tarih</label>
+                          <FormGroup>
+                            <Input
+                              name="date"
+                              type="text"
+                              value={date}
+                              onChange={(e) => setDate(e.target.value)}
+                            />
+                          </FormGroup>
+
                           <label>Malzeme Kodu</label>
                           <FormGroup>
                             <Select
@@ -750,33 +769,13 @@ const DataTable = () => {
                             />
                           </FormGroup>
 
-
-
-                          <label>Tarih</label>
+                          <label>Alıcı Vergi No</label>
                           <FormGroup>
-                            <Input
-                              name="date"
-                              type="text"
-                              value={date}
-                              onChange={(e) => setDate(e.target.value)}
-                            />
-                          </FormGroup>
-
-                          <label>Durum</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              value={status}
-                              onChange={(e) => setStatus(e.target.value)}
-                            />
-                          </FormGroup>
-
-                          <label>Barkod</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              value={barcode}
-                              onChange={(e) => setBarcode(e.target.value)}
+                            <Select
+                              name="receiver_tax_code"
+                              value={consumerOptions.find(option => option.value === recieverCompanyTaxCode)}
+                              options={consumerOptions}
+                              onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
                             />
                           </FormGroup>
 
@@ -791,15 +790,29 @@ const DataTable = () => {
 
                           </FormGroup>
 
+
+                       
+
                         </div>
                         <div className="form-group-col">
-                          <label>Alıcı Vergi No</label>
+                         
+                        
+                        <label>Barkod</label>
                           <FormGroup>
-                            <Select
-                              name="receiver_tax_code"
-                              value={consumerOptions.find(option => option.value === recieverCompanyTaxCode)}
-                              options={consumerOptions}
-                              onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+                            <Input
+                              type="text"
+                              value={barcode}
+                              onChange={(e) => setBarcode(e.target.value)}
+                            />
+                          </FormGroup>
+
+                          
+                          <label>Durum</label>
+                          <FormGroup>
+                            <Input
+                              type="text"
+                              value={status}
+                              onChange={(e) => setStatus(e.target.value)}
                             />
                           </FormGroup>
 

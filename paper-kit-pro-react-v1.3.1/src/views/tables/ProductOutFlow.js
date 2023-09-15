@@ -485,20 +485,29 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       label: consumer[1] !== undefined && consumer[2] !== undefined ? `${consumer[1]} - ${consumer[2]}` : '',
     }));
 
+    const getTaxCodeByName = (name) => {
+      const matchingConsumer = consumerList.find(consumer => consumer[2] === name);
+      return matchingConsumer ? String(matchingConsumer[1]) : '';
+    }
+  
+
     useEffect(() => {
       if (productData) {
-        console.log(productData[2])
+        console.log(productData[4])
         setId(productData[0]);
         setDate(productData[1]);
         setProductCode(productData[2]);
-        setProviderCompanyTaxCode(productData[4]);
-        setRecieverCompanyTaxCode(productData[7])
+        
+        setProviderCompanyTaxCode(String(productData[4]));
+  
+        const taxCode = getTaxCodeByName(productData[7]);
+        setRecieverCompanyTaxCode(taxCode);
         setStatus(productData[8])
         setBarcode(productData[3]);
         setPlaceOfUse(productData[9]);
         setAmount(productData[17]);
-        
-       
+  
+  
       }
     }, [productData]);
   
@@ -527,43 +536,53 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       setRenderEdit(true)
     };
 
-
-    async function handleExportClick() {
-      // Retrieve the access token from localForage
+    const handleEdit = async (event) => {
+      event.preventDefault();
+  
+  
+  
       const access_token = await localforage.getItem('access_token');
-    
-      // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('http://127.0.0.1:8000/api/export_sales/', {
+      const updatedData = {
+        old_id: id,
+        new_product_code: productCode,
+        new_supplier_tax_code: providerCompanyTaxCode,
+        new_receiver_tax_code: recieverCompanyTaxCode,
+        date,
+        status,
+        place_of_use: placeOfUse,
+        amount,
+        barcode
+      };
+  
+      fetch(`http://127.0.0.1:8000/api/edit_product_outflow/`, {
+        method: "POST",
         headers: {
-          'Authorization': 'Bearer '+ String(access_token)
+          "Content-Type": "application/json",
+          'Authorization': 'Bearer ' + String(access_token)
         },
-      });
-    
-      // Parse the JSON response
-      const data = await response.json();
-    
-      // Extract the filename and content from the JSON response
-      const filename = data.filename;
-      const base64Content = data.content;
-    
-      // Convert the base64 content to a Blob
-      const binaryContent = atob(base64Content);
-      const byteNumbers = new Array(binaryContent.length);
-      for (let i = 0; i < binaryContent.length; i++) {
-        byteNumbers[i] = binaryContent.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    
-      // Create a link to download the file and simulate a click to download it
-      const link = document.createElement('a');
-      link.href = window.URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-
-
-
-    }
+        body: JSON.stringify(updatedData)
+      })
+        .then(response => response.json().then(data => ({ status: response.status, body: data })))
+        .then(({ status, body }) => {
+          if (status === 200) { // Assuming 200 is the success status code
+            console.log("Inflow edited successfully");
+            successUpload(body.message);
+            setUpdatedProductData(updatedData);
+  
+            setDataChanged(true);
+            setShowEditPopup(false);
+  
+  
+          } else {
+            console.log("Failed to edit inflow", body.error);
+            errorUpload(body.error);
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          errorUpload(error.message);
+        });
+    };
 
     const instantUploadFileChange = (e) => {
       const files = Array.from(e.target.files);
@@ -628,16 +647,25 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           />
         </FormGroup>
 
-
-        <label>Barkod</label>
-        <FormGroup>
-          <Input
-            type="text"
-           
-            onChange={(e) => setBarcode(e.target.value)}
-          />
-        </FormGroup>
-
+        <label>Malzeme Kodu</label>
+      <FormGroup>
+        <Select
+          name="product_code"
+          
+          options={productOptions}
+          onChange={(selectedOption) => setProductCode(selectedOption.value)}
+        />
+      </FormGroup>
+        
+        <label>Alıcı Vergi No</label>
+      <FormGroup>
+      <Select
+  name="receiver_tax_code"
+  
+  options={consumerOptions}
+  onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+/>
+      </FormGroup>
         
         <label>Tedarikçi Vergi No</label>
       <FormGroup>
@@ -650,28 +678,21 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
 
       </FormGroup>
 
-        <label>Miktar</label>
-        <FormGroup>
-          <Input
-            type="text"
-           
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </FormGroup>
-      
+       
         </div>
 
         <div className="form-group-col">
 
-        <label>Alıcı Vergi No</label>
-      <FormGroup>
-      <Select
-  name="receiver_tax_code"
-  
-  options={consumerOptions}
-  onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
-/>
-      </FormGroup>
+        <label>Barkod</label>
+        <FormGroup>
+          <Input
+            type="text"
+           
+            onChange={(e) => setBarcode(e.target.value)}
+          />
+        </FormGroup>
+
+   
 
        
 
@@ -693,15 +714,15 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           />
         </FormGroup>
 
-        <label>Malzeme Kodu</label>
-      <FormGroup>
-        <Select
-          name="product_code"
-          
-          options={productOptions}
-          onChange={(selectedOption) => setProductCode(selectedOption.value)}
-        />
-      </FormGroup>
+        <label>Miktar</label>
+        <FormGroup>
+          <Input
+            type="text"
+           
+            onChange={(e) => setAmount(e.target.value)}
+          />
+        </FormGroup>
+      
         </div>
 
         
@@ -754,10 +775,10 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
        <div className="popup">
       <Card>
             <CardHeader>
-              <CardTitle tag="h4">Ambar Çıkış Ekle</CardTitle>
+              <CardTitle tag="h4">Ambar Çıkış Düzenle</CardTitle>
             </CardHeader>
             <CardBody>
-              <Form onSubmit={handleAdd}>
+              <Form onSubmit={handleEdit}>
               <div>
         <div className="form-group-col">
 
@@ -772,7 +793,42 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           />
         </FormGroup>
 
+        <label>Malzeme Kodu</label>
+                          <FormGroup>
+                            <Select
+                              name="product_code"
+                              value={productOptions.find(option => option.value === productCode)}
+                              options={productOptions}
+                              onChange={(selectedOption) => setProductCode(selectedOption.value)}
+                            />
+                          </FormGroup>
 
+                          <label>Alıcı Vergi No</label>
+                          <FormGroup>
+                            <Select
+                              name="receiver_tax_code"
+                              value={consumerOptions.find(option => option.value === recieverCompanyTaxCode)}
+                              options={consumerOptions}
+                              onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+                            />
+                          </FormGroup>
+       
+                          <label>Tedarikçi Vergi No</label>
+                          <FormGroup>
+                            <Select
+                              name="provider_tax_code"
+                              value={supplierOptions.find(option => option.value === providerCompanyTaxCode)}
+                              options={supplierOptions}
+                              onChange={(selectedOption) => setProviderCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+                            />
+
+                          </FormGroup>
+
+       
+      
+        </div>
+
+        <div className="form-group-col">
         <label>Barkod</label>
         <FormGroup>
           <Input
@@ -781,36 +837,8 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
             onChange={(e) => setBarcode(e.target.value)}
           />
         </FormGroup>
-        <label>Tedarikçi Vergi No</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={providerCompanyTaxCode}
-            onChange={(e) => setProviderCompanyTaxCode(e.target.value)}
-          />
-        </FormGroup>
 
-        <label>Miktar</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={amount}
-            onChange={(e) => setAmount(e.target.value)}
-          />
-        </FormGroup>
       
-        </div>
-
-        <div className="form-group-col">
-
-        <label>Alıcı Vergi No</label>
-        <FormGroup>
-          <Input
-            type="text"
-            defaultValue={recieverCompanyTaxCode}
-            onChange={(e) => setRecieverCompanyTaxCode(e.target.value)}
-          />
-        </FormGroup>
 
        
 
@@ -832,14 +860,15 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           />
         </FormGroup>
 
-        <label>Malzeme Kodu</label>
+        <label>Miktar</label>
         <FormGroup>
           <Input
             type="text"
-            defaultValue={productCode}
-            onChange={(e) => setProductCode(e.target.value)}
+            defaultValue={amount}
+            onChange={(e) => setAmount(e.target.value)}
           />
         </FormGroup>
+     
         </div>
 
         
@@ -856,7 +885,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
               </Form>
             </CardBody>
               <CardFooter>
-                <Button className="btn-round" color="success" type="submit" onClick={handleAdd}>
+                <Button className="btn-round" color="success" type="submit" onClick={handleEdit}>
                   Onayla
                 </Button>
                 <Button className="btn-round" color="danger" type="submit"  onClick={handleCancel}>
@@ -878,10 +907,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
             <i className="fa fa-plus-circle mr-1"></i>
             Çıkış Ekle
           </Button>
-          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-            <i className="fa fa-download mr-1"></i>
-            Dışa Aktar
-          </Button>
+          
         </div>
       )}
       {showUploadDiv && (
@@ -891,10 +917,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
               <i className="fa fa-plus-circle mr-1"></i>
               Dosya Ekle
             </Button>
-            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-              <i className="fa fa-download mr-1"></i>
-              Dışa Aktar
-            </Button>
+            
           </div>
           <div className="mt-3">
             <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />

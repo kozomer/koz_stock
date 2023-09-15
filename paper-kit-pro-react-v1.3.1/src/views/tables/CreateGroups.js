@@ -81,6 +81,10 @@ function CreateGroups() {
     .catch(error => console.error(error));
   };
 
+  useEffect(() => {
+    console.log("subgroupList has changed!", subgroupList);
+    // Any additional logic if required
+}, [subgroupList]);
 
   useEffect(() => {
     if (selectedGroup) {
@@ -112,8 +116,10 @@ function CreateGroups() {
       })
       .then(data => {
         if (data.message) {
+          console.log("Before setting the list:",subgroupList)
           setSubgroupName("");
           setSubgroupList([...subgroupList, subgroupName]);
+          console.log("After setting the new list",subgroupList)
           successUpload(data.message);
         } else if (data.error) {
           errorUpload(data.error);
@@ -167,8 +173,13 @@ function CreateGroups() {
   
   // Function to handle subgroup deleting
   const handleDeleteSubgroup = async (subgroupCode) => {
-    console.log("subgroupCode:",subgroupCode[0])
+    console.log("subgroupCode:", subgroupCode[0]);
     const access_token = await localforage.getItem('access_token');
+    
+    // Optimistically remove the subgroup from state
+    const updatedSubgroups = subgroupList.filter(subgroup => subgroup[0] !== subgroupCode[0]);
+    setSubgroupList(updatedSubgroups);
+
     fetch('http://127.0.0.1:8000/api/delete_product_subgroup/', {
       method: 'POST',
       headers: {
@@ -187,21 +198,20 @@ function CreateGroups() {
       return response.json();
     })
     .then(data => {
-      if(data.message) {
-        // handle success message
+      if (data.message) {
         successUpload(data.message);
-        
-      } else if(data.error) {
-        // handle error message
+      } else if (data.error) {
         errorUpload(data.error);
-      } else {
-        // After successful delete, fetch the updated list
-        fetchSubgroups(groupList.find(group => group[1] === selectedGroup)[0]);
+
+        // Since there was an error, revert the change by adding the subgroup back to the list
+        setSubgroupList(prevSubgroups => [...prevSubgroups, subgroupCode]);
       }
     })
     .catch(error => {
-      // handle error message
       errorUpload(error.error);
+
+      // If there's an error, revert the change by adding the subgroup back to the list
+      setSubgroupList(prevSubgroups => [...prevSubgroups, subgroupCode]);
     });
 }
 
@@ -468,7 +478,7 @@ function CreateGroups() {
       <Col xs="6">
         <Card body>
           <h4>Subgroups</h4>
-          <Button onClick={handleCreateSubgroup}>Create Subgroup</Button>
+          
           <Form>
             <FormGroup>
               <Label>Select Group</Label>

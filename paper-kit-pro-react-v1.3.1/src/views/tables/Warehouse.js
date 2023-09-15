@@ -621,29 +621,7 @@ const handleAddFileClick = () => {
                         
                         <>
     
-    
-                          <Button
-                            disabled={showPopup}
-                            onClick={() => {
-                              
-                               warningWithConfirmAndCancelMessage() 
-                               const rowToDelete = {...row};
-                               const data = {
-                                product_code: rowToDelete[0],
-
-                              };
-                              setDeleteData(data);
-                              console.log(deleteConfirm)
-                             
-                            
-                            }
-                            }
-                            color="danger"
-                            size="sm"
-                            className="btn-icon btn-link remove"
-                          >
-                            <i className="fa fa-times" />
-                          </Button>
+  
                           </>
                       </div>
                     ),

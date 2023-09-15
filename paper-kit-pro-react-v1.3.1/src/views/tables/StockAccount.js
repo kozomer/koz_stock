@@ -333,8 +333,9 @@ const DataTable = () => {
 // 2. Define the formKeys array in the correct order
 const formKeys = [
   'id',
-  'date',
   'productCode',
+  'date',
+  
   'barcode',
   'providerCompany',
   'receiverCompany',
@@ -369,6 +370,7 @@ if (productData) {
   });
 
   setFormData(updatedFormData);
+  console.log(formData)
 }
 }, [productData]);
   
@@ -472,7 +474,7 @@ if (productData) {
 
     const handleInputChange = (event) => {
       const { name, value } = event.target;
-      
+      console.log(name,value)
       // Update the respective state
       setFormData(prevData => ({ ...prevData, [name]: value }));
 
@@ -499,44 +501,41 @@ if (productData) {
         <div className="form-group-col-sales">
         
                   <FormGroup>
-                <label>No</label>
-                <div>{formData.id}</div>
+                <label >No</label>
+                <Input value={formData.id} disabled></Input>
                 </FormGroup>
            
 
                 <FormGroup>
                 <label>Product Code</label>
-                <div>{formData.productCode} </div>
+                <Input value={formData.productCode} disabled></Input>
                  </FormGroup>
             
                 <FormGroup>
                 <label>Date</label>
-                <div>{formData.date} </div>
+                <Input value={formData.date} disabled></Input>
                 </FormGroup>
             
                 <FormGroup>
                 <label>Barcode</label>
-                <div>{formData.barcode}</div>
+                <Input value={formData.barcode} disabled></Input>
                 </FormGroup>
             
                 <FormGroup>
                 <label>Provider Company</label>
-                <div>{formData.providerCompany} </div>
+                <Input value={formData.providerCompany} disabled></Input>
                 </FormGroup>
                 <FormGroup>
                 <label>Receiver Company</label>
-              <div>{formData.receiverCompany} </div>
+                <Input value={formData.receiverCompany} disabled></Input>
               </FormGroup>
            
               <FormGroup>
                 <label>Status</label>
-                <div>{formData.status} </div>
+                <Input value={formData.status} disabled></Input>
                 </FormGroup>
 
-                <FormGroup>
-                <label>Place Of Use</label>
-              <div>{formData.placeOfUse}</div>
-            </FormGroup>
+              
           
         </div>
 
@@ -544,43 +543,67 @@ if (productData) {
             
             <FormGroup>
                 <label>Group</label>
-               <div>{formData.group}</div>
+                <Input value={formData.group} disabled></Input>
             </FormGroup>
 
             <FormGroup>
                 <label>Subgroup</label>
-              <div>{formData.subgroup}</div> 
+                <Input value={formData.subgroup} disabled></Input>
             </FormGroup>
 
             <FormGroup>
                 <label>Brand</label>
-                <div>{formData.brand}</div>
+                <Input value={formData.brand} disabled></Input>
             </FormGroup>
 
             <FormGroup>
                 <label>Serial Number</label>
-                <div>{formData.serialNumber} </div>
+                <Input value={formData.serialNumber} disabled></Input>
             </FormGroup>
             <FormGroup>
                 <label>Model</label>
-               <div> {formData.model}</div>
+                <Input value={formData.model} disabled></Input>
             </FormGroup>
             <FormGroup>
                 <label>Description</label>
-               <div>{formData.description}</div>
+                <Input value={formData.description} disabled></Input>
             </FormGroup>
 
 
             <FormGroup>
                 <label>Unit</label>
-                <div>{formData.unit}</div>
+                <Input value={formData.unit} disabled></Input>
+            </FormGroup>
+         
+        </div>
+        <div className="form-group-col-sales">
+            <FormGroup>
+                <label>Price Without Tax</label>
+                <Input value={formData.priceWithoutTax} disabled></Input>
+            </FormGroup>
+            <FormGroup>
+                <label>Unit Price Without Tax</label>
+                <Input value={formData.unitPriceWithoutTax} disabled></Input>
+            </FormGroup>
+            <FormGroup>
+                <label>Price With Tevkifat</label>
+                <Input value={formData.priceWithTevkifat} disabled></Input>
+            </FormGroup>
+           
+            <FormGroup>
+                <label>Place Of Use</label>
+                <Input value={formData.placeOfUse} disabled></Input>
             </FormGroup>
             <FormGroup>
                 <label>Amount</label>
-                <div>{formData.amount}</div>
+                <Input value={formData.amount} disabled></Input>
+            </FormGroup>
+
+            <FormGroup>
+                <label>Price Total</label>
+                <Input value={formData.priceTotal} disabled></Input>
             </FormGroup>
         </div>
-
         <div className="form-group-col-sales">
           
             <FormGroup>
@@ -589,40 +612,25 @@ if (productData) {
             </FormGroup>
             <FormGroup>
                 <label>Discount Rate</label>
-                <Input  onChange={(e) => handleInputChange(e)} value={formData.discountRate} />
+                <Input name="discountRate" onChange={(e) => handleInputChange(e)} value={formData.discountRate} />
             </FormGroup>
             <FormGroup>
                 <label>Discount Amount</label>
-                <Input ref={refs.discountAmountRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.discountAmount} />
+                <Input name="discountAmount" onChange={(e) => handleInputChange(e)} value={formData.discountAmount} />
             </FormGroup>
             <FormGroup>
                 <label>Tax Rate</label>
-                <Input ref={refs.taxRateRef} onChange={(e) =>handleInputChange(e)} defaultValue={formData.taxRate} />
+                <Input 
+                name="taxRate"
+                 onChange={(e) =>handleInputChange(e)} value={formData.taxRate} />
             </FormGroup>
             <FormGroup>
                 <label>Tevkifat Rate</label>
-                <Input ref={refs.tevkifatRateRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.tevkifatRate} />
+                <Input name="tevkifatRate"  onChange={(e) => handleInputChange(e)} value={formData.tevkifatRate} />
             </FormGroup>
         </div>
 
-        <div className="form-group-col-sales">
-            <FormGroup>
-                <label>Price Without Tax</label>
-                <Input ref={refs.priceWithoutTaxRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.priceWithoutTax} />
-            </FormGroup>
-            <FormGroup>
-                <label>Unit Price Without Tax</label>
-                <Input ref={refs.unitPriceWithoutTaxRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.unitPriceWithoutTax} />
-            </FormGroup>
-            <FormGroup>
-                <label>Price With Tevkifat</label>
-                <Input ref={refs.priceWithTevkifatRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.priceWithTevkifat} />
-            </FormGroup>
-            <FormGroup>
-                <label>Price Total</label>
-                <Input ref={refs.priceTotalRef} onChange={(e) => handleInputChange(e)} defaultValue={formData.priceTotal} />
-            </FormGroup>
-        </div>
+       
     </div>
 </Form>
 
@@ -645,43 +653,7 @@ if (productData) {
     <CardTitle tag='h4'>MUHASEBE</CardTitle>
   </CardHeader>
   <CardBody>
-    <div className="upload-container">
-      {!showUploadDiv && (
-        <div className="d-flex justify-content-between align-items-center">
-          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-            <i className="fa fa-plus-circle mr-1"></i>
-            MUHASEBE GİRİŞİ EKLE
-          </Button>
-          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-            <i className="fa fa-download mr-1"></i>
-            Dışa Aktar
-          </Button>
-        </div>
-      )}
-      {showUploadDiv && (
-        <div>
-          <div className="d-flex justify-content-between align-items-center">
-            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-              <i className="fa fa-plus-circle mr-1"></i>
-              Dosya Ekle
-            </Button>
-            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
-              <i className="fa fa-download mr-1"></i>
-              Dışa Aktar
-            </Button>
-          </div>
-          <div className="mt-3">
-            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Yükle
-            </Button>
-            <div className="spinner-container">
-              {isLoading && <div className="loading-spinner"></div>}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+  
   </CardBody>
 </Card>
 
