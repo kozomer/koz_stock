@@ -328,6 +328,8 @@ class EditUserView(APIView):
         try:
             print(request.data)
             # Extract the data from the request
+            print(request.data)
+            user_id = request.data.get('id')
             username = request.data.get('username')
             password = request.data.get('password')
             first_name = request.data.get('first_name')
@@ -349,10 +351,12 @@ class EditUserView(APIView):
                 return JsonResponse({'error': _("Invalid staff role.")}, status=400)
 
             # Get the User, Projects instances
-            user = CustomUser.objects.get(username=username, company=company)
+            user = CustomUser.objects.get(id=user_id, company=company)
             projects = Project.objects.filter(id__in=project_ids, company=company)
 
             # Update the user details
+            if username:
+                user.username = username
             if password:
                 user.set_password(password)
             if first_name:
@@ -1630,65 +1634,55 @@ class EditProductOutflowView(APIView):
             data = request.data
 
             old_id = data.get('old_id')
-            product_outflow = ProductOutflow.objects.get(id=old_id)
+            product_outflow = ProductOutflow.objects.filter(company=request.user.company, project=request.user.current_project).get(id=old_id)
 
-            # Save original state for dirty fields checking
-            product_outflow.save_dirty_fields()
+            # Store the images linked to this product outflow (assuming images are linked similarly to inflow)
+            outflow_images = list(product_outflow.images.all())
 
-            # Check if new product_code value is unique
+            # Delete the old product outflow - this might trigger pre_delete signal if set
+            product_outflow.delete()
+
+            # Prepare for creating a new product outflow - this will trigger post_save signal if set
             new_product_code = data.get('product_code')
-            if new_product_code and new_product_code != product_outflow.product.product_code:
-                product = Products.objects.filter(product_code=new_product_code, company=request.user.company).first()
-                if not product:
-                    return JsonResponse({'error': _("The Product Code '%s' does not exist in the database or doesn't belong to your company.") % new_product_code}, status=400)
-                product_outflow.product = product
+            product = Products.objects.filter(product_code=new_product_code, company=request.user.company).first()
 
-            # Update date
-            new_date = data.get('date')
-            if new_date:
-                try:
-                    new_date = datetime.strptime(new_date, '%Y-%m-%d').date()
-                    product_outflow.date = new_date
-                except ValueError:
-                    return JsonResponse({'error': _("Invalid date format. Use YYYY-MM-DD.")}, status=400)
-
-            # Update supplier_company
             new_supplier_tax_code = data.get('provider_company_tax_code')
-            if new_supplier_tax_code:
-                supplier_company = Consumers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company).first()
-                if not supplier_company:
-                    return JsonResponse({'error': _("The Supplier with tax code '%s' does not exist in the database or doesn't belong to your company.") % new_supplier_tax_code}, status=400)
-                product_outflow.provider_company = supplier_company
+            supplier_company = Consumers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company).first()
 
-            # Update receiver_company
             new_receiver_tax_code = data.get('receiver_company_tax_code')
-            if new_receiver_tax_code:
-                receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company).first()
-                if not receiver_company:
-                    return JsonResponse({'error': _("The Receiver with tax code '%s' does not exist in the database or doesn't belong to your company.") % new_receiver_tax_code}, status=400)
-                product_outflow.receiver_company = receiver_company
+            receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company).first()
 
-            # Update other product outflow fields
-            for field in ['status', 'place_of_use', 'amount', 'barcode']:
+            product_data = {
+                'product': product if new_product_code else product_outflow.product,
+                'supplier_company': supplier_company if new_supplier_tax_code else product_outflow.supplier_company,
+                'receiver_company': receiver_company if new_receiver_tax_code else product_outflow.receiver_company,
+            }
+
+            for field in ['date', 'status', 'place_of_use', 'amount', 'barcode']:
                 value = data.get(field)
-                if value is not None:
-                    setattr(product_outflow, field, value)
+                if value is not None and value != '':
+                    product_data[field] = value
+                else:
+                    return JsonResponse({'error': _("The field '{field}' cannot be empty.")}, status=400)
 
-            # Check dirty fields and save if any
-            if product_outflow.is_dirty():
-                product_outflow.save()
-                return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
-            else:
-                return JsonResponse({'message': _("No changes detected.")}, status=200)
+            product_data["company"] = request.user.company
+            product_data["project"] = request.user.current_project
+
+            new_product_outflow = ProductOutflow.objects.create(**product_data)
+
+            # Reassign the images to the new product outflow instance
+            for image in outflow_images:
+                image.product_outflow = new_product_outflow
+                image.save()
+
+            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
         except ProductOutflow.DoesNotExist:
             return JsonResponse({'error': _("Product not found.")}, status=400)
-
-        except ValueError as e:
-            return JsonResponse({'error': str(e)}, status=400)
-
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
 
 class DeleteProductOutflowView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
