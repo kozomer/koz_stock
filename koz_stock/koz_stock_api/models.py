@@ -176,7 +176,7 @@ class ProductOutflowImage(models.Model):
 
 
 class Stock(models.Model):
-    product = models.ForeignKey(Products, on_delete=models.PROTECT)
+    product = models.ForeignKey(Products, on_delete=models.CASCADE)
     warehouse = models.CharField(max_length=255, null=True)
     inflow = models.FloatField(null=True)
     outflow = models.FloatField(null=True)
