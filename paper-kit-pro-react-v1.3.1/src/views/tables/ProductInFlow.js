@@ -172,6 +172,35 @@ const DataTable = () => {
     );
 
   };
+
+
+  const deleteImage = (index,id) => {
+
+    setAlert(
+
+      <ReactBSAlert
+        warning
+        style={{ display: "block", marginTop: "-100px" }}
+        title="Emin misiniz?"
+        onConfirm={() => {
+          handleDeleteFile(index,id)
+        }}
+        onCancel={() => {
+          
+          cancelDelete()
+        }}
+        confirmBtnBsStyle="info"
+        cancelBtnBsStyle="danger"
+        confirmBtnText="Evet, sil!"
+        cancelBtnText="İptal et"
+        showCancel
+        btnSize=""
+      >
+        Bu görsel silinecektir!
+      </ReactBSAlert>
+    );
+
+  };
   useEffect(() => {
 
   }, [deleteConfirm]);
@@ -359,9 +388,12 @@ const DataTable = () => {
     value: consumer[1] !== undefined ? String(consumer[1]) : '',
     label: consumer[1] !== undefined && consumer[2] !== undefined ? `${consumer[1]} - ${consumer[2]}` : '',
   }));
+
+  /*
   console.log("recieverCompanyTaxCode:", providerCompanyTaxCode);
   console.log("Matching Option:", supplierOptions.find(option => option.value ===  providerCompanyTaxCode));
    console.log("Supplier Options:",supplierOptions)
+   */
 
   const handleEdit = async (event) => {
     event.preventDefault();
@@ -509,6 +541,44 @@ const DataTable = () => {
     setRenderEdit(true)
   };
 
+
+
+  const handleDeleteFile = async(index,rowId) => {
+    let fileToDelete = currentFiles[index];
+    const filename = fileToDelete.split('/').pop(); // Assuming the filename is the last part after the slash
+    const access_token = await localforage.getItem('access_token');
+    fetch('http://127.0.0.1:8000/api/delete_image/', {
+      method: 'POST',
+      headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + String(access_token)
+          // Add other headers like authorization if required
+      },
+      body: JSON.stringify({
+          content_type: "product_inflow",
+          id:rowId, // You need to have the row id here. Pass it when you call handleDeleteFile
+          image: filename
+      })
+  })
+  .then(response => response.json())
+  .then(data => {
+      if(data.message) {
+          successDelete(data.message)
+          let updatedFiles = [...currentFiles];
+          updatedFiles.splice(index, 1);
+          setCurrentFiles(updatedFiles);
+      } else if(data.error) {
+          errorUpload(data.message)
+      }
+  })
+  .catch(error => console.error("Error:", error));
+  };
+
+
+  useEffect(() => {
+    
+  }, [currentFiles]);
+
   const instantUploadFileChange = (e) => {
       const files = Array.from(e.target.files);
       let urls = [];
@@ -521,14 +591,63 @@ const DataTable = () => {
           urls.push(file.name); // Storing the name of the file instead of the blob URL
         }, 2000);
       });
+
+      console.log("Coming file:",e.target.files)
+      console.log("Files:",files)
   
       setTimeout(() => {
         console.log('All files uploaded successfully');
         setUploadedFileUrls(urls); // This will now store file names
         setUploadedFiles(files);
+       
       }, 2000 * files.length); // Assuming each file takes 2 seconds to upload
   };
 
+
+  
+  const UploadFileChangeInModal = async (e) => {
+    const files = Array.from(e.target.files);
+    let urls = [];
+
+    files.forEach((file, index) => {
+        console.log(`Uploading file ${index + 1}`);
+        setTimeout(() => {
+            urls.push(file.name); 
+        }, 2000);
+    });
+
+    console.log("Coming file:", e.target.files)
+    console.log("Files:", files)
+
+    setTimeout(async () => {
+        console.log('All files uploaded successfully');
+        setUploadedFileUrls(urls);
+
+        const access_token = await localforage.getItem('access_token');
+        const formData = new FormData();
+        formData.append('content_type', "product_inflow");
+        formData.append('id', id);
+        files.forEach(file => {
+            formData.append('images', file);
+        });
+
+        fetch('http://127.0.0.1:8000/api/add_image/', {
+            method: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + String(access_token)
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+        })
+        .catch(error => {
+            console.error('Error uploading images:', error);
+        });
+
+    }, 2000 * files.length); 
+};
 
 
   const handleDownload = (event) => {
@@ -546,8 +665,8 @@ const DataTable = () => {
   };
 
   // Function to handle showing the modal
-  const handleShowModal = (files) => {
-    console.log(files)
+  const handleShowModal = (files,rowId) => {
+    setId(rowId)
     setCurrentFiles(files);
     setShowModal(true);
   };
@@ -1088,7 +1207,7 @@ const DataTable = () => {
                         return (
                           <Button 
                             color="link" 
-                            onClick={() => handleShowModal(original.uploaded_files)}
+                            onClick={() => handleShowModal(original.uploaded_files,original.id)}
                             title="Show Uploaded Files"
                           >
         <i className="fa fa-picture-o" /> 
@@ -1131,23 +1250,31 @@ const DataTable = () => {
         </div>
         <div className="modal-body">
           {currentFiles.map((file, index) => {
-            // prepend the server's base URL to the relative file URL
             const imageUrl = `http://127.0.0.1:8000${file}`; 
-
             return (
-              <p key={index}>
-                <img src={imageUrl} alt={`file ${index}`} />
-              </p>
+              <div key={index} className="file-item">
+    <img src={imageUrl} alt={`file ${index}`} />
+    <button className="delete-button" onClick={() => deleteImage(index, id)}>
+        <i className="fa fa-trash"></i>
+    </button>
+</div>
+
             );
           })}
         </div>
         <div className="modal-footer">
-          <button type="button" className="btn btn-secondary" onClick={handleHideModal}>Close</button>
+          <input 
+            type="file" 
+            onChange={UploadFileChangeInModal} 
+            multiple
+          />
+        
         </div>
       </div>
     </div>
   </div>
 )}
+
 
 
 

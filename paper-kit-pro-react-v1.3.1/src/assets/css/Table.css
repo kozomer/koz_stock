@@ -300,3 +300,34 @@
   display: inline-block;
   margin-bottom: 5px; 
 }
+
+
+/*Delete button for images ProductIn/OutFlow*/
+
+.file-item {
+    position: relative;
+    display: inline-block;
+    margin: 10px;
+}
+
+.file-item img {
+    display: block;
+    max-width: 100%;
+}
+
+.delete-button {
+    position: absolute;
+    top: 10px;      /* Adjust as needed */
+    right: 10px;    /* Adjust as needed */
+    background-color: rgba(255, 0, 0, 0.7); /* semi-transparent red */
+    color: white;
+    border: none;
+    border-radius: 50%; /* makes the button circular */
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.delete-button:hover {
+    background-color: rgba(255, 0, 0, 0.9); /* darker red on hover */
+}

@@ -1547,17 +1547,20 @@ class DeleteImageView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             # Get content_type and id from the request
+            print( request.data)
             content_type = request.data.get('content_type')
             id = request.data.get('id')
             image_file = request.data.get('image')  # Get the image filename you want to delete
 
             # Based on content_type, fetch the related image model
             if content_type == "product_inflow":
-                product_inflow_image = ProductInflowImage.objects.get(product_inflow_id=id, image=image_file)
+                product_inflow = ProductInflow.objects.get(id=id)
+                product_inflow_image = ProductInflowImage.objects.get(product_inflow=product_inflow, image="product_images/" + image_file)
                 product_inflow_image.image.delete(save=True)
                 product_inflow_image.delete()
             elif content_type == "product_outflow":
-                product_outflow_image = ProductOutflowImage.objects.get(product_outflow_id=id, image=image_file)
+                product_outflow = ProductOutflow.objects.get(id=id)
+                product_outflow_image = ProductOutflowImage.objects.get(product_outflow=product_outflow, image="product_images/" + image_file)
                 product_outflow_image.image.delete(save=True)
                 product_outflow_image.delete()
             else:
@@ -1566,10 +1569,14 @@ class DeleteImageView(APIView):
             return JsonResponse({'message': _('Image deleted successfully.')}, status=200)
 
         except ProductInflowImage.DoesNotExist:
+            print(ProductInflowImage.objects.all().values())
+            traceback.print_exc()
             return JsonResponse({'error': _('Image associated with the given ProductInflow ID does not exist or filename mismatch.')}, status=400)
         except ProductOutflowImage.DoesNotExist:
             return JsonResponse({'error': _('Image associated with the given ProductOutflow ID does not exist or filename mismatch.')}, status=400)
         except Exception as e:
+            traceback.print_exc()
+
             return JsonResponse({'error': str(e)}, status=500)
 
 # endregion
