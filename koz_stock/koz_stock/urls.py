@@ -23,7 +23,8 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                     CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, ProductGroupsView, EditProductGroupView, DeleteProductGroupView,
                                     CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
                                     AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView, SupplierConsumerProductSearchView,
-                                    AddQTOView,EditQTOView, BuildingsForProjectView, ElevationsForBuildingView, SectionsForElevationView, PlacesForSectionView, QTOView, AddExcelQTOView, DeleteQTOView, AddExcelProjectView  )
+                                    AddQTOView,EditQTOView, BuildingsForProjectView, ElevationsForBuildingView, SectionsForElevationView, PlacesForSectionView, QTOView, AddExcelQTOView, DeleteQTOView, AddExcelProjectView,
+                                    AddImageView, DeleteImageView  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -114,6 +115,9 @@ urlpatterns = [
     path('api/edit_qto/', EditQTOView.as_view(), name='edit_qto'),
     path('api/add_excel_qto/', AddExcelQTOView.as_view(), name='add_excel_qto'),
     path('api/delete_qto/', DeleteQTOView.as_view(), name='delete_qto'),
+
+    path('api/add_image/', AddImageView.as_view(), name='add_image'),
+    path('api/delete_image/', DeleteImageView.as_view(), name='delete_image'),
 
 
 

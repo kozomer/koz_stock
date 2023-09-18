@@ -1487,6 +1487,90 @@ class DeleteProductInflowView(APIView):
 
         return JsonResponse({'message': _('Product inflow object has been successfully deleted.')}, status=200)
 
+class AddImageView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get the ProductInflow object using its id
+            content_type = request.data.get('content_type')
+            id = request.data.get('id')
+            if content_type == "product_inflow":
+                product_inflow = ProductInflow.objects.get(id=id)
+            elif content_type == "product_outflow":
+                product_outflow = ProductOutflow.objects.get(id=id)
+
+            # Fetch the uploaded images
+            images = request.FILES.getlist('images')
+            for image in images:
+                # Validate the image (type, size, and content)
+                if not isinstance(image, InMemoryUploadedFile) or image.content_type not in ['image/png', 'image/jpeg']:
+                    return JsonResponse({'error': _('Invalid file type. Only PNG and JPEG are allowed.')}, status=400)
+
+                if image.size > 2 * 1024 * 1024:
+                    return JsonResponse({'error': _('The image file is too large (max 2 MB).')}, status=400)
+
+                try:
+                    img = Image.open(image)
+                    img.verify()
+                    if content_type == "product_inflow":
+                        ProductInflowImage.objects.create(product_inflow=product_inflow, image=image)
+                    elif content_type == "product_outflow":
+                        ProductOutflowImage.objects.create(product_outflow=product_outflow, image=image)
+                except (IOError, SyntaxError, ValidationError):
+                    return JsonResponse({'error': _('One or more uploaded files are not valid images.')}, status=400)
+
+            return JsonResponse({'message': _('Images added successfully to ProductInflow.')}, status=201)
+
+        except ProductInflow.DoesNotExist:
+            return JsonResponse({'error': _('ProductInflow with the provided id does not exist.')}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class DeleteImageView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get content_type and id from the request
+            content_type = request.data.get('content_type')
+            id = request.data.get('id')
+            image_file = request.data.get('image')  # Get the image filename you want to delete
+
+            # Based on content_type, fetch the related image model
+            if content_type == "product_inflow":
+                product_inflow_image = ProductInflowImage.objects.get(product_inflow_id=id, image=image_file)
+                product_inflow_image.image.delete(save=True)
+                product_inflow_image.delete()
+            elif content_type == "product_outflow":
+                product_outflow_image = ProductOutflowImage.objects.get(product_outflow_id=id, image=image_file)
+                product_outflow_image.image.delete(save=True)
+                product_outflow_image.delete()
+            else:
+                return JsonResponse({'error': _('Invalid content_type provided.')}, status=400)
+
+            return JsonResponse({'message': _('Image deleted successfully.')}, status=200)
+
+        except ProductInflowImage.DoesNotExist:
+            return JsonResponse({'error': _('Image associated with the given ProductInflow ID does not exist or filename mismatch.')}, status=400)
+        except ProductOutflowImage.DoesNotExist:
+            return JsonResponse({'error': _('Image associated with the given ProductOutflow ID does not exist or filename mismatch.')}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 # endregion
 
