@@ -1276,7 +1276,8 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         </div>
         <div className="modal-body">
           {currentFiles.map((file, index) => {
-            const imageUrl = `http://127.0.0.1:8000${file}`; 
+            const imageUrl = `${process.env.REACT_APP_PUBLIC_URL}${file}`;
+
             return (
               <div key={index} className="file-item">
     <img src={imageUrl} alt={`file ${index}`} />
