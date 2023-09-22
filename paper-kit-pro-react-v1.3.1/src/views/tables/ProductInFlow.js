@@ -1250,7 +1250,7 @@ const DataTable = () => {
         </div>
         <div className="modal-body">
           {currentFiles.map((file, index) => {
-            const imageUrl = `${process.env.REACT_APP_PUBLIC_URL}${file}`;
+            const imageUrl = `${process.env.REACT_APP_MEDIA_URL}${file}`;
 
             return (
               <div key={index} className="file-item">
