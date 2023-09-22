@@ -27,7 +27,7 @@ function RegistrationForm() {
     async function fetchProjects() {
       const access_token = await localforage.getItem('access_token');
       console.log(formData)
-      fetch('http://127.0.0.1:8000/api/projects/', {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/projects/`, {
         headers: {
           'Authorization': 'Bearer ' + String(access_token),
         },
@@ -86,7 +86,7 @@ function RegistrationForm() {
   
     const access_token = await localforage.getItem('access_token');
   
-    fetch('http://127.0.0.1:8000/api/create_user/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/create_user/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
@@ -155,7 +155,7 @@ function RegistrationForm() {
   const fetchActiveAndPassiveUsers = async () => {
     const access_token = await localforage.getItem('access_token');
     console.log(access_token)
-    fetch('http://127.0.0.1:8000/api/collapsed_users/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/collapsed_users/`, {
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
         'Content-Type': 'application/json'
@@ -173,7 +173,7 @@ function RegistrationForm() {
   const fetchUserDetails = async (id) => {
     console.log(id)
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/user_detail/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/user_detail/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
@@ -203,7 +203,7 @@ function RegistrationForm() {
   // Method to handle user deletion
   const deleteUser = async (id) => {
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/delete_user/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_user/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
@@ -236,7 +236,7 @@ function RegistrationForm() {
     const userWithProjectIds = { ...user, projects: projectIds };
   
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/edit_user/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_user/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),

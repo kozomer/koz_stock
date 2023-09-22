@@ -63,7 +63,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token');
       console.log("edit")
-      const response = await fetch('http://127.0.0.1:8000/api/products/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/products/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -93,7 +93,7 @@ const DataTable = () => {
     async function fetchGroups() {
       const access_token = await localforage.getItem('access_token');
       
-      const response = await fetch('http://127.0.0.1:8000/api/product_groups/', {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/product_groups/`, {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -112,7 +112,7 @@ useEffect(() => {
       if (selectedGroup) {
           const access_token = await localforage.getItem('access_token');
           
-          const response = await fetch(`http://127.0.0.1:8000/api/product_subgroups/`, {
+          const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/product_subgroups/`, {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
@@ -138,7 +138,7 @@ useEffect(() => {
       if (selectedEditGroup) {
           const access_token = await localforage.getItem('access_token');
           
-          const response = await fetch(`http://127.0.0.1:8000/api/product_subgroups/`, {
+          const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/product_subgroups/`, {
               method: 'POST',
               headers: {
                   'Content-Type': 'application/json',
@@ -178,7 +178,7 @@ const handleInputChange = (event) => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/add_products/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_products/`, {
       method: 'POST',
       
       
@@ -203,7 +203,7 @@ const handleInputChange = (event) => {
       setIsLoading(false);
       successUpload(data.message);
       
-      fetch('http://127.0.0.1:8000/api/products/',{
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/products/`,{
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         }
@@ -354,7 +354,7 @@ const handleInputChange = (event) => {
         
         console.log(deleteData)
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/delete_products/`, {
+          const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_products/`, {
             method: "POST",
             body: JSON.stringify(deleteData),
             headers: {
@@ -420,7 +420,7 @@ const handleInputChange = (event) => {
       subgroup:selectedEditSubgroup,
     };
   
-    fetch(`http://127.0.0.1:8000/api/edit_products/`, {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_products/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -454,7 +454,7 @@ const handleInputChange = (event) => {
       const access_token = await localforage.getItem('access_token'); 
       event.preventDefault();
       console.log(selectedSubgroup);
-      fetch(`http://127.0.0.1:8000/api/add_products/`, {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_products/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -499,7 +499,7 @@ const handleInputChange = (event) => {
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('http://127.0.0.1:8000/api/export_products/', {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_products/`, {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },

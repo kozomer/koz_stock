@@ -220,8 +220,10 @@ class SetCurrentProjectView(APIView):
         data = json.loads(request.body)
         project_id = data.get('project_id')
         try:
+            print("current_project:", request.user.current_project)
+            print("project_id:", project_id)
             project = Project.objects.get(id=project_id, company=request.user.company)
-
+            print(project)
             # Check if the project belongs to the user's projects
             if project not in request.user.projects.all():
                 return JsonResponse({'error': _('You do not have access to this project.')}, status=403)

@@ -28,18 +28,22 @@ SECRET_KEY = SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 #! True for developement environment
 #! False for production environment
-DEBUG = True
+DEBUG = config('DEBUG')
 
 ALLOWED_HOSTS = ["192.168.1.192",
                  "127.0.0.1",
                  "localhost",
                  "179.61.219.154",
+                 "stockruct.com",
+                 "www.stockruct.com"
                 ]
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:8000",
+    "https://www.stockruct.com",
+    "https://stockruct.com"
 ]
 
 CORS_EXPOSE_HEADERS = ['Content-Disposition']
@@ -63,7 +67,9 @@ INSTALLED_APPS = [
     'rest_framework_jwt',
     
 ]
-CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',  
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000',
+                        "https://www.stockruct.com",
+                        "https://stockruct.com"  
                                                 ]
 
 

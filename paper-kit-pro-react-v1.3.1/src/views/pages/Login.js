@@ -53,7 +53,7 @@ function Login({ history }) {
     event.preventDefault();
     console.log(username)
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/login/", {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/login/`, {
         method: "POST",
       
         body: JSON.stringify({

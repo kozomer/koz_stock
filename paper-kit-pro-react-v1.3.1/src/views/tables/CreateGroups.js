@@ -16,7 +16,7 @@ function CreateGroups() {
   const [alert, setAlert] = useState(null);
   const fetchData = async () => {
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/product_groups/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/product_groups/`, {
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
       }
@@ -33,7 +33,7 @@ function CreateGroups() {
 
   const handleCreateGroup = async () => {
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/create_product_group/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/create_product_group/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
@@ -65,7 +65,7 @@ function CreateGroups() {
   
   const fetchSubgroups = async (groupCode) => {
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/product_subgroups/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/product_subgroups/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
@@ -100,7 +100,7 @@ function CreateGroups() {
       const group_code = groupList.find(group => group[1] === selectedGroup)[0];
   
       const access_token = await localforage.getItem('access_token');
-      fetch('http://127.0.0.1:8000/api/create_product_subgroup/', {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/create_product_subgroup/`, {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + String(access_token),
@@ -136,7 +136,7 @@ function CreateGroups() {
     console.log("subgroupCode:",subgroupCode[1])
     console.log("newSubgroupName:",newSubgroupName)
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/edit_product_subgroup/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_subgroup/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
@@ -180,7 +180,7 @@ function CreateGroups() {
     const updatedSubgroups = subgroupList.filter(subgroup => subgroup[0] !== subgroupCode[0]);
     setSubgroupList(updatedSubgroups);
 
-    fetch('http://127.0.0.1:8000/api/delete_product_subgroup/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_product_subgroup/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
@@ -223,7 +223,7 @@ function CreateGroups() {
 
   const handleSaveGroup = async (groupCode, newGroupName) => {
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/edit_product_group/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_group/`, {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + String(access_token),
@@ -254,7 +254,7 @@ function CreateGroups() {
   const handleDeleteGroup = async (groupCode) => {
    
       const access_token = await localforage.getItem('access_token');
-      fetch('http://127.0.0.1:8000/api/delete_product_group/', {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_product_group/`, {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer ' + String(access_token),

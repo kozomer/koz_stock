@@ -70,7 +70,7 @@ function QTOForm() {
         try {
             const access_token = await localforage.getItem('access_token'); 
       
-            const response = await fetch('http://127.0.0.1:8000/api/buildings_for_project/',{
+            const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/buildings_for_project/`,{
               headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer '+ String(access_token)
@@ -91,7 +91,7 @@ function QTOForm() {
         const access_token = await localforage.getItem('access_token'); 
     
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/floors_for_building/', {
+            const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/floors_for_building/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -118,7 +118,7 @@ function QTOForm() {
         console.log("elevationId:", elevationId);
         console.log('Starting handleElevationChange');
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/sections_for_floor/', {
+            const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/sections_for_floor/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ function QTOForm() {
         const access_token = await localforage.getItem('access_token'); 
 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/places_for_section/', {
+            const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/places_for_section/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -171,7 +171,7 @@ function QTOForm() {
                const access_token = await localforage.getItem('access_token'); 
     
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/floors_for_building/', {
+            const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/floors_for_building/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -219,7 +219,7 @@ useEffect(() => {
         const access_token = await localforage.getItem('access_token'); 
         console.log(selectedSection)
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/add_qto/', {
+            const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_qto/`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -319,7 +319,7 @@ useEffect(() => {
         async function fetchRows () {
         const access_token = await localforage.getItem('access_token'); 
         try {
-            const response = await fetch('http://127.0.0.1:8000/api/qto/', {
+            const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/qto/`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + String(access_token)
@@ -421,7 +421,7 @@ useEffect(() => {
             console.log(deleteData)
             
             try {
-              const response = await fetch(`http://127.0.0.1:8000/api/delete_qto/`, {
+              const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_qto/`, {
                 method: "POST",
                 body: JSON.stringify(deleteData),
                 headers: {
@@ -561,7 +561,7 @@ useEffect(() => {
           total:total,
         };
     
-        fetch(`http://127.0.0.1:8000/api/edit_qto/`, {
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_qto/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -604,7 +604,7 @@ useEffect(() => {
         const formData = new FormData();
         formData.append('file', file);
         const access_token = await localforage.getItem('access_token');
-        fetch('http://127.0.0.1:8000/api/add_excel_qto/', {
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_excel_qto/`, {
           method: 'POST',
           body: formData,
           
@@ -628,7 +628,7 @@ useEffect(() => {
           successUpload(data.message);
           
           
-          fetch('http://127.0.0.1:8000/api/qto/',{
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/qto/`,{
             headers: {
               'Authorization': 'Bearer '+ String(access_token)
             }
