@@ -230,8 +230,8 @@ class SetCurrentProjectView(APIView):
 
             request.user.current_project = project
             request.user.save()
-            print("current_project1:", request.user.current_project)
-            return JsonResponse({'message': _('Project set successfully')})
+            return JsonResponse({'error': f"{project.name}, {request.user.current_project.name},{project_id}"})
+            #return JsonResponse({'message': _('Project set successfully')})
         except ObjectDoesNotExist:
             return JsonResponse({'error': _('Project not found or does not belong to your company')}, status=400, safe=False)
         except Exception as e:
