@@ -280,7 +280,7 @@ const DataTable = () => {
 
         console.log(deleteData)
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/delete_product_inflow/`, {
+          const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_product_inflow/`, {
             method: "POST",
             body: JSON.stringify(deleteData),
             headers: {
@@ -349,7 +349,7 @@ const DataTable = () => {
       try {
         const access_token = await localforage.getItem('access_token');
 
-        const response = await fetch('http://127.0.0.1:8000/api/search_supplier_consumer_product/', {
+        const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/search_supplier_consumer_product/`, {
           headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + String(access_token)
@@ -413,7 +413,7 @@ const DataTable = () => {
       barcode
     };
 
-    fetch(`http://127.0.0.1:8000/api/edit_product_inflow/`, {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_inflow/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -472,7 +472,7 @@ const DataTable = () => {
       console.log(pair[0]+ ', '+ pair[1]); 
    }
    
-   fetch(`http://127.0.0.1:8000/api/add_product_inflow/`, {
+   fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_product_inflow/`, {
       method: "POST",
       headers: {
         'Authorization': 'Bearer ' + String(access_token)
@@ -547,7 +547,7 @@ const DataTable = () => {
     let fileToDelete = currentFiles[index];
     const filename = fileToDelete.split('/').pop(); // Assuming the filename is the last part after the slash
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/delete_image/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_image/`, {
       method: 'POST',
       headers: {
           'Content-Type': 'application/json',
@@ -631,7 +631,7 @@ const DataTable = () => {
             formData.append('images', file);
         });
 
-        fetch('http://127.0.0.1:8000/api/add_image/', {
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_image/`, {
             method: 'POST',
             headers: {
                 'Authorization': 'Bearer ' + String(access_token)
@@ -682,7 +682,7 @@ const DataTable = () => {
     const access_token = await localforage.getItem('access_token');
 
     // Make an AJAX request to the backend to download the CSV file
-    const response = await fetch('http://127.0.0.1:8000/api/export_sales/', {
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_sales/`, {
       headers: {
         'Authorization': 'Bearer ' + String(access_token)
       },

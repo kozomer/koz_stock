@@ -38,7 +38,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       
-      const response = await fetch('http://127.0.0.1:8000/api/warehouse/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/warehouse/`,{
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer '+ String(access_token)
@@ -71,7 +71,7 @@ const handleAddFileClick = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token'); 
-    fetch('http://127.0.0.1:8000/api/add_warehouse/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_warehouse/`, {
       method: 'POST',
       body: formData,
       
@@ -91,7 +91,7 @@ const handleAddFileClick = () => {
         return response.json().then(data => {
           setIsLoading(false);
           successUpload(data.message);
-          fetch('http://127.0.0.1:8000/api/warehouse/',{
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/warehouse/`,{
             headers: {
               'Authorization': 'Bearer '+ String(access_token)
             }
@@ -174,7 +174,7 @@ const handleAddFileClick = () => {
       
     };
     console.log(updatedData)
-    fetch('http://127.0.0.1:8000/api/edit_warehouse/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_warehouse/`, {
     method: 'POST',
     body: JSON.stringify(updatedData),
     headers: {
@@ -320,7 +320,7 @@ const handleAddFileClick = () => {
         if (deleteConfirm) {
          
          const access_token =  await localforage.getItem('access_token'); 
-          fetch(`http://127.0.0.1:8000/api/delete_warehouse/`, {
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_warehouse/`, {
             method: "POST",
             body: new URLSearchParams(deleteData),
             headers: {
@@ -381,7 +381,7 @@ const handleAddFileClick = () => {
     const access_token = await localforage.getItem('access_token');
   
     // Make an AJAX request to the backend to download the CSV file
-    const response = await fetch('http://127.0.0.1:8000/api/export_warehouse/', {
+    const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_warehouse/`, {
       headers: {
         'Authorization': 'Bearer '+ String(access_token)
       },

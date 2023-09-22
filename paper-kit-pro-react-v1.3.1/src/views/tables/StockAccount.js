@@ -108,7 +108,7 @@ const DataTable = () => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
       console.log(access_token)
-      const response = await fetch('http://127.0.0.1:8000/api/accounting/',{
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/accounting/`,{
        
         headers: {
           'Content-Type': 'application/json',
@@ -146,7 +146,7 @@ const DataTable = () => {
     const formData = new FormData();
     formData.append('file', file);
     const access_token = await localforage.getItem('access_token');
-    fetch('http://127.0.0.1:8000/api/add_accounting/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_accounting/`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -167,7 +167,7 @@ const DataTable = () => {
         setIsLoading(false);
         successUpload(data.message);
         
-        fetch('http://127.0.0.1:8000/api/accounting/',{
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/accounting/`,{
           headers: {
             'Authorization': 'Bearer '+ String(access_token)
           }
@@ -309,7 +309,7 @@ const DataTable = () => {
       if (deleteConfirm) {
        console.log("delete")
        const access_token =  await localforage.getItem('access_token'); 
-        fetch(`http://127.0.0.1:8000/api/delete_accounting/`, {
+        fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_accounting/`, {
           method: "POST",
           body: new URLSearchParams(deleteData),
           headers: {
@@ -398,7 +398,7 @@ if (productData) {
 
  
     
-      fetch(`http://127.0.0.1:8000/api/edit_accounting/`, {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_accounting/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -441,7 +441,7 @@ if (productData) {
       const access_token = await localforage.getItem('access_token');
     
       // Make an AJAX request to the backend to download the CSV file
-      const response = await fetch('http://127.0.0.1:8000/api/export_accounting/', {
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/export_accounting/`, {
         headers: {
           'Authorization': 'Bearer '+ String(access_token)
         },
@@ -738,7 +738,7 @@ if (productData) {
                                 };
                                 setDeleteData(data);
                                 //console.log(data);
-                                fetch(`http://127.0.0.1:8000/api/delete_sales/`, {
+                                fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {

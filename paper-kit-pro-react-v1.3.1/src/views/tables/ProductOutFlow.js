@@ -252,7 +252,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         
         console.log(deleteData)
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/delete_product_outflow/`, {
+          const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_product_outflow/`, {
             method: "POST",
             body: JSON.stringify(deleteData),
             headers: {
@@ -352,7 +352,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
   
     console.log(updatedData)
   
-    fetch('http://127.0.0.1:8000/api/add_product_outflow/', {
+    fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_product_outflow/`, {
       method: 'POST',
       body: JSON.stringify(updatedData),
       headers: {
@@ -407,7 +407,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       console.log(pair[0]+ ', '+ pair[1]); 
    }
    
-   fetch(`http://127.0.0.1:8000/api/add_product_outflow/`, {
+   fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_product_outflow/`, {
       method: "POST",
       headers: {
         'Authorization': 'Bearer ' + String(access_token)
@@ -445,7 +445,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         try {
           const access_token = await localforage.getItem('access_token');
           
-          const response = await fetch('http://127.0.0.1:8000/api/search_supplier_consumer_product/', {
+          const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/search_supplier_consumer_product/`, {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': 'Bearer '+ String(access_token)
@@ -554,7 +554,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         barcode
       };
   
-      fetch(`http://127.0.0.1:8000/api/edit_product_outflow/`, {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_outflow/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -641,7 +641,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
               formData.append('images', file);
           });
   
-          fetch('http://127.0.0.1:8000/api/add_image/', {
+          fetch(`${process.env.REACT_APP_PUBLIC_URL}/add_image/`, {
               method: 'POST',
               headers: {
                   'Authorization': 'Bearer ' + String(access_token)
@@ -693,7 +693,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       let fileToDelete = currentFiles[index];
       const filename = fileToDelete.split('/').pop(); // Assuming the filename is the last part after the slash
       const access_token = await localforage.getItem('access_token');
-      fetch('http://127.0.0.1:8000/api/delete_image/', {
+      fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_image/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1122,7 +1122,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
                                 };
                                 setDeleteData(data);
                                 //console.log(data);
-                                fetch(`http://127.0.0.1:8000/api/delete_sales/`, {
+                                fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_sales/`, {
                                   method: "POST",
                                   body: new URLSearchParams(data),
                                 }).then(() => {
