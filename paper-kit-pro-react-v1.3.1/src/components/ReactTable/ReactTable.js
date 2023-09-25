@@ -25,7 +25,7 @@ function DefaultColumnFilter({
   return (
     <FormGroup>
       <Input
-        placeholder={`Search ${count} records...`}
+        placeholder={` ${count} kayıt içinden ara...`}
         type="text"
         onChange={(e) => {
           setFilter(e.target.value || undefined); // Set undefined to remove the filter entirely
@@ -45,12 +45,12 @@ fuzzyTextFilterFn.autoRemove = (val) => !val;
 // Our table component
 function Table({ columns, data }) {
   const [numberOfRows, setNumberOfRows] = React.useState({
-    value: 10,
-    label: "10 rows",
+    value: 100,
+    label: "100 satır",
   });
   const [pageSelect, handlePageSelect] = React.useState({
     value: 0,
-    label: "Page 1",
+    label: "Sayfa 1",
   });
   const filterTypes = React.useMemo(
     () => ({
@@ -106,7 +106,7 @@ function Table({ columns, data }) {
       data,
       defaultColumn, // Be sure to pass the defaultColumn option
       filterTypes,
-      initialState: { pageSize: 10, pageIndex: 0 },
+      initialState: { pageSize: 100, pageIndex: 0 },
     },
     useFilters, // useFilters!
     useSortBy,
@@ -134,7 +134,7 @@ function Table({ columns, data }) {
                 className="-btn"
                
               >
-                Previous
+                Önceki
               </button>
             </div>
             <div className="-center" >
@@ -204,7 +204,7 @@ function Table({ columns, data }) {
                 className="-btn"
                 
               >
-                Next
+                Sonraki
               </button>
             </div>
           </div>

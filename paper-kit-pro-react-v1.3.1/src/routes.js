@@ -176,15 +176,7 @@ const routes = [
   },
 
 
-  {
-    path: "/select",
-    name: "Select",
-    icon: "nc-icon nc-bus-front-12",
-    component: Select,
-    layout: "/auth",
-    navbar: false
-   
-  },
+
 
   {
     path: "/deneme",
@@ -214,7 +206,15 @@ const routes = [
    
   },
 
- 
+  {
+    path: "/select",
+    name: "Proje Değiştir",
+    icon: "nc-icon nc-bus-front-12",
+    component: Select,
+    layout: "/auth",
+    navbar: false
+   
+  },
   
 ];
 

@@ -1084,38 +1084,15 @@ useEffect(() => {
               </CardHeader>
               <CardBody>
               <div className="upload-container">
-              {!showUploadDiv && (
+            
         <div className="d-flex justify-content-between align-items-center">
-          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-            <i className="fa fa-plus-circle mr-1"></i>
-            Add File
-          </Button>
+          
           {!isAdding && <Button  className="my-button-class" color="primary" onClick={() => setShowPopup(true)}>+ EKLE</Button>}
         </div>
-      )}
+    
 
 
 
-              {showUploadDiv && (
-        <div>
-          <div className="d-flex justify-content-between align-items-center">
-            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
-              <i className="fa fa-plus-circle mr-1"></i>
-              Add File
-            </Button>
-            {!isAdding && <Button  className="my-button-class" color="primary" onClick={() => setShowPopup(true)}>+ EKLE</Button>}
-          </div>
-          <div className="mt-3">
-            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Upload
-            </Button>
-            <div className="spinner-container">
-              {isLoading && <div className="loading-spinner"></div>}
-            </div>
-          </div>
-        </div>
-      )}
          </div>    
               
 

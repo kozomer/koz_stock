@@ -34,8 +34,10 @@ function Sidebar(props) {
   const history = useHistory(); // get the history object
   const [name, setName] = useState("");
   const [LastName, setLastName] = useState("");
+  const [project, setProject] = useState(null);
 
   const location = useLocation();
+  console.log(location)
   
   // this creates the intial state of this component based on the collapse routes
   // that it gets through props.routes
@@ -213,16 +215,47 @@ function Sidebar(props) {
     }
     fetchData();
   }, []);
+
+  
+
+  useEffect(() => {
+    async function fetchProject() {
+      try {
+        const access_token = await localforage.getItem('access_token');
+        
+        const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/get_current_project/`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + String(access_token)
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log(data)
+          setProject(data);
+        } else {
+          console.error('Error fetching project', response.statusText);
+          console.log('Bearer ' + String(access_token));
+        }
+      } catch (error) {
+        console.error('Failed to fetch the project:', error.message);
+      }
+    }
+    
+    fetchProject();
+  }, []);
   return (
     <div
       className="sidebar"
       data-color={props.bgColor}
       data-active-color={props.activeColor}
     >
-      <div className="logo" style={{ textAlign: "center", fontSize: "1.5rem", color: "white",  fontWeight: 'bold', }}>
-        KOZ
-      </div>
-  
+     <div className="logo" style={{ textAlign: "center", fontSize: "1.5rem", color: "white", fontWeight: 'bold', }}>
+    {project && project[1] ? project[1] : ''}
+</div>
+
       <div className="sidebar-wrapper" ref={sidebar}>
         <div className="user">
           <div className="photo"></div>
@@ -239,7 +272,7 @@ function Sidebar(props) {
             </a>
           </div>
         </div>
-        {location.pathname !== "/auth/login" && (
+        {location.pathname !== "/auth/login" && location.pathname !== "/auth/select" && (
           <>
             <Nav>{createLinks(props.routes)}</Nav>
             <Button

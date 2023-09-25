@@ -335,7 +335,10 @@ const handleInputChange = (event) => {
         onConfirm={() => { 
           hideAlert()
         setShowPopup(false)
-      setShowEditPopup(false)}}
+      setShowEditPopup(false)
+    setSelectedGroup(null)
+    setSelectedSubgroup(null)
+    }}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""

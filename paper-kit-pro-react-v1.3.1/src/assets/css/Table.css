@@ -65,6 +65,18 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
+.cardStyle.fixed-height {
+  height: 200px; /* You can adjust this value to whatever height you desire */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.buttonContainer {
+  margin: 10px; /* Give some space around the button */
+}
+
+
 .cardStyle:hover {
   transform: translateY(-5px);
   box-shadow: 0 6px 12px rgba(0,0,0,0.15);
@@ -74,7 +86,7 @@
   background-color: #f7f7f7; /* Light gray background for header */
   padding: 20px;
   text-align: center;
-  font-size: 24px;
+  font-size: 12px;
   font-weight: 600;
   border-bottom: 1px solid #e0e0e0; /* Slight border for separation */
 }
@@ -95,7 +107,7 @@
 .buttonContainer {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  margin-top: 10px;
 }
 
 .button {
@@ -330,4 +342,11 @@
 
 .delete-button:hover {
     background-color: rgba(255, 0, 0, 0.9); /* darker red on hover */
+}
+
+
+/* Login Page */
+.card-login {
+  z-index: 10; 
+  position: relative;
 }

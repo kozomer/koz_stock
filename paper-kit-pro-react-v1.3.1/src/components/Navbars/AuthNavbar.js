@@ -34,43 +34,7 @@ function AuthNavbar(props) {
     setCollapseOpen(!collapseOpen);
   };
   
-  return (
-    <Navbar
-      className={classnames("navbar-absolute fixed-top", color)}
-      expand="lg"
-    >
-      <Container>
-        <div className="navbar-wrapper">
-          <NavbarBrand href="#pablo" onClick={(e) => e.preventDefault()}
-          style={{ color: 'white',
-          fontWeight: 'bold',
-          fontSize: '2.2rem', // Adjust the size as desired
-         
-          paddingBottom: '5px'  }}>
-            KOZTECH STOCK
-          </NavbarBrand>
-        </div>
-        <button
-          aria-controls="navigation-index"
-          aria-expanded={false}
-          aria-label="Toggle navigation"
-          className="navbar-toggler"
-          data-toggle="collapse"
-          type="button"
-          onClick={toggleCollapse}
-        >
-         
-        </button>
-        <Collapse isOpen={collapseOpen} className="justify-content-end" navbar>
-          {showNavbarItems && (
-            <Nav navbar>
-              {/* Remove the navbarRoutes rendering */}
-            </Nav>
-          )}
-        </Collapse>
-      </Container>
-    </Navbar>
-  );
+ 
 }
 
 export default AuthNavbar;

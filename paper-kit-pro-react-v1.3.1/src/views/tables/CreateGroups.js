@@ -116,9 +116,8 @@ function CreateGroups() {
       })
       .then(data => {
         if (data.message) {
-          console.log("Before setting the list:",subgroupList)
-          setSubgroupName("");
-          setSubgroupList([...subgroupList, subgroupName]);
+          fetchSubgroups(group_code)
+         
           console.log("After setting the new list",subgroupList)
           successUpload(data.message);
         } else if (data.error) {
@@ -401,11 +400,11 @@ function CreateGroups() {
     <Row>
       <Col xs="6">
         <Card body>
-          <h4>Groups</h4>
+          <h4>Gruplar</h4>
          
           <Form>
             <FormGroup>
-              <Label>Group Name</Label>
+              <Label>Grup Adı</Label>
               <Input type="text" value={groupName} onChange={e => setGroupName(e.target.value)} />
             </FormGroup>
             <Button disabled={!groupName} className="my-button-class" color="primary" onClick={handleCreateGroup}>OLUSTUR</Button>
@@ -469,7 +468,7 @@ function CreateGroups() {
                   })
                   
                     : 
-                    <li>There's no current groups in list</li>
+                    <li>Listede şu anda kayıtlı grup yok</li>
                 }
               </ul>
 
@@ -477,11 +476,11 @@ function CreateGroups() {
       </Col>
       <Col xs="6">
         <Card body>
-          <h4>Subgroups</h4>
+          <h4>Alt Gruplar</h4>
           
           <Form>
             <FormGroup>
-              <Label>Select Group</Label>
+              <Label>Grup Seç</Label>
               <Input type="select" value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)}>
     {groupList.map((group, index) => (
         group ? <option key={index} value={group[1]}>{group[1]}</option> : null
@@ -491,7 +490,7 @@ function CreateGroups() {
 
             </FormGroup>
             <FormGroup>
-              <Label>Subgroup Name</Label>
+              <Label>Alt Grup Adı</Label>
               <Input type="text" value={subgroupName} onChange={e => setSubgroupName(e.target.value)} />
             </FormGroup>
             <Button disabled={!selectedGroup || !subgroupName} className="my-button-class" color="primary" onClick={handleCreateSubgroup}>OLUSTUR</Button>
@@ -549,7 +548,7 @@ function CreateGroups() {
     }
   }) 
    : 
-    <li>There's no current subgroups in list</li>}
+    <li>Listede şu anda kayıtlı alt grup yok</li>}
 </ul>
 
         </Card>

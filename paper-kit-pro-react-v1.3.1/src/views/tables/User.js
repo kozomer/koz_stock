@@ -346,7 +346,7 @@ function RegistrationForm() {
     <CardHeader>
         <Row className="align-items-center">
             <Col>
-                <CardTitle tag="h5">Active Users</CardTitle>
+                <CardTitle tag="h5">Aktif Kullanıcılar</CardTitle>
             </Col>
             <Col className="text-right">
                 <Button
@@ -355,7 +355,7 @@ function RegistrationForm() {
                     onClick={() => { setShowAddForm(!showAddForm); setSelectedUser(false);}}
                     outline
                 >
-                    <i className="nc-icon nc-simple-add" /> Add New Saler
+                    <i className="nc-icon nc-simple-add" />Yeni Kullanıcı Ekle
                 </Button>
             </Col>
         </Row>
@@ -418,28 +418,28 @@ function RegistrationForm() {
        <Col  md="8" >
   <Card>
   <CardHeader>
-        <CardTitle tag="h5">Edit User</CardTitle>
+        <CardTitle tag="h5">Kullanıcı Düzenle</CardTitle>
       </CardHeader>
     <CardBody>
       {/* Editable form view of selected user */}
       <Form onSubmit={(e) => {e.preventDefault(); handleEditSubmit(userDetail);}}>
         <FormGroup>
-          <Label for="username">Username</Label>
+          <Label for="username">Kullanıcı AdI</Label>
           <Input id="username" type="text" value={userDetail.username} onChange={(e) => setUserDetail({...userDetail, username: e.target.value})} />
         </FormGroup>
         <FormGroup>
-          <Label for="first_name">First Name</Label>
+          <Label for="first_name">Ad</Label>
           <Input id="first_name" type="text" value={userDetail.first_name} onChange={(e) => setUserDetail({...userDetail, first_name: e.target.value})} />
         </FormGroup>
         <FormGroup>
-          <Label for="last_name">Last Name</Label>
+          <Label for="last_name">Soyad</Label>
           <Input id="last_name" type="text" value={userDetail.last_name} onChange={(e) => setUserDetail({...userDetail, last_name: e.target.value})} />
         </FormGroup>
        
         <Col md="4"></Col>
           <Col md="8">
         <FormGroup>
-  <label>Projects</label>
+  <label>Projeler</label>
   {projects.map(project => (
     <div key={project.id}>
       <Input
@@ -463,7 +463,7 @@ function RegistrationForm() {
 </Col>
 
 <FormGroup>
-  <Label for="staff_role">Staff Role</Label>
+  <Label for="staff_role"> Personel Rolü</Label>
   <Input type="select" id="staff_role" value={userDetail.staff_role} onChange={(e) => {
     const role = e.target.value;
     setUserDetail({
@@ -479,9 +479,9 @@ function RegistrationForm() {
 
 
         {/* Add additional form groups for other fields as needed */}
-        <Button className="btn-round" color="success" type="submit">SAVE</Button> {/* Submit Button */}
+        <Button className="btn-round" color="success" type="submit">kAYDET</Button> {/* Submit Button */}
         <Button className="btn-round" color="danger" type="submit" onClick={() => setSelectedUser(false)}>
-                            Cancel
+                            İptal ET
                           </Button>
       </Form>
     </CardBody>
@@ -496,10 +496,10 @@ function RegistrationForm() {
     <Card >
       <CardHeader>
         <h5 className="title" style={{ textTransform: "uppercase" }}>
-          Registration Form
+          Kayıt Formu
         </h5>
         <small className="text-muted" style={{ fontSize: "1.1em", fontWeight: "bold" }}>
-          Please Fill the Information Below
+          Lütfen Aşağıyı Doldurunuz
         </small>
       </CardHeader>
       <CardBody>
@@ -507,7 +507,7 @@ function RegistrationForm() {
           <Row>
             <Col>
               <FormGroup>
-                <label>Username</label>
+                <label>Kullanıcı Adı</label>
                 <Input
                   name="username"
                   onChange={handleInputChange}
@@ -519,7 +519,7 @@ function RegistrationForm() {
             </Col>
             <Col>
               <FormGroup>
-                <label>First Name</label>
+                <label>Ad</label>
                 <Input
                   name="first_name"
                   onChange={handleInputChange}
@@ -531,7 +531,7 @@ function RegistrationForm() {
             </Col>
             <Col>
               <FormGroup>
-                <label>Last Name</label>
+                <label>Soyad</label>
                 <Input
                   name="last_name"
                   onChange={handleInputChange}
@@ -546,7 +546,7 @@ function RegistrationForm() {
           <Row>
             <Col>
               <FormGroup>
-                <label>Password</label>
+                <label>Şifre</label>
                 <Input
                   name="password"
                   type="password"
@@ -561,7 +561,7 @@ function RegistrationForm() {
           <Row>
             <Col>
               <FormGroup>
-                <label>Role</label>
+                <label>Rol</label>
                 <Input
                   name="staff_role"
                   type="select"
@@ -580,7 +580,7 @@ function RegistrationForm() {
           <Col md="1"></Col>
           <Col md="11">
           <FormGroup>
-        <label>Projects</label>
+        <label>Projeler</label>
         {projects.map(project => ( // use the fetched projects here
           <div key={project.id}>
             <Input
@@ -599,7 +599,7 @@ function RegistrationForm() {
         </Form>
       </CardBody>
       <CardFooter>
-        <Button className="btn-round" color="success" type="submit" disabled={!isFormValid} onClick={handleSave}>Save</Button>
+        <Button className="btn-round" color="success" type="submit" disabled={!isFormValid} onClick={handleSave}>Kaydet</Button>
       </CardFooter>
     </Card>
 
