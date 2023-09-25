@@ -24,7 +24,7 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                     CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
                                     AddConsumersView, ConsumersView, EditConsumersView, DeleteConsumerView, AddSuppliersView, SuppliersView, EditSuppliersView, DeleteSupplierView, SupplierConsumerProductSearchView,
                                     AddQTOView,EditQTOView, BuildingsForProjectView, ElevationsForBuildingView, SectionsForElevationView, PlacesForSectionView, QTOView, AddExcelQTOView, DeleteQTOView, AddExcelProjectView,
-                                    AddImageView, DeleteImageView  )
+                                    AddImageView, DeleteImageView, GetCurrentProjectView  )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
@@ -46,6 +46,7 @@ urlpatterns = [
 
     path('api/projects/', GetProjectsView.as_view(), name='get-projects'),
     path('api/set_current_project/', SetCurrentProjectView.as_view(), name='set-current-project'),
+    path('api/get_current_project/', GetCurrentProjectView.as_view(), name='set-current-project'),
     path('api/create_project/', CreateProjectView.as_view(), name='create_project'),
     path('api/create_excel_project/', AddExcelProjectView.as_view(), name='create_excel_project'),
 

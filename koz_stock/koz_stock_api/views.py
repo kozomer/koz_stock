@@ -205,6 +205,23 @@ class GetProjectsView(APIView):
         print(projects)
         return JsonResponse(projects, safe=False)
 
+class GetCurrentProjectView(APIView):
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+
+        return super().handle_exception(exc)
+
+    def get(self, request):
+        # Get the projects that belong to the user's company and the user is associated with
+        project = request.user.current_project
+        project = [project.id ,project.name] # Convert QuerySet to a list
+        
+        return JsonResponse(project, safe=False)
+
 
 class SetCurrentProjectView(APIView):
     permission_classes = (IsAuthenticated,)
