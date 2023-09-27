@@ -14,7 +14,7 @@ import { matchSorter } from "match-sorter";
 import Select from "react-select";
 import '../../assets/css/Table.css';
 // reactstrap components
-import { Container, Row, Col, FormGroup, Input } from "reactstrap";
+import { Container, Row, Col, FormGroup, Input, Button } from "reactstrap";
 
 // Define a default UI for filtering
 function DefaultColumnFilter({
@@ -127,15 +127,16 @@ function Table({ columns, data }) {
         <div className="pagination-top"  >
           <div className="-pagination">
             <div className="-previous" >
-              <button
-                type="button"
-                onClick={() => previousPage()}
-                disabled={!canPreviousPage}
-                className="-btn"
-                style={{ backgroundColor: 'black', color: 'white' }}
-              >
-                Önceki
-              </button>
+            <Button
+    type="button"
+    onClick={() => previousPage()}
+    disabled={!canPreviousPage}
+    className="wide-btn"
+>
+    Önceki
+</Button>
+
+ 
             </div>
             <div className="-center" >
               <Container fluid >
@@ -197,16 +198,14 @@ function Table({ columns, data }) {
               </Container>
             </div>
             <div className="-next">
-              <button
-                type="button"
-                onClick={() => nextPage()}
-                disabled={!canNextPage}
-                className="-btn"
-                style={{ backgroundColor: 'black', color: 'white' }}
-                
-              >
-                Sonraki
-              </button>
+            <Button
+    type="button"
+    onClick={() => nextPage()}
+    disabled={!canNextPage}
+    className="wide-btn"
+>
+   Sonraki
+</Button>
             </div>
           </div>
         </div>

@@ -190,7 +190,7 @@ const routes = [
   {
     path: "/qto",
     name: "Metraj",
-    icon: "nc-icon nc-circle-10",
+    icon: "nc-icon nc-ruler-pencil",
     component: QTO,
     layout: "/admin",
    
@@ -209,7 +209,7 @@ const routes = [
   {
     path: "/select",
     name: "Proje Değiştir",
-    icon: "nc-icon nc-bus-front-12",
+    icon: "nc-icon nc-settings",
     component: Select,
     layout: "/auth",
     navbar: false

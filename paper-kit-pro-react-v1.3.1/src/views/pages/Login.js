@@ -132,7 +132,12 @@ function Login({ history }) {
                         <i className="nc-icon nc-key-25"></i>
                     </InputGroupText>
                 </InputGroupAddon>
-                <Input placeholder="Password" type="password" value={password} onChange={handlePasswordChange} />
+                <Input placeholder="Password" type="password" value={password}    onKeyPress={(event) => {
+                  if (event.key === "Enter") {
+                    handleSubmit(event);
+                    
+                  }
+                }} onChange={handlePasswordChange} />
             </InputGroup>
             {error && <p className="mt-3 text-danger text-center">{error}</p>}
             <Button className="btn-block mt-4"  onClick={handleSubmit}>Log in</Button>
