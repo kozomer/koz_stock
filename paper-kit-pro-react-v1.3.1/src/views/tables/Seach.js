@@ -37,7 +37,7 @@ const SearchComponent = () => {
     <div className='content'>
     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '20px' }}>
         <Input type="text" placeholder="Product Code" onChange={(e) => setProductCode(e.target.value)} />
-        <Button  className="my-button-class" color="primary"   disabled={!productCode.trim()} onClick={handleSearch}>Ara</Button>
+        <Button  className="my-button-class"   disabled={!productCode.trim()} onClick={handleSearch}>Ara</Button>
       </div>
       
       <Row>

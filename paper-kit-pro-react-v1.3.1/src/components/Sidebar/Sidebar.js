@@ -44,6 +44,7 @@ function Sidebar(props) {
   const getCollapseStates = (routes) => {
     let initialState = {};
     routes.map((prop, key) => {
+      console.log(prop)
       if (prop.collapse) {
         initialState = {
           [prop.state]: getCollapseInitialState(prop.views),
@@ -253,7 +254,7 @@ function Sidebar(props) {
       data-active-color={props.activeColor}
     >
      <div className="logo" style={{ textAlign: "center", fontSize: "1.5rem", color: "white", fontWeight: 'bold', }}>
-    {project && project[1] ? project[1] : ''}
+    SR
 </div>
 
       <div className="sidebar-wrapper" ref={sidebar}>
@@ -277,7 +278,7 @@ function Sidebar(props) {
             <Nav>{createLinks(props.routes)}</Nav>
             <Button
               className="my-button-class d-flex justify-content-center align-items-center"
-              color="primary"
+              
               onClick={handleLogout}
               style={{
                 display: "block",

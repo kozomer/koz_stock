@@ -121,7 +121,7 @@ const errorUpload = (e) => {
               <h3 className="header text-center">{project.name}</h3>
             </CardHeader>
             <div className="buttonContainer">
-              <Button className="my-button-class" color="primary" onClick={() => handleSelectProject(project)}>
+              <Button className="btn-block mt-4" onClick={() => handleSelectProject(project)}>
                 Seç
               </Button>
             </div>

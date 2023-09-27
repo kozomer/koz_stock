@@ -132,7 +132,7 @@ function Table({ columns, data }) {
                 onClick={() => previousPage()}
                 disabled={!canPreviousPage}
                 className="-btn"
-               
+                style={{ backgroundColor: 'black', color: 'white' }}
               >
                 Önceki
               </button>
@@ -202,6 +202,7 @@ function Table({ columns, data }) {
                 onClick={() => nextPage()}
                 disabled={!canNextPage}
                 className="-btn"
+                style={{ backgroundColor: 'black', color: 'white' }}
                 
               >
                 Sonraki

@@ -755,11 +755,11 @@ const handleInputChange = (event) => {
     <div className="upload-container">
       {!showUploadDiv && (
         <div className="d-flex justify-content-between align-items-center">
-          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+          <Button className="my-button-class"  onClick={handleAddFileClick}>
             <i className="fa fa-plus-circle mr-1"></i>
             Yeni Malzeme Ekle
           </Button>
-          <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+          <Button className="my-button-class"  onClick={handleExportClick}>
             <i className="fa fa-download mr-1"></i>
             Dışa Aktar
           </Button>
@@ -768,18 +768,18 @@ const handleInputChange = (event) => {
       {showUploadDiv && (
         <div>
           <div className="d-flex justify-content-between align-items-center">
-            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+            <Button className="my-button-class"  onClick={handleAddFileClick}>
               <i className="fa fa-plus-circle mr-1"></i>
               Dosya Yükle
             </Button>
-            <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+            <Button className="my-button-class"  onClick={handleExportClick}>
               <i className="fa fa-download mr-1"></i>
               Dışa Aktar
             </Button>
           </div>
           <div className="mt-3">
             <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-            <Button color="primary" className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
+            <Button  className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
               Yükle
             </Button>
             <div className="spinner-container">

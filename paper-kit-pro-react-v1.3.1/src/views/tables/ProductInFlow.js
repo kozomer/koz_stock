@@ -982,11 +982,11 @@ const DataTable = () => {
                 <div className="upload-container">
                   {!showUploadDiv && (
                     <div className="d-flex justify-content-between align-items-center">
-                      <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+                      <Button className="my-button-class"  onClick={handleAddFileClick}>
                         <i className="fa fa-plus-circle mr-1"></i>
                         GİRDİ EKLE
                       </Button>
-                      <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+                      <Button className="my-button-class"  onClick={handleExportClick}>
                         <i className="fa fa-download mr-1"></i>
                         Dışa Aktar
                       </Button>
@@ -995,11 +995,11 @@ const DataTable = () => {
                   {showUploadDiv && (
                     <div>
                       <div className="d-flex justify-content-between align-items-center">
-                        <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+                        <Button className="my-button-class"  onClick={handleAddFileClick}>
                           <i className="fa fa-plus-circle mr-1"></i>
                           Dosya Ekle
                         </Button>
-                        <Button className="my-button-class" color="primary" onClick={handleExportClick}>
+                        <Button className="my-button-class"  onClick={handleExportClick}>
                           <i className="fa fa-download mr-1"></i>
                           Dışa Aktar
                         </Button>

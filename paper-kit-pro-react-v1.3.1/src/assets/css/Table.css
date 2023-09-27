@@ -1,3 +1,16 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap');
+
+.-btn {
+  background-color: black !important;  /* Ensure override */
+  color: white !important;
+  transition: background-color 0.3s ease, color 0.3s ease;  /* Smooth transition for hover effect */
+}
+
+.-btn:hover {
+  background-color: white !important;
+  color: black !important;
+}
 .custom-file-upload {
     border: 1px solid #ccc;
     display: inline-block;
@@ -32,12 +45,12 @@
   }
   
 .my-button-class {
-  background-color: #51cbce!important;
+  background-color: black!important;
  
   /* Other styles as needed */
 }
 .my-button-class:hover {
-  background-color: red !important;
+  background-color: white !important;
  
   /* Other styles as needed */
 }
@@ -350,3 +363,95 @@
   z-index: 10; 
   position: relative;
 }
+
+.stockruct-title {
+  position: absolute;
+  top: 50%;
+  left: 18%;
+  font-size: 3em;
+  color: #ffffff;
+  font-weight: bold;
+  z-index: 2;
+  transform: translateY(-50%);
+  font-family: 'Poppins', sans-serif;
+
+  /* For the square dot */
+  display: flex;
+  align-items: center;
+}
+
+.stockruct-title:after {
+  content: '■';  /* Unicode square character */
+  font-size: 1.2em;
+  margin-left: 0.2em;  /* Slight spacing */
+}
+.animated-letter {
+  opacity: 0;
+  transform: translateY(1em); /* starts slightly below their final position */
+  animation: appear 0.5s forwards;
+  display: inline-block;
+}
+
+@keyframes appear {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.login-page {
+  font-family: 'Poppins', sans-serif;
+}
+
+
+
+.form {
+    padding-left: 20px; /* adjust as needed */
+}
+.card-login {
+  border: none;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  top:20px;
+  
+}
+
+.text-center {
+  font-weight: 600;
+}
+
+.nc-icon {
+  color: black;
+}
+
+.btn-block.mt-4 {
+  opacity: 1 !important;          /* Ensures the button is fully opaque*/
+  background-color: black !important; /* Set to whatever color you want*/
+  color: white !important;       /* Set the text color appropriately*/
+}
+
+.btn-block:hover {
+  background-color: #555;
+}
+
+
+.vertical-line {
+  z-index: 10;
+  border-left: 3px solid white;
+  height: 50vh;             /* This is half the viewport height */
+  position: absolute;
+  top: 50%;                 /* Move the top of the line to the center of the viewport */
+  left: 50%;
+  margin-left: -1.5px;      /* This is half the width of the line, to center it perfectly */
+  transform: translateY(-50%); /* This moves the line upwards by half of its height, thus centering it vertically */
+  animation: slideLine 2s forwards; /* assuming the stockruct animation takes about 2s */
+}
+
+
+
+/* Animation for the vertical line */
+@keyframes slideLine {
+  0% { left: 48%; }
+  100% { left: 50%; }
+}
+

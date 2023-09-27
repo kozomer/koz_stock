@@ -407,7 +407,7 @@ function CreateGroups() {
               <Label>Grup Adı</Label>
               <Input type="text" value={groupName} onChange={e => setGroupName(e.target.value)} />
             </FormGroup>
-            <Button disabled={!groupName} className="my-button-class" color="primary" onClick={handleCreateGroup}>OLUSTUR</Button>
+            <Button disabled={!groupName} className="my-button-class"  onClick={handleCreateGroup}>OLUSTUR</Button>
           </Form>
           <ul>
                 {groupList.length > 0 ? 
@@ -493,7 +493,7 @@ function CreateGroups() {
               <Label>Alt Grup Adı</Label>
               <Input type="text" value={subgroupName} onChange={e => setSubgroupName(e.target.value)} />
             </FormGroup>
-            <Button disabled={!selectedGroup || !subgroupName} className="my-button-class" color="primary" onClick={handleCreateSubgroup}>OLUSTUR</Button>
+            <Button disabled={!selectedGroup || !subgroupName} className="my-button-class"  onClick={handleCreateSubgroup}>OLUSTUR</Button>
           </Form>
           <ul>
   {subgroupList.length > 0 ? 

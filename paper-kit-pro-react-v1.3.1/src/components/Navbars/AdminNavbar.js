@@ -60,6 +60,8 @@ function AdminNavbar(props) {
   const [sidebarActiveColor, setSidebarActiveColor] = useState("primary");
   const [sidebarMini, setSidebarMini] = useState(false);
   const [showFixedPlugin, setShowFixedPlugin] = useState(false);
+  const [project, setProject] = useState(null);
+
   const handleBgClick = (color) => {
   setSidebarBgColor(color);
   };
@@ -76,7 +78,34 @@ function AdminNavbar(props) {
     setShowFixedPlugin(!showFixedPlugin);
   };
   
+  useEffect(() => {
+    async function fetchProject() {
+      try {
+        const access_token = await localforage.getItem('access_token');
+        
+        const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/get_current_project/`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + String(access_token)
+          },
+        });
 
+        if (response.ok) {
+          const data = await response.json();
+          console.log(data)
+          setProject(data);
+        } else {
+          console.error('Error fetching project', response.statusText);
+          console.log('Bearer ' + String(access_token));
+        }
+      } catch (error) {
+        console.error('Failed to fetch the project:', error.message);
+      }
+    }
+    
+    fetchProject();
+  }, []);
   useEffect(() => {
     
       console.log(notifications)
@@ -185,11 +214,11 @@ function AdminNavbar(props) {
                fontSize: '1.5rem', // Adjust the size as desired
                
                paddingBottom: '5px'  }}>
-                STOCK
+                 {project && project[1] ? project[1] : ''}
               </span>
               <span className="d-block d-md-none"
                 style={{ color: 'black',
-                fontWeight: 'bold',}}>STCK</span>
+                fontWeight: 'bold',}}>KZ</span>
             </NavbarBrand>
           </div>
           <button

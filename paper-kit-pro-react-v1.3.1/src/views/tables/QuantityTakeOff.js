@@ -1087,7 +1087,7 @@ useEffect(() => {
             
         <div className="d-flex justify-content-between align-items-center">
           
-          {!isAdding && <Button  className="my-button-class" color="primary" onClick={() => setShowPopup(true)}>+ EKLE</Button>}
+          {!isAdding && <Button  className="my-button-class" onClick={() => setShowPopup(true)}>+ EKLE</Button>}
         </div>
     
 

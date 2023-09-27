@@ -45,9 +45,16 @@ function Login({ history }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  
 
   const handleEmailChange = (event) => setUsername(event.target.value);
   const handlePasswordChange = (event) => setPassword(event.target.value);
+  const word = "stockruct";
+  const letters = word.split("").map((letter, index) => (
+    <span key={index} style={{ animationDelay: `${index * 0.2}s` }} className="animated-letter">
+      {letter}
+    </span>
+  ));
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -95,78 +102,59 @@ function Login({ history }) {
   };
 
   return (
-    <div className="login-page">
+    <div className="login-page"  >
+
+
+<Row className="h-100">
+<div className="stockruct-title">
+        {letters}
+      </div>
+      
+        <div className="vertical-line"></div>
+    
      <Container>
   <Row>
-    <Col className="ml-auto mr-auto" lg="4" md="6">
-      <Form
-        action=""
-        className="form"
-        method=""
-        
-        
-      >
-        <Card className="card-login">
-          <CardHeader>
-            <CardHeader>
-              <h3 className="header text-center">Login</h3>
-            </CardHeader>
-          </CardHeader>
-          <CardBody style={{ marginLeft: "10px", marginRight: "10px" }}>
-            <InputGroup>
-              <Input
-                placeholder="Username"
-                type="suername"
-                value={username}
-                onChange={handleEmailChange}
-                style={{
-                  borderLeft: "1px solid #dedede",
-                  borderRight: "1px solid #dedede",
-                }}
-              />
+  <Col className="ml-auto" lg="3" md="4">
+    <Card className="card-login">
+        <CardBody>
+            <h4 className="text-center">Login</h4>
+            <InputGroup className="mt-3">
+                <InputGroupAddon addonType="prepend">
+                    <InputGroupText>
+                        <i className="nc-icon nc-single-02"></i>
+                    </InputGroupText>
+                </InputGroupAddon>
+                <Input placeholder="Username" type="text" value={username} onChange={handleEmailChange} />
             </InputGroup>
-            <InputGroup>
-              <Input
-                placeholder="Password"
-                type="password"
-                autoComplete="off"
-                value={password}
-                onChange={handlePasswordChange}
-                style={{
-                  border: error ? "0.5px solid #D32F2F" : "",
-                  boxShadow: error ? "0 0 10px rgba(255, 0, 0, 0.5)" : "",
-                  borderLeft: "1px solid #dedede",
-                  borderRight: "1px solid #dedede",
-                }}
-                onKeyPress={(event) => {
-                  if (event.key === "Enter") {
-                    handleSubmit(event);
-                    
-                  }
-                }}
-              />
+            <InputGroup className="mt-3">
+                <InputGroupAddon addonType="prepend">
+                    <InputGroupText>
+                        <i className="nc-icon nc-key-25"></i>
+                    </InputGroupText>
+                </InputGroupAddon>
+                <Input placeholder="Password" type="password" value={password} onChange={handlePasswordChange} />
             </InputGroup>
-            {error && <p style={{ color: "red" }}>{error}</p>}
-            <br />
-          </CardBody>
-          <CardFooter className="d-flex justify-content-center">
-            <Button type="submit" className="my-button-class" color="primary" onClick={handleSubmit}>
-              LOGIN
-            </Button>
-          </CardFooter>
-        </Card>
-      </Form>
-    </Col>
+            {error && <p className="mt-3 text-danger text-center">{error}</p>}
+            <Button className="btn-block mt-4"  onClick={handleSubmit}>Log in</Button>
+        </CardBody>
+    </Card>
+</Col>
+
   </Row>
+
+  
 </Container>
+</Row>
+{/* 
 <div
   className="full-page-background"
   style={{
     backgroundImage: `url(${require("assets/img/bg/fabio-mangione.jpg")})`,
   }}
 />
-
+*/}
     </div>
+   
   );
 }
 

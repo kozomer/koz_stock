@@ -1008,7 +1008,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
     <div className="upload-container">
       {!showUploadDiv && (
         <div className="d-flex justify-content-between align-items-center">
-          <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+          <Button className="my-button-class" onClick={handleAddFileClick}>
             <i className="fa fa-plus-circle mr-1"></i>
             Çıkış Ekle
           </Button>
@@ -1018,7 +1018,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       {showUploadDiv && (
         <div>
           <div className="d-flex justify-content-between align-items-center">
-            <Button className="my-button-class" color="primary" onClick={handleAddFileClick}>
+            <Button className="my-button-class"  onClick={handleAddFileClick}>
               <i className="fa fa-plus-circle mr-1"></i>
               Dosya Ekle
             </Button>
