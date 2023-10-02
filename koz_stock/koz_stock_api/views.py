@@ -1280,6 +1280,7 @@ class AddProductInflowView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             # Bill Level Information
+            print(request.POST)
             date = request.POST.get('date')
             bill_number = request.POST.get('bill_number')
             provider_company_tax_code = request.POST.get('provider_company_tax_code')
@@ -1404,7 +1405,7 @@ class ProductInflowView(APIView):
 
                 inflow_data = {
                     'id': pf.id,
-                    'biill_number': pf.bill_number,
+                    'bill_number': pf.bill_number,
                     'date': pf.date,
                     'supplier_company_tax_code': pf.supplier_company.tax_code,
                     'supplier_company_name': pf.supplier_company.name,

@@ -53,6 +53,7 @@ function CreateGroups() {
         setGroupList([...groupList, data.group]);
         fetchData();  // Move the fetchData call here.
         successUpload(data.message);
+        setSelectedGroup(groupName)
       } else if (data.error) {
         errorUpload(data.error);
       }
@@ -86,12 +87,17 @@ function CreateGroups() {
     // Any additional logic if required
 }, [subgroupList]);
 
-  useEffect(() => {
-    if (selectedGroup) {
-      const groupCode = groupList.find(group => group[1] === selectedGroup)[0];
+useEffect(() => {
+  if (selectedGroup && Array.isArray(groupList)) {
+    const matchedGroup = groupList.find(group => group && group[1] === selectedGroup);
+    
+    if (matchedGroup && matchedGroup.length > 0) {
+      const groupCode = matchedGroup[0];
       fetchSubgroups(groupCode);
     }
-  }, [selectedGroup]);
+  }
+}, [selectedGroup]);
+
   
   
 
