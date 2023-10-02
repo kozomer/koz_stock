@@ -1308,6 +1308,7 @@ class AddProductInflowView(APIView):
 
             # Loop through the list of products
             products = json.loads(request.POST.get('products'))  # Assuming products are sent as a list of dictionaries
+            print(products)
             for product_data in products:
                 product_code = product_data.get('product_code')
                 barcode = product_data.get('barcode')
