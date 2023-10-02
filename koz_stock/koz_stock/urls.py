@@ -61,10 +61,15 @@ urlpatterns = [
     path('api/add_products/',AddProductsView.as_view(), name='add_pricelists'),
     path('api/delete_products/', DeleteProductsView.as_view(), name='delete_goods'),
 
+    
     path('api/product_inflow/', ProductInflowView.as_view(), name='product_inflow'),
     path('api/edit_product_inflow/', EditProductInflowView.as_view(), name='edit_product_inflow'),
     path('api/add_product_inflow/',AddProductInflowView.as_view(), name='add_product_inflow'),
     path('api/delete_product_inflow/', DeleteProductInflowView.as_view(), name='delete_product_inflow'),
+
+    path('api/edit_product_inflow_item/', EditProductInflowItemView.as_view(), name='edit_product_inflow_item'),
+    path('api/add_product_inflow_item/',AddProductInflowItemView.as_view(), name='add_product_inflow_item'),
+    path('api/delete_product_inflow_item/', DeleteProductInflowItemView.as_view(), name='delete_product_inflow_item'),
 
     path('api/product_outflow/', ProductOutflowView.as_view(), name='product_outflow'),
     path('api/edit_product_outflow/', EditProductOutflowView.as_view(), name='edit_product_outflow'),
