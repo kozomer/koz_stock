@@ -1404,6 +1404,7 @@ class ProductInflowView(APIView):
 
                 inflow_data = {
                     'id': pf.id,
+                    'biill_number': pf.bill_number,
                     'date': pf.date,
                     'supplier_company_tax_code': pf.supplier_company.tax_code,
                     'supplier_company_name': pf.supplier_company.name,
@@ -1469,7 +1470,6 @@ class EditProductInflowView(APIView):
 
             product_data["company"]=request.user.company
             product_data["project"]=request.user.current_project
-            print(product_data)
             new_product_inflow = ProductInflow.objects.create(**product_data)
 
             # Reassign the images to the new product inflow instance
