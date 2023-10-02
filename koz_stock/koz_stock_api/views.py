@@ -1538,7 +1538,7 @@ class EditProductInflowItemView(APIView):
         try:
             data = request.data
             item_id = data.get('item_id')
-            
+            print(request.data)
             # Get the old inflow item
             old_item = ProductInflowItem.objects.get(id=item_id)
 

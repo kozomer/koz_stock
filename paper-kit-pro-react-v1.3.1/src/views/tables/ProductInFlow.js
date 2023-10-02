@@ -66,11 +66,51 @@ const startEditProduct = (index) => {
   setIsEditingIndex(index);
 };
 
-const saveEditedProduct = (index) => {
-  // Currently, this simply closes the editor.
-  // If needed, you can add more logic here, such as sending the changes to the backend.
+const saveEditedProduct = async (index) => {
+  const productToEdit = modalProducts[index];
+
+  // Construct the payload to send to the API
+  const updatedData = {
+      item_id: productToEdit.id,  // Assuming each product has a unique id
+      product_code: productToEdit.product_code,
+      barcode: productToEdit.barcode,
+      status: productToEdit.status,
+      place_of_use: productToEdit.place_of_use,
+      amount: productToEdit.amount
+      // Add other fields as necessary
+  };
+
+  try {
+      const access_token = await localforage.getItem('access_token');
+
+      // Make the API call
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_inflow_item/`, {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              'Authorization': 'Bearer ' + String(access_token)
+          },
+          body: JSON.stringify(updatedData)
+      });
+
+      const data = await response.json();
+
+      if (response.status === 200) {
+          console.log("Product edited successfully:", data.message);
+          // Show a success message or any other actions you want
+      } else {
+          console.error("Failed to edit product:", data.error);
+          // Show an error message to the user
+      }
+  } catch (error) {
+      console.error("Error while editing product:", error);
+      // Show an error message to the user
+  }
+
+  // Close the editor
   setIsEditingIndex(null);
 };
+
 
 const handleProductChange = (index, field, value) => {
   const updatedProducts = [...modalProducts];
