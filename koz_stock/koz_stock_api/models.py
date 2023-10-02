@@ -142,16 +142,20 @@ class Consumers(models.Model, DirtyFieldsMixin):
 
 
 class ProductInflow(models.Model, DirtyFieldsMixin):
+    bill_number = models.CharField(max_length=100)
     date = models.DateField()
-    product = models.ForeignKey(Products, on_delete=models.PROTECT)
-    barcode = models.CharField(max_length=100)
     supplier_company = models.ForeignKey(Suppliers, on_delete=models.PROTECT, related_name='supplier_inflows')
     receiver_company = models.ForeignKey(Consumers, on_delete=models.PROTECT, related_name='receiver_inflows')
-    status = models.CharField(max_length=255)
-    place_of_use = models.CharField(max_length=255)
-    amount = models.FloatField(null= True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+class ProductInflowItem(models.Model):
+    inflow = models.ForeignKey(ProductInflow, related_name='items', on_delete=models.CASCADE)
+    product = models.ForeignKey(Products, on_delete=models.PROTECT)
+    barcode = models.CharField(max_length=100)
+    status = models.CharField(max_length=255)
+    place_of_use = models.CharField(max_length=255)
+    amount = models.FloatField(null=True)
 
 class ProductInflowImage(models.Model):
     product_inflow = models.ForeignKey(ProductInflow, related_name='images', on_delete=models.CASCADE)

@@ -1,6 +1,6 @@
 from django.shortcuts import render
 import pandas as pd
-from .models import ( Products, ProductInflow,ProductOutflow, Consumers, Suppliers,
+from .models import ( Products, ProductInflow, ProductInflowItem, ProductOutflow, Consumers, Suppliers,
                       Stock, Accounting, Project, CustomUser, Company, ProductGroups,
                       SequenceNumber, ProductSubgroups, ProductInflowImage, ProductOutflowImage,
                       QuantityTakeOff, Building, Section, Place, ElevationOrFloor)
@@ -1269,58 +1269,65 @@ class DeleteProductSubgroupView(APIView):
 # region ProductInflow
 
 class AddProductInflowView(APIView):
-    permission_classes = (IsAuthenticated,  IsSuperStaffOrStockStaff)
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
     authentication_classes = (JWTAuthentication,)
 
     def handle_exception(self, exc):
         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
-
         return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
-            product_code = request.POST.get('product_code')
+            # Bill Level Information
             date = request.POST.get('date')
-            barcode = request.POST.get('barcode')
+            bill_number = request.POST.get('bill_number')
             provider_company_tax_code = request.POST.get('provider_company_tax_code')
             receiver_company_tax_code = request.POST.get('receiver_company_tax_code')
-            status = request.POST.get('status')
-            place_of_use = request.POST.get('place_of_use')
-            amount = request.POST.get('amount')
             company = request.user.company
             project = request.user.current_project
 
-            try:
-                from datetime import datetime
-                date = datetime.strptime(date, '%Y-%m-%d').date()
-            except ValueError:
-                return JsonResponse({'error': _('Invalid date format. Use YYYY-MM-DD.')}, status=400)
-            
-            # Fetch the product using the product code
-            product = Products.objects.get(product_code=product_code,company=request.user.company)
-            supplier_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=request.user.company)
-            receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code, company=request.user.company)
-            # Create the ProductInflow object
+            # Date Parsing
+            from datetime import datetime
+            date = datetime.strptime(date, '%Y-%m-%d').date()
+
+            # Fetch the companies
+            supplier_company = Suppliers.objects.get(tax_code=provider_company_tax_code, company=company)
+            receiver_company = Consumers.objects.get(tax_code=receiver_company_tax_code, company=company)
+
+            # Create the ProductInflow object (represents the bill)
             product_inflow = ProductInflow.objects.create(
-                product=product,
                 date=date,
-                barcode=barcode,
-                supplier_company=supplier_company, 
-                receiver_company=receiver_company, 
-                status=status,
-                place_of_use=place_of_use, 
-                amount=amount, 
-                company=company, 
+                bill_number=bill_number,
+                supplier_company=supplier_company,
+                receiver_company=receiver_company,
+                company=company,
                 project=project
             )
-            # Add project to product, consumer, and supplier projects fields
-            product.projects.add(project)
-            supplier_company.projects.add(project)
-            receiver_company.projects.add(project)
-            # Get the uploaded images
+
+            # Loop through the list of products
+            products = request.POST.getlist('products')  # Assuming products are sent as a list of dictionaries
+            for product_data in products:
+                product_code = product_data.get('product_code')
+                barcode = product_data.get('barcode')
+                status = product_data.get('status')
+                place_of_use = product_data.get('place_of_use')
+                amount = product_data.get('amount')
+
+                product = Products.objects.get(product_code=product_code, company=company)
+
+                # Create the ProductInflowItem (represents an individual product in the bill)
+                ProductInflowItem.objects.create(
+                    inflow=product_inflow,
+                    product=product,
+                    barcode=barcode,
+                    status=status,
+                    place_of_use=place_of_use,
+                    amount=amount
+                )
+
+            # Process the uploaded images for the bill
             images = request.FILES.getlist('images')
-            
             for image in images:
                 # Check that it's an image
                 if not isinstance(image, InMemoryUploadedFile) or image.content_type not in ['image/png', 'image/jpeg']:
@@ -1332,29 +1339,24 @@ class AddProductInflowView(APIView):
 
                 # Use Django's built-in validation
                 try:
-        # Open the image file
                     img = Image.open(image)
-
-                    # Check if the file is an image
                     img.verify()
-
-                    # The file is an image, save it to your model
                     ProductInflowImage.objects.create(product_inflow=product_inflow, image=image)
                 except (IOError, SyntaxError):
-                    # The file is not an image, handle the exception
                     return JsonResponse({'error': _('One or more uploaded files are not valid images.')}, status=400)
-                
-                
 
             return JsonResponse({'message': _('ProductInflow created successfully')}, status=201)
+
         except Products.DoesNotExist:
             return JsonResponse({'error': _('Product with the provided product code does not exist.')}, status=400)
         except Suppliers.DoesNotExist:
             return JsonResponse({'error': _('Supplier with the provided tax code does not exist.')}, status=400)
+        except Consumers.DoesNotExist:
+            return JsonResponse({'error': _('Consumer with the provided tax code does not exist.')}, status=400)
         except Company.DoesNotExist:
-            return JsonResponse({'error': _('Company with the provided company id does not exist.')}, status=400)
+            return JsonResponse({'error': _('Company does not exist.')}, status=400)
         except Project.DoesNotExist:
-            return JsonResponse({'error': _('Project with the provided project id does not exist.')}, status=400)
+            return JsonResponse({'error': _('Project does not exist.')}, status=400)
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
@@ -1366,40 +1368,54 @@ class ProductInflowView(APIView):
     def handle_exception(self, exc):
         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
-
         return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
         try:
-            product_inflows = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).select_related('product').prefetch_related('images').all()
+            product_inflows = ProductInflow.objects.filter(
+                company=request.user.company,
+                project=request.user.current_project
+            ).prefetch_related(
+                'images',
+                'items',
+                'items__product',
+                'items__product__group',
+                'items__product__subgroup'
+            ).all()
 
-            product_inflow_list = [
-                [
-                    pf.id, 
-                    pf.date, 
-                    pf.product.product_code,
-                    pf.barcode, 
-                    pf.supplier_company.tax_code,
-                    pf.supplier_company.name, 
-                    pf.receiver_company.tax_code,
-                    pf.receiver_company.name,  
-                    pf.status, 
-                    pf.place_of_use,
-                    pf.product.group.group_name,
-                    pf.product.subgroup.subgroup_name,
-                    pf.product.brand,
-                    pf.product.serial_number,
-                    pf.product.model,
-                    pf.product.description,
-                    pf.product.unit,
-                    pf.amount,
-                    [settings.MEDIA_URL + str(image.image) for image in pf.images.all()]  # URLs of all images related to this ProductInflow    
-            ] 
-                for pf in product_inflows
-            ]
+            product_inflow_list = []
+            for pf in product_inflows:
+                items = [
+                    {
+                        'product_code': item.product.product_code,
+                        'barcode': item.barcode,
+                        'status': item.status,
+                        'place_of_use': item.place_of_use,
+                        'group_name': item.product.group.group_name,
+                        'subgroup_name': item.product.subgroup.subgroup_name,
+                        'brand': item.product.brand,
+                        'serial_number': item.product.serial_number,
+                        'model': item.product.model,
+                        'description': item.product.description,
+                        'unit': item.product.unit,
+                        'amount': item.amount
+                    } for item in pf.items.all()
+                ]
+
+                inflow_data = {
+                    'id': pf.id,
+                    'date': pf.date,
+                    'supplier_company_tax_code': pf.supplier_company.tax_code,
+                    'supplier_company_name': pf.supplier_company.name,
+                    'receiver_company_tax_code': pf.receiver_company.tax_code,
+                    'receiver_company_name': pf.receiver_company.name,
+                    'items': items,
+                    'images': [settings.MEDIA_URL + str(image.image) for image in pf.images.all()]
+                }
+                product_inflow_list.append(inflow_data)
 
             return JsonResponse(product_inflow_list, safe=False, status=200)
-        
+
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
