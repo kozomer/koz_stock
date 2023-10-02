@@ -1432,55 +1432,65 @@ class EditProductInflowView(APIView):
     def handle_exception(self, exc):
         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
-
         return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
-        # ... your initial code ...
         try:
             data = request.data
-            old_id = data.get('old_id')
-            product_inflow = ProductInflow.objects.filter(company=request.user.company, project=request.user.current_project).get(id=old_id)
+            inflow_id = data.get('inflow_id')
 
-            # Store the images linked to this product inflow
-            inflow_images = list(product_inflow.images.all())
+            # Get the old inflow and its associated items and images
+            old_inflow = ProductInflow.objects.get(id=inflow_id)
+            inflow_images = list(old_inflow.images.all())
+            old_inflow_items = list(old_inflow.items.all())
 
-            # Delete the old product inflow - triggers pre_delete signal
-            product_inflow.delete()
+            # Fetch supplier and receiver companies
+            supplier_company = Suppliers.objects.get(tax_code=data['supplier_tax_code'], company=request.user.company)
+            receiver_company = Consumers.objects.get(tax_code=data['receiver_tax_code'], company=request.user.company)
 
-            # Create a new product inflow - triggers post_save signal
-            new_product_code = data.get('new_product_code')
-            product = Products.objects.filter(product_code=new_product_code, company=request.user.company).first()
-            new_supplier_tax_code = data.get('new_supplier_tax_code')
-            supplier_company = Suppliers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company).first()
-            new_receiver_tax_code = data.get('new_receiver_tax_code')
-            receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company).first()
-            product_data = {
-                'product': product if new_product_code else product_inflow.product,
-                'supplier_company': supplier_company if new_supplier_tax_code else product_inflow.supplier_company,
-                'receiver_company': receiver_company if new_receiver_tax_code else product_inflow.receiver_company,
-                # ... any other fields you want to use ...
-            }
-            for field in ['date', 'status', 'place_of_use', 'amount', 'barcode']:
-                value = data.get(field)
-                if value is not None and value != '':
-                    product_data[field] = value
-                else:
-                    return JsonResponse({'error': _("The field '{field}' cannot be empty.")}, status=400)
+            # Create a new inflow with updated details
+            new_inflow = ProductInflow.objects.create(
+                date=data['date'],
+                bill_number=data['bill_number'],
+                supplier_company=supplier_company,
+                receiver_company=receiver_company,
+                company=request.user.company,
+                project=request.user.current_project
+            )
 
-            product_data["company"]=request.user.company
-            product_data["project"]=request.user.current_project
-            new_product_inflow = ProductInflow.objects.create(**product_data)
+            # Add items to the new inflow
+            for item_data in data.get('items', []):
+                product = Products.objects.get(product_code=item_data['product_code'], company=request.user.company)
+                ProductInflowItem.objects.create(
+                    product_inflow=new_inflow,
+                    product=product,
+                    barcode=item_data['barcode'],
+                    status=item_data['status'],
+                    place_of_use=item_data['place_of_use'],
+                    amount=item_data['amount'],
+                   
+                )
 
-            # Reassign the images to the new product inflow instance
+            # Reassign the images to the new inflow
             for image in inflow_images:
-                image.product_inflow = new_product_inflow
+                image.product_inflow = new_inflow
                 image.save()
+
+            # Delete the old inflow and its items
+            for item in old_inflow_items:
+                item.delete()
+            old_inflow.delete()
 
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
         except ProductInflow.DoesNotExist:
+            return JsonResponse({'error': _("Product Inflow not found.")}, status=400)
+        except Products.DoesNotExist:
             return JsonResponse({'error': _("Product not found.")}, status=400)
+        except Suppliers.DoesNotExist:
+            return JsonResponse({'error': _("Supplier company not found.")}, status=400)
+        except Consumers.DoesNotExist:
+            return JsonResponse({'error': _("Receiver company not found.")}, status=400)
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
