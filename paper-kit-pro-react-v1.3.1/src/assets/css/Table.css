@@ -513,4 +513,11 @@
   padding-right: 15px; /* To*/
   z-index: 100;
 }
+
+
+.modal-body-scroll {
+  max-height: 500px;  /* You can adjust this value according to your needs */
+  overflow-y: auto;
+}
+
   
