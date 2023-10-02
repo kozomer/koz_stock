@@ -1364,6 +1364,51 @@ class AddProductInflowView(APIView):
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
+class AddProductInflowItemView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get the ProductInflow object for which we are adding an item
+            inflow_id = request.data.get('inflow_id')
+            product_inflow = ProductInflow.objects.get(id=inflow_id)
+
+            # Fetch the details of the item
+            product_code = request.data.get('product_code')
+            barcode = request.data.get('barcode')
+            status = request.data.get('status')
+            place_of_use = request.data.get('place_of_use')
+            amount = request.data.get('amount')
+
+            # Get the associated product using the product_code
+            product = Products.objects.get(product_code=product_code, company=request.user.company)
+
+            # Create the ProductInflowItem (represents an individual product in the bill)
+            ProductInflowItem.objects.create(
+                inflow=product_inflow,
+                product=product,
+                barcode=barcode,
+                status=status,
+                place_of_use=place_of_use,
+                amount=amount
+            )
+
+            return JsonResponse({'message': _('ProductInflowItem added successfully')}, status=201)
+
+        except ProductInflow.DoesNotExist:
+            return JsonResponse({'error': _('ProductInflow with the provided ID does not exist.')}, status=400)
+        except Products.DoesNotExist:
+            return JsonResponse({'error': _('Product with the provided product code does not exist.')}, status=400)
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+
 class ProductInflowView(APIView):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
@@ -1442,10 +1487,9 @@ class EditProductInflowView(APIView):
             data = request.data
             inflow_id = data.get('inflow_id')
 
-            # Get the old inflow and its associated items and images
+            # Get the old inflow and its associated images
             old_inflow = ProductInflow.objects.get(id=inflow_id)
             inflow_images = list(old_inflow.images.all())
-            old_inflow_items = list(old_inflow.items.all())
 
             # Fetch supplier and receiver companies
             supplier_company = Suppliers.objects.get(tax_code=data['supplier_tax_code'], company=request.user.company)
@@ -1461,39 +1505,63 @@ class EditProductInflowView(APIView):
                 project=request.user.current_project
             )
 
-            # Add items to the new inflow
-            for item_data in data.get('items', []):
-                product = Products.objects.get(product_code=item_data['product_code'], company=request.user.company)
-                ProductInflowItem.objects.create(
-                    product_inflow=new_inflow,
-                    product=product,
-                    barcode=item_data['barcode'],
-                    status=item_data['status'],
-                    place_of_use=item_data['place_of_use'],
-                    amount=item_data['amount'],
-                   
-                )
-
             # Reassign the images to the new inflow
             for image in inflow_images:
                 image.product_inflow = new_inflow
                 image.save()
 
-            # Delete the old inflow and its items
-            for item in old_inflow_items:
-                item.delete()
+            # Delete the old inflow
             old_inflow.delete()
 
-            return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
+            return JsonResponse({'message': _("Product Inflow changes have been successfully saved.")}, status=200)
 
         except ProductInflow.DoesNotExist:
             return JsonResponse({'error': _("Product Inflow not found.")}, status=400)
-        except Products.DoesNotExist:
-            return JsonResponse({'error': _("Product not found.")}, status=400)
         except Suppliers.DoesNotExist:
             return JsonResponse({'error': _("Supplier company not found.")}, status=400)
         except Consumers.DoesNotExist:
             return JsonResponse({'error': _("Receiver company not found.")}, status=400)
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
+
+class EditProductInflowItemView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            data = request.data
+            item_id = data.get('item_id')
+            
+            # Get the old inflow item
+            old_item = ProductInflowItem.objects.get(id=item_id)
+
+            # Create a new item with updated details
+            product = Products.objects.get(product_code=data['product_code'], company=request.user.company)
+            new_item = ProductInflowItem.objects.create(
+                product_inflow=old_item.product_inflow,
+                product=product,
+                barcode=data['barcode'],
+                status=data['status'],
+                place_of_use=data['place_of_use'],
+                amount=data['amount']
+            )
+
+            # Delete the old inflow item
+            old_item.delete()
+
+            return JsonResponse({'message': _("Product Inflow Item changes have been successfully saved.")}, status=200)
+
+        except ProductInflowItem.DoesNotExist:
+            return JsonResponse({'error': _("Product Inflow Item not found.")}, status=400)
+        except Products.DoesNotExist:
+            return JsonResponse({'error': _("Product not found.")}, status=400)
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
@@ -1535,6 +1603,32 @@ class DeleteProductInflowView(APIView):
             return JsonResponse({'error': str(e)}, status=500)
 
         return JsonResponse({'message': _('Product inflow object has been successfully deleted.')}, status=200)
+
+class DeleteProductInflowItemView(APIView):
+    permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
+    authentication_classes = (JWTAuthentication,)
+
+    def handle_exception(self, exc):
+        if isinstance(exc, (NotAuthenticated, PermissionDenied)):
+            return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
+        return super().handle_exception(exc)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            # Get the ProductInflowItem object that needs to be deleted
+            item_id = request.data.get('item_id')
+            product_inflow_item = ProductInflowItem.objects.get(id=item_id)
+            
+            # Delete the ProductInflowItem
+            product_inflow_item.delete()
+
+            return JsonResponse({'message': _('ProductInflowItem deleted successfully')}, status=200)
+
+        except ProductInflowItem.DoesNotExist:
+            return JsonResponse({'error': _('ProductInflowItem with the provided ID does not exist.')}, status=400)
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
 
 class AddImageView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaffOrStockStaff)
