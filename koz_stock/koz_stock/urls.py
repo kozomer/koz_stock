@@ -17,6 +17,7 @@ from django.contrib import admin
 from django.urls import path
 from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProductsView, AddProductsView,
                                     DeleteProductsView, AddProductInflowView, ProductInflowView, EditProductInflowView, DeleteProductInflowView,
+                                    AddProductInflowItemView, EditProductInflowItemView, DeleteProductInflowItemView,
                                     StockView,  AddProductOutflowView, ProductOutflowView, EditProductOutflowView, DeleteProductOutflowView,
                                     AccountingView, EditAccountingView, CollapsedUserView, UserCardView, DeleteUserView,  EditUserView,
                                     SetCurrentProjectView, GetProjectsView, CreateProjectView,
