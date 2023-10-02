@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, CardHeader, CardBody, CardTitle, Row, Col, Form, FormGroup, Label, CardFooter, Input } from 'reactstrap';
+import { Button, Card, CardHeader,ListGroup, CardBody, CardTitle, Row, Col, Form, FormGroup, Label, CardFooter, Input } from 'reactstrap';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
 import ReactBSAlert from "react-bootstrap-sweetalert";
@@ -7,6 +7,10 @@ import localforage from 'localforage';
 import { FaFileUpload } from 'react-icons/fa';
 import Modal from 'react-bootstrap/Modal';
 import Select from 'react-select';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
+
 
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
@@ -28,6 +32,7 @@ const DataTable = () => {
   const [productData, setProductData] = useState(null);
   const [id, setId] = useState('');
   const [date, setDate] = useState('');
+  const [billNo, setBillNo] = useState('');
   const [productCode, setProductCode] = useState('');
   const [barcode, setBarcode] = useState('');
   const [providerCompanyTaxCode, setProviderCompanyTaxCode] = useState('');
@@ -48,6 +53,18 @@ const DataTable = () => {
   const [currentFiles, setCurrentFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
+
+
+  const [rows, setRows] = useState([{}]);
+
+  const [show, setShow] = useState(false);
+const [modalProducts, setModalProducts] = useState([]);
+
+const handleClose = () => setShow(false);
+const handleShow = (products) => {
+    setModalProducts(products);
+    setShow(true);
+};
 
 
   React.useEffect(() => {
@@ -77,6 +94,26 @@ const DataTable = () => {
     }
     fetchData();
   }, [dataChanged, renderEdit]);
+
+
+  
+  const handleAddRow = () => {
+    setRows([...rows, {}]); // Add an empty row to the rows state
+  };
+
+  const handleRemoveRow = (index) => {
+    const newRows = [...rows];
+    newRows.splice(index, 1);
+    setRows(newRows);
+  };
+
+
+  const handleInputChange = (index, fieldName, value) => {
+    const newRows = [...rows];
+    newRows[index][fieldName] = value;
+    setRows(newRows);
+  };
+  
 
   /*
   useEffect(() => {
@@ -323,8 +360,9 @@ const DataTable = () => {
     if (productData) {
       console.log(productData[4])
       setId(productData[0]);
-      setDate(productData[1]);
-      setProductCode(productData[2]);
+      setBillNo(productData[1])
+      setDate(productData[2]);
+      setProductCode(productData[3]);
       
       setProviderCompanyTaxCode(String(productData[4]));
 
@@ -452,16 +490,23 @@ const DataTable = () => {
     const formData = new FormData();
 
     formData.append('date', date);
-    formData.append('product_code', productCode);
-    formData.append('barcode', barcode);
+    formData.append('bill_number',billNo)
     formData.append('provider_company_tax_code', providerCompanyTaxCode);
     formData.append('receiver_company_tax_code', recieverCompanyTaxCode);
-    formData.append('status', status);
-    formData.append('place_of_use', placeOfUse);
-    formData.append('amount', amount);
+  
+
+    rows.forEach(row => {
+      formData.append('products', JSON.stringify({
+          product_code: row.productCode,
+          barcode: row.barcode,
+          status: row.status,
+          place_of_use: row.placeOfUse,
+          amount: row.amount
+      }));
+  });
   
     // Append all the uploaded files
-    console.log(uploadedFiles);
+    console.log(formData);
     for (let i = 0; i < uploadedFiles.length; i++) {
       formData.append('images', uploadedFiles[i]);
     }
@@ -723,128 +768,138 @@ const DataTable = () => {
           >
             {/* Pop Up */}
             {showPopup && (
-              <div className="popup">
+              <div className="popup-inflow">
                 <Card>
                   <CardHeader>
                     <CardTitle tag="h4">Ambar Giriş Ekle</CardTitle>
                   </CardHeader>
                   <CardBody>
-                    <Form onSubmit={handleAdd}>
-                      <div>
-                        <div className="form-group-col">
+        <Form onSubmit={handleAdd}>
+          {/* General details */}
+          <div className="form-general">
 
+          <label>İrsaliye No</label>
+            <FormGroup>
+              <Input
+                name="bill_number"
+                type="text"
+                value={billNo}
+                onChange={(e) => setBillNo(e.target.value)}
+              />
+            </FormGroup>
+            <label>Tarih</label>
+            <FormGroup>
+              <Input
+                name="date"
+                type="text"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
+            </FormGroup>
+            <label>Alıcı Vergi No</label>
+            <FormGroup>
+              <Select
+                name="receiver_tax_code"
+                options={consumerOptions}
+                onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+              />
+            </FormGroup>
+            <label>Tedarikçi Vergi No</label>
+            <FormGroup>
+              <Select
+                name="provider_tax_code"
+                options={supplierOptions}
+                onChange={(selectedOption) => setProviderCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+              />
+            </FormGroup>
+            {/* Photo upload section */}
+            <div className="photo-upload-section">
+              <input 
+                type="file" 
+                onChange={instantUploadFileChange}
+                multiple 
+              />
+              {uploadedFiles.length > 0 && (
+                <p>
+                  {uploadedFiles.length} files selected for upload
+                </p>
+              )}
+            </div>
+            <div className="uploaded-files-section">
+              <ul>
+                {uploadedFileUrls.map((name, index) => (
+                  <li key={index}>
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
 
-                          <label>Tarih</label>
-                          <FormGroup>
-                            <Input
-                              name="date"
-                              type="text"
-                              defaultValue={date}
-                              onChange={(e) => setDate(e.target.value)}
-                            />
-                          </FormGroup>
+          {/* Dynamic product rows */}
+          {rows.map((row, index) => (
+  <div key={index} className="dynamic-row">
 
-                          <label>Malzeme Kodu</label>
-      <FormGroup>
-        <Select
-          name="product_code"
-          
-          options={productOptions}
-          onChange={(selectedOption) => setProductCode(selectedOption.value)}
-        />
-      </FormGroup>
-
-      <label>Alıcı Vergi No</label>
-      <FormGroup>
+    <hr className="row-separator"/> {/* Horizontal separator line */}
+    <h5 className="row-subheader">{`Product ${index + 1}`}</h5> {/* Subheader indicating product number */}
+    
+    <label>Malzeme Kodu</label>
+    <FormGroup>
       <Select
-  name="receiver_tax_code"
-  
-  options={consumerOptions}
-  onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
-/>
-      </FormGroup>
-                         
+        name="product_code"
+        options={productOptions}
+        value={productOptions.find(option => option.value === row.productCode)}
+        onChange={(selectedOption) => handleInputChange(index, 'productCode', selectedOption.value)}
+      />
+    </FormGroup>
 
-                          <label>Tedarikçi Vergi No</label>
-                          <FormGroup>
-                            <Select
-                              name="provider_tax_code"
+    <label>Miktar</label>
+    <FormGroup>
+      <Input
+        type="text"
+        value={row.amount || ''}
+        onChange={(e) => handleInputChange(index, 'amount', e.target.value)}
+      />
+    </FormGroup>
 
-                              options={supplierOptions}
-                              onChange={(selectedOption) => setProviderCompanyTaxCode(selectedOption ? selectedOption.value : '')}
-                            />
-                          </FormGroup>
+    <label>Barkod</label>
+    <FormGroup>
+      <Input
+        type="text"
+        value={row.barcode || ''}
+        onChange={(e) => handleInputChange(index, 'barcode', e.target.value)}
+      />
+    </FormGroup>
 
-                        </div>
-                        <div className="form-group-col">
-                     
-                        <label>Barkod</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              defaultValue={barcode}
-                              onChange={(e) => setBarcode(e.target.value)}
-                            />
-                          </FormGroup>
+    <label>Durum</label>
+    <FormGroup>
+      <Input
+        type="text"
+        value={row.status || ''}
+        onChange={(e) => handleInputChange(index, 'status', e.target.value)}
+      />
+    </FormGroup>
 
-                          <label>Durum</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              defaultValue={status}
-                              onChange={(e) => setStatus(e.target.value)}
-                            />
-                          </FormGroup>
+    <label>Kullanım Yeri</label>
+    <FormGroup>
+      <Input
+        type="text"
+        value={row.placeOfUse || ''}
+        onChange={(e) => handleInputChange(index, 'placeOfUse', e.target.value)}
+      />
+    </FormGroup>
 
-                          <label>Kullanım Yeri</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              defaultValue={placeOfUse}
-                              onChange={(e) => setPlaceOfUse(e.target.value)}
-                            />
-                          </FormGroup>
-
-                          <label>Miktar</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              defaultValue={amount}
-                              onChange={(e) => setAmount(e.target.value)}
-                            />
-                          </FormGroup>
-                        </div>
-
-
-                        
-{/* Photo upload section */}
-<div className="photo-upload-section">
-  <input 
-    type="file" 
-    onChange={instantUploadFileChange}
-    multiple 
-  />
-  {uploadedFiles.length > 0 && (
-    <p>
-      {uploadedFiles.length} files selected for upload
-    </p>
-  )}
-</div>
-
-<div className="uploaded-files-section">
-  <ul>
-    {uploadedFileUrls.map((name, index) => (
-      <li key={index}>
-        {name} {/* Displaying the file name directly */}
-      </li>
-    ))}
-  </ul>
-</div>
-
-                      </div>
-
-                    </Form>
-                  </CardBody>
+              {/* ... other product inputs like barcode, amount, etc. ... */}
+              <button type="button" className="icon-button" onClick={() => handleRemoveRow(index)}>
+                <FontAwesomeIcon icon={faMinus} />
+              </button>
+            </div>
+          ))}
+          <button type="button" className="icon-button" onClick={handleAddRow}>
+            <FontAwesomeIcon icon={faPlus} />
+          </button>
+        </Form>
+      </CardBody>
                   <CardFooter>
                     <Button className="btn-round" color="success" type="submit" onClick={handleAdd}>
                       Onayla
@@ -1023,28 +1078,30 @@ const DataTable = () => {
               <CardBody >
 
                 <ReactTable
-                  data={dataTable.map((row, index) => ({
-                    id: row[0],
-                    date: row[1],
-                    product_code: row[2],
-                    barcode: row[3],
-                    supplier_company_tax_code: row[4],
-                    supplier_company_name: row[5],
-                    receiver_company_tax_code: row[6],
-                    receiver_company_name: row[7],
-                    status: row[8],
-                    place_of_use: row[9],
-                    group: row[10],
-                    subgroup: row[11],
-                    brand: row[12],
-                    serial_number: row[13],
-                    model: row[14],
-                    description: row[15],
-                    unit: row[16],
-                    amount: row[17],
-                    uploaded_files: row[18],  // This line is added
-
-
+              data={dataTable.map(row => ({
+                id: row.id,
+                bill_number:row.bill_number,
+                date: row.date,
+                items: row.items.map(item => ({
+                  product_code: item.product.product_code,
+                  barcode: item.barcode,
+                  status: item.status,
+                  place_of_use: item.place_of_use,
+                  group_name: item.product.group.group_name,
+                  subgroup_name: item.product.subgroup.subgroup_name,
+                  brand: item.product.brand,
+                  serial_number: item.product.serial_number,
+                  model: item.product.model,
+                  description: item.product.description,
+                  unit: item.product.unit,
+                  amount: item.amount
+                })),
+                images: row.images,
+                supplier_company_tax_code: row.supplier_company_tax_code,
+                supplier_company_name: row.supplier_company_name,
+                receiver_company_tax_code: row.receiver_company_tax_code,
+                receiver_company_name: row.receiver_company_name,
+             
                     actions: (
                       <div className='actions-left'>
 
@@ -1126,107 +1183,79 @@ const DataTable = () => {
                   }))}
                   columns={[
                     {
-                      Header: 'No',
-                      accessor: 'id'
-                    },
-                    {
-                      Header: 'Tarih',
+                      Header: 'Date',
                       accessor: 'date'
                     },
                     {
-                      Header: 'Malzeme Kodu',
-                      accessor: 'product_code'
+                      Header: 'ID',
+                      accessor: 'id'
                     },
                     {
-                      Header: 'Barkod',
-                      accessor: 'barcode'
+                      Header: 'Bill Number',
+                      accessor: 'bill_number'
                     },
                     {
-                      Header: 'Tedarikçi Vergi No',
-                      accessor: 'supplier_company_tax_code'
-                    },
-                    {
-                      Header: 'Tedarikçi Adı',
+                      Header: 'Supplier Company',
                       accessor: 'supplier_company_name'
                     },
                     {
-                      Header: 'Alıcı Vergi No',
-                      accessor: 'receiver_company_tax_code'
+                      Header: 'Supplier Tax Code',
+                      accessor: 'supplier_company_tax_code'
                     },
                     {
-                      Header: 'Alıcı Adı',
+                      Header: 'Receiver Company',
                       accessor: 'receiver_company_name'
                     },
                     {
-                      Header: 'Durum',
-                      accessor: 'status'
+                      Header: 'Receiver Tax Code',
+                      accessor: 'receiver_company_tax_code'
                     },
                     {
-                      Header: 'Kullanım Yeri',
-                      accessor: 'place_of_use'
-                    },
-                    {
-                      Header: 'Grup',
-                      accessor: 'group'
-                    },
-                    {
-                      Header: 'Alt Grup',
-                      accessor: 'subgroup'
-                    },
-                    {
-                      Header: 'Marka',
-                      accessor: 'brand'
-                    },
-                    {
-                      Header: 'Seri Numarası',
-                      accessor: 'serial_number'
-                    },
-                    {
-                      Header: 'Model',
-                      accessor: 'model'
-                    },
-                    {
-                      Header: 'Açıklama',
-                      accessor: 'description'
-                    },
-                    {
-                      Header: 'Birim',
-                      accessor: 'unit'
-                    },
-                    {
-                      Header: 'Miktar',
-                      accessor: 'amount'
-                    },
+                      Header: 'Products',
+                      id: 'products',
+                      accessor: d => d.items.length,
+                      Cell: ({ row: { original } }) => {
+                          return (
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                  <i className="fa fa-cube" title="View Products" style={{ cursor: 'pointer', marginRight: '5px' }}
+                                      onClick={() => handleShow(original.items)} />
+                                  <span>{original.items.length}</span>
+                              </div>
+                          );
+                      }
+                  },
 
+                
+                  
+                    
                     {
                       Header: 'Uploaded Files',
                       id: 'uploaded_files',
-                      Cell: ({row: {original}}) => {
-                        const numOfFiles = original.uploaded_files.length;
-                    
+                      accessor: 'images',
+                      Cell: ({ value, row: { original } }) => {
+                        const numOfFiles = value.length;
                         return (
                           <Button 
                             color="link" 
-                            onClick={() => handleShowModal(original.uploaded_files,original.id)}
+                            onClick={() => handleShowModal(value, original.id)}
                             title="Show Uploaded Files"
                           >
-        <i className="fa fa-picture-o" /> 
+                            <i className="fa fa-picture-o" /> 
                             <span>{numOfFiles}</span>
                           </Button>
                         );
-                      },
+                      }
                     },
-                    
-                    
 
                     {
                       Header: 'İşlem',
                       accessor: 'actions',
                       sortable: false,
                       filterable: false,
-
-
-                    }
+  
+  
+                    },
+                    
                   ]}
                   defaultPageSize={10}
                   className='-striped -highlight'
@@ -1277,7 +1306,25 @@ const DataTable = () => {
 )}
 
 
-
+<Modal show={show} onHide={handleClose}>
+    <Modal.Header closeButton>
+        <Modal.Title>Products List</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+        <ListGroup>
+            {modalProducts.map((product, index) => (
+                <ListGroup.Item key={index}>
+                    {product.product_code} - {product.description}
+                </ListGroup.Item>
+            ))}
+        </ListGroup>
+    </Modal.Body>
+    <Modal.Footer>
+        <Button variant="secondary" onClick={handleClose}>
+            Close
+        </Button>
+    </Modal.Footer>
+</Modal>
 
 
     </>

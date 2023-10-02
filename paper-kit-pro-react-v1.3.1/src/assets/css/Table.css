@@ -472,3 +472,45 @@
   100% { left: 50%; }
 }
 
+/*Add icons for ProductInFlow Product Addition */
+.icon-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: black;  /* Color of the icons */
+  font-size: 20px;  /* Size of the icons */
+  margin: 0 5px;  /* Spacing around the icons */
+}
+
+.icon-button:focus {
+  outline: none;
+}
+
+
+.row-separator {
+  width: 100%;
+  border: 0;
+  border-top: 1px solid #e0e0e0; /* Adjust color as needed */
+  margin: 15px 0; /* Adjust margin as needed */
+}
+
+.row-subheader {
+  font-weight: bold;
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+
+/* PopUp */
+.popup-inflow {
+  width:500px;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-height: 90vh; /* Sets the max height to 90% of the viewport height. Adjust as needed. */
+  overflow-y: auto; /* Display vertical scrollbar if needed */
+  padding-right: 15px; /* To*/
+  z-index: 100;
+}
+  
