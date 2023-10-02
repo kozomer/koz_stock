@@ -68,10 +68,10 @@ const startEditProduct = (index) => {
 
 const saveEditedProduct = async (index) => {
   const productToEdit = modalProducts[index];
-
+ console.log(productToEdit)
   // Construct the payload to send to the API
   const updatedData = {
-      item_id: productToEdit.id,  // Assuming each product has a unique id
+      item_id: productToEdit.item_id,  // Assuming each product has a unique id
       product_code: productToEdit.product_code,
       barcode: productToEdit.barcode,
       status: productToEdit.status,
@@ -137,6 +137,7 @@ const addProduct = () => {
 
 const handleClose = () => setShow(false);
 const handleShow = (products) => {
+  console.log(products)
     setModalProducts(products);
     setShow(true);
 };
@@ -1160,6 +1161,7 @@ const handleShow = (products) => {
                 bill_number:row.bill_number,
                 date: row.date,
                 items: row.items.map(item => ({
+                  item_id:item.id,
                   product_code: item.product_code,
                   barcode: item.barcode,
                   status: item.status,

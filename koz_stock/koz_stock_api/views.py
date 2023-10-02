@@ -1546,7 +1546,7 @@ class EditProductInflowItemView(APIView):
             # Create a new item with updated details
             product = Products.objects.get(product_code=data['product_code'], company=request.user.company)
             new_item = ProductInflowItem.objects.create(
-                product_inflow=old_item.product_inflow,
+                inflow=old_item.inflow,
                 product=product,
                 barcode=data['barcode'],
                 status=data['status'],
