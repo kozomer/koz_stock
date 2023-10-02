@@ -217,7 +217,7 @@ class Accounting(models.Model, DirtyFieldsMixin):
         self.price_without_tax = float(self.price_without_tax)
         self.price_with_tevkifat = float(self.price_with_tevkifat)
         self.price_total = float(self.price_total)
-        self.product_inflow.amount = float(self.product_inflow.amount)
+        #!self.product_inflow.amount = float(self.product_inflow.amount)
         if self.discount_rate and float(self.discount_rate) != 0:
             discount = self.discount_rate * self.unit_price * self.product_inflow.amount
         else:
