@@ -9,7 +9,7 @@ import Modal from 'react-bootstrap/Modal';
 import Select from 'react-select';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faMinus } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faMinus, faEdit, faTrash, faSave, faTimes} from '@fortawesome/free-solid-svg-icons';
 
 
 const DataTable = () => {
@@ -59,6 +59,41 @@ const DataTable = () => {
 
   const [show, setShow] = useState(false);
 const [modalProducts, setModalProducts] = useState([]);
+const [isEditingIndex, setIsEditingIndex] = useState(null);
+
+
+const startEditProduct = (index) => {
+  setIsEditingIndex(index);
+};
+
+const saveEditedProduct = (index) => {
+  // Currently, this simply closes the editor.
+  // If needed, you can add more logic here, such as sending the changes to the backend.
+  setIsEditingIndex(null);
+};
+
+const handleProductChange = (index, field, value) => {
+  const updatedProducts = [...modalProducts];
+  updatedProducts[index][field] = value;
+  setModalProducts(updatedProducts);
+};
+
+
+const deleteProduct = (index) => {
+  const updatedProducts = [...modalProducts];
+  updatedProducts.splice(index, 1);
+  setModalProducts(updatedProducts);
+};
+
+const addProduct = () => {
+  const newProduct = {
+      // add default or empty values for a new product
+  };
+  setModalProducts(prevProducts => [...prevProducts, newProduct]);
+  setIsEditingIndex(modalProducts.length); // To edit the last product (the newly added one).
+};
+
+
 
 const handleClose = () => setShow(false);
 const handleShow = (products) => {
@@ -486,6 +521,7 @@ const handleShow = (products) => {
   const handleAdd = async (event) => {
     const access_token = await localforage.getItem('access_token');
     event.preventDefault();
+    let productsArray = [];
 
     const formData = new FormData();
 
@@ -496,15 +532,16 @@ const handleShow = (products) => {
   
 
     rows.forEach(row => {
-      formData.append('products', JSON.stringify({
+      productsArray.push({
           product_code: row.productCode,
           barcode: row.barcode,
           status: row.status,
           place_of_use: row.placeOfUse,
           amount: row.amount
-      }));
+      });
   });
-  
+
+  formData.append('products', JSON.stringify(productsArray));
     // Append all the uploaded files
     console.log(formData);
     for (let i = 0; i < uploadedFiles.length; i++) {
@@ -1083,17 +1120,17 @@ const handleShow = (products) => {
                 bill_number:row.bill_number,
                 date: row.date,
                 items: row.items.map(item => ({
-                  product_code: item.product.product_code,
+                  product_code: item.product_code,
                   barcode: item.barcode,
                   status: item.status,
                   place_of_use: item.place_of_use,
-                  group_name: item.product.group.group_name,
-                  subgroup_name: item.product.subgroup.subgroup_name,
-                  brand: item.product.brand,
-                  serial_number: item.product.serial_number,
-                  model: item.product.model,
-                  description: item.product.description,
-                  unit: item.product.unit,
+                  group_name: item.group_name,
+                  subgroup_name: item.subgroup_name,
+                  brand: item.brand,
+                  serial_number: item.serial_number,
+                  model: item.model,
+                  description: item.description,
+                  unit: item.unit,
                   amount: item.amount
                 })),
                 images: row.images,
@@ -1306,25 +1343,124 @@ const handleShow = (products) => {
 )}
 
 
-<Modal show={show} onHide={handleClose}>
-    <Modal.Header closeButton>
-        <Modal.Title>Products List</Modal.Title>
-    </Modal.Header>
-    <Modal.Body>
-        <ListGroup>
-            {modalProducts.map((product, index) => (
-                <ListGroup.Item key={index}>
-                    {product.product_code} - {product.description}
-                </ListGroup.Item>
-            ))}
-        </ListGroup>
-    </Modal.Body>
-    <Modal.Footer>
-        <Button variant="secondary" onClick={handleClose}>
-            Close
-        </Button>
-    </Modal.Footer>
-</Modal>
+{show && (
+  <div className="modal show d-block custom-modal" tabindex="-1">
+    <div className="modal-dialog">
+      <div className="modal-content custom-modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Products List</h5>
+          <button type="button" className="close" onClick={handleClose}>
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div className="modal-body modal-body-scroll">
+    {modalProducts.map((product, index) => (
+        <div key={index} className="product-item">
+            {isEditingIndex === index ? (
+                // Editable inputs for the current product
+                <div>
+                    <label>Malzeme Kodu</label>
+                    <FormGroup>
+                        <Select
+                            name="product_code"
+                            options={productOptions}
+                            value={productOptions.find(option => option.value === product.product_code)}
+                            onChange={(selectedOption) => handleProductChange(index, 'product_code', selectedOption.value)}
+                        />
+                    </FormGroup>
+
+                    <label>Miktar</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.amount || ''}
+                            onChange={(e) => handleProductChange(index, 'amount', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    <label>Barkod</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.barcode || ''}
+                            onChange={(e) => handleProductChange(index, 'barcode', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    <label>Durum</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.status || ''}
+                            onChange={(e) => handleProductChange(index, 'status', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    <label>Kullanım Yeri</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.place_of_use || ''}
+                            onChange={(e) => handleProductChange(index, 'place_of_use', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    {/* ... you can continue with other product inputs in a similar fashion ... */}
+
+                    <button type="button" className="icon-button" onClick={() => saveEditedProduct(index)}>
+                        <FontAwesomeIcon icon={faSave} />
+                    </button>
+                    <button type="button" className="icon-button" onClick={() => setIsEditingIndex(null)}>
+                        <FontAwesomeIcon icon={faTimes} /> {/* Cancel editing icon */}
+                    </button>
+                </div>
+            ) : (
+                // Display mode for the current product
+                <div>
+                    <h5 className="product-title">
+                        Product {index + 1}
+                        <button type="button" className="icon-button" onClick={() => setIsEditingIndex(index)}>
+                            <FontAwesomeIcon icon={faEdit} />
+                        </button>
+                        <button type="button" className="icon-button" onClick={() => deleteProduct(index)}>
+                            <FontAwesomeIcon icon={faTrash} />
+                        </button>
+                    </h5>
+                    <strong>Product Code:</strong> {product.product_code}<br />
+                    <strong>Description:</strong> {product.description}<br />
+                    <strong>Amount:</strong> {product.amount}<br />
+                    <strong>Barcode:</strong> {product.barcode}<br />
+                    <strong>Brand:</strong> {product.brand}<br />
+                    <strong>Model:</strong> {product.model}<br />
+                    <strong>Place of Use:</strong> {product.place_of_use}<br />
+                    <strong>Serial Number:</strong> {product.serial_number}<br />
+                    <strong>Status:</strong> {product.status}<br />
+                    <strong>Group Name:</strong> {product.group_name}<br />
+                    <strong>Subgroup Name:</strong> {product.subgroup_name}<br />
+                    <strong>Unit:</strong> {product.unit}<br />
+                </div>
+            )}
+            {(index !== modalProducts.length - 1) && <hr />}
+        </div>
+    ))}
+    <button type="button" className="icon-button" onClick={addProduct}>
+        <FontAwesomeIcon icon={faPlus} />
+    </button>
+</div>
+
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={handleClose}>Close</button>
+          <button type="button" className="icon-button" onClick={addProduct}>
+            <FontAwesomeIcon icon={faPlus} /> {/* Add new product icon */}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
+
+
 
 
     </>

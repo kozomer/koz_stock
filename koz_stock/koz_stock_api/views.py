@@ -1307,17 +1307,10 @@ class AddProductInflowView(APIView):
             )
 
             # Loop through the list of products
-            products_data_str_list = request.data.get('products')  # Assuming products are sent as a list of dictionaries
-
-            products_data = []
-            for prod_str in products_data_str_list:
-                try:
-                    prod_data = json.loads(prod_str)
-                    products_data.append(prod_data)
-                except json.JSONDecodeError:
-                    return JsonResponse({'error': f'Failed to decode product data: {prod_str}'}, status=400)
-            for product_data in products_data:
-                product_data = json.loads(product_data)
+            products = json.loads(request.POST.get('products'))  # Assuming products are sent as a list of dictionaries
+            print(products)
+            for product_data in products:
+                
                 product_code = product_data.get('product_code')
                 barcode = product_data.get('barcode')
                 status = product_data.get('status')
@@ -1934,13 +1927,13 @@ class CreateProductOutflowReceiptView(APIView):
 def update_stock_inflow(sender, instance, created, **kwargs):
     if created:  # Only handle inflow for newly created items
         try:
-            stock = Stock.objects.get(product=instance.product, company=instance.product_inflow.company, project=instance.product_inflow.project)
+            stock = Stock.objects.get(product=instance.product, company=instance.inflow.company, project=instance.inflow.project)
             stock.inflow += float(instance.amount)
             stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
             stock.save()
 
-            instance.product_inflow.supplier_company.products.add(instance.product)
-            instance.product_inflow.receiver_company.products.add(instance.product)
+            instance.inflow.supplier_company.products.add(instance.product)
+            instance.inflow.receiver_company.products.add(instance.product)
         except Stock.DoesNotExist:
             return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
@@ -1948,14 +1941,14 @@ def update_stock_inflow(sender, instance, created, **kwargs):
 @receiver(pre_delete, sender=ProductInflowItem)
 def update_stock_inflow_on_delete(sender, instance, **kwargs):
     try:
-        stock = Stock.objects.get(product=instance.product, company=instance.product_inflow.company, project=instance.product_inflow.project)
+        stock = Stock.objects.get(product=instance.product, company=instance.inflow.company, project=instance.inflow.project)
         stock.inflow -= instance.amount
         stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
         stock.save()
 
         # If product was added to the supplier, remove it
-        instance.product_inflow.supplier_company.products.remove(instance.product)
-        instance.product_inflow.receiver_company.products.remove(instance.product)
+        instance.inflow.supplier_company.products.remove(instance.product)
+        instance.inflow.receiver_company.products.remove(instance.product)
     except Stock.DoesNotExist:
         return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
