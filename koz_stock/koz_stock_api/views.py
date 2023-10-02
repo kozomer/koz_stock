@@ -1435,6 +1435,7 @@ class ProductInflowView(APIView):
             for pf in product_inflows:
                 items = [
                     {
+                        'id': item.id,
                         'product_code': item.product.product_code,
                         'barcode': item.barcode,
                         'status': item.status,
