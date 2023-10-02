@@ -1920,31 +1920,32 @@ class CreateProductOutflowReceiptView(APIView):
 #         )
 
 
-@receiver(post_save, sender=ProductInflow)
+@receiver(post_save, sender=ProductInflowItem)
 def update_stock_inflow(sender, instance, created, **kwargs):
-    try:
-        stock = Stock.objects.get(product=instance.product, company=instance.company, project=instance.project)
-        stock.inflow += float(instance.amount)
-        stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
-        stock.save()
-        instance.supplier_company.products.add(instance.product)
-        instance.receiver_company.products.add(instance.product)
-    except Stock.DoesNotExist:
-        return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
+    if created:  # Only handle inflow for newly created items
+        try:
+            stock = Stock.objects.get(product=instance.product, company=instance.product_inflow.company, project=instance.product_inflow.project)
+            stock.inflow += float(instance.amount)
+            stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+            stock.save()
+
+            instance.product_inflow.supplier_company.products.add(instance.product)
+            instance.product_inflow.receiver_company.products.add(instance.product)
+        except Stock.DoesNotExist:
+            return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
-
-@receiver(pre_delete, sender=ProductInflow)
+@receiver(pre_delete, sender=ProductInflowItem)
 def update_stock_inflow_on_delete(sender, instance, **kwargs):
     try:
-        stock = Stock.objects.get(product=instance.product, company=instance.company, project=instance.project)
+        stock = Stock.objects.get(product=instance.product, company=instance.product_inflow.company, project=instance.product_inflow.project)
         stock.inflow -= instance.amount
         stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
         stock.save()
 
         # If product was added to the supplier, remove it
-        instance.supplier_company.products.remove(instance.product)
-        instance.receiver_company.products.remove(instance.product)
+        instance.product_inflow.supplier_company.products.remove(instance.product)
+        instance.product_inflow.receiver_company.products.remove(instance.product)
     except Stock.DoesNotExist:
         return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
