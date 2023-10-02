@@ -224,13 +224,13 @@ class Accounting(models.Model, DirtyFieldsMixin):
             discount = 0
         if self.discount_amount and self.discount_amount != 0:
             discount = self.discount_amount
-        tax = (self.tax_rate/100) * (self.unit_price * self.product_inflow.amount - discount)
-        tax_tevkifat = ((self.tax_rate)-((self.tevkifat_rate/100)*self.tax_rate))/100 * (self.unit_price * self.product_inflow.amount - discount)
+#!     tax = (self.tax_rate/100) * (self.unit_price * self.product_inflow.amount - discount)
+#!     tax_tevkifat = ((self.tax_rate)-((self.tevkifat_rate/100)*self.tax_rate))/100 * (self.unit_price * self.product_inflow.amount - discount)
         
-        self.unit_price_without_tax = self.price_without_tax / self.product_inflow.amount
-        self.price_without_tax = (self.unit_price * self.product_inflow.amount) - discount
-        self.price_with_tevkifat = (self.unit_price * self.product_inflow.amount) - discount + tax_tevkifat
-        self.price_total = (self.unit_price * self.product_inflow.amount) - discount + tax
+#!        self.unit_price_without_tax = self.price_without_tax / self.product_inflow.amount
+#!        self.price_without_tax = (self.unit_price * self.product_inflow.amount) - discount
+ #!       self.price_with_tevkifat = (self.unit_price * self.product_inflow.amount) - discount + tax_tevkifat
+ #!       self.price_total = (self.unit_price * self.product_inflow.amount) - discount + tax
         super().save(*args, **kwargs)
 
 
