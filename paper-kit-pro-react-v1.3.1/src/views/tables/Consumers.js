@@ -27,6 +27,9 @@ const DataTable = () => {
   const [name, setName] = useState('');
   const [contactName, setContactName] = useState('');
   const [contactNo, setContactNo] = useState('');
+  const [mail, setMail] = useState('');
+  const [adress, setAdress] = useState('');
+  const [explanation, setExplanation] = useState('');
   const [company, setCompany] = useState(null);
   const [project, setProject] = useState(null);
   const [products, setProducts] = useState(null);
@@ -286,7 +289,9 @@ const DataTable = () => {
       setContactName(productData[3])
      
       setContactNo(productData[4]);
-     
+      setMail(productData[5]);
+      setAdress(productData[6]);
+      setExplanation(productData[7]);
     }
   }, [productData]);
 
@@ -306,7 +311,9 @@ const DataTable = () => {
       contact_name: contactName,
       contact_no:contactNo,
       tax_code:taxCode,
-      
+      mail:mail,
+      adress:adress,
+      explanation:explanation,
     };
   
     fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_consumer/`, {
@@ -356,7 +363,9 @@ const DataTable = () => {
          
           contact_name: contactName,
           contact_no: contactNo,
-         
+          mail:mail,
+          adress:adress,
+          explanation:explanation,
         })
       })
       .then(response => response.json().then(data => ({status: response.status, body: data})))
@@ -474,7 +483,36 @@ const DataTable = () => {
               
                 </div>
 
-                
+                <div className="form-group-col">
+                <label>Mail</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                     
+                      onChange={(e) => setMail(e.target.value)}
+                    />
+                  </FormGroup>
+                  <label>Adres</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                     
+                      onChange={(e) => setAdress(e.target.value)}
+                    />
+                  </FormGroup>
+
+                  <label>Açıklama</label>
+                  <FormGroup>
+                    <Input
+                      type="textarea"  // Change from 'text' to 'textarea'
+                      rows="10"  // Defines the number of visible rows. Adjust as needed.
+                     
+                      onChange={(e) => setExplanation(e.target.value)}
+                    />
+                  </FormGroup>
+
+
+                </div>
               </div>
             </Form>
           </CardBody>
@@ -541,6 +579,37 @@ const DataTable = () => {
                 
                 </div>
 
+
+                <div className="form-group-col">
+                <label>Mail</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      value={mail}
+                      onChange={(e) => setMail(e.target.value)}
+                    />
+                  </FormGroup>
+                  <label>Adres</label>
+                  <FormGroup>
+                    <Input
+                      type="text"
+                      value={adress}
+                      onChange={(e) => setAdress(e.target.value)}
+                    />
+                  </FormGroup>
+
+                  <label>Açıklama</label>
+                  <FormGroup>
+                    <Input
+                       type="textarea"  // Change from 'text' to 'textarea'
+                       rows="10"  // Defines the number of visible rows. Adjust as needed.
+                      value={explanation}
+                      onChange={(e) => setExplanation(e.target.value)}
+                    />
+                  </FormGroup>
+
+
+                </div>
                 
               </div>
             </Form>
@@ -592,7 +661,9 @@ const DataTable = () => {
                     name: row[2],
                     contact_name: row[3],
                     contact_no: row[4],
-                   
+                    mail: row[5],
+                    adress:row[6],
+                    explanation:row[7],
                     
 
                     actions: (
@@ -665,7 +736,18 @@ const DataTable = () => {
                       accessor: 'contact_no',
                     },
                     
-                  
+                    {
+                      Header: 'Mail',
+                      accessor: 'mail',
+                    },
+                    {
+                      Header: 'Adres',
+                      accessor: 'adress',
+                    },
+                    {
+                      Header: 'Açıklama',
+                      accessor: 'explanation',
+                    },
                     {
                       Header: 'İşlem',
                       accessor: 'actions',

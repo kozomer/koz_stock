@@ -53,6 +53,7 @@ const DataTable = () => {
   const [currentFiles, setCurrentFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
+  const [mode, setMode] = useState(null);  // This will store 'edit' or 'add'
 
 
   const [rows, setRows] = useState([{}]);
@@ -68,47 +69,61 @@ const startEditProduct = (index) => {
 
 const saveEditedProduct = async (index) => {
   const productToEdit = modalProducts[index];
- console.log(productToEdit)
-  // Construct the payload to send to the API
-  const updatedData = {
-      item_id: productToEdit.item_id,  // Assuming each product has a unique id
-      product_code: productToEdit.product_code,
-      barcode: productToEdit.barcode,
-      status: productToEdit.status,
-      place_of_use: productToEdit.place_of_use,
-      amount: productToEdit.amount
-      // Add other fields as necessary
-  };
+  let endpoint;
+  let payload;
+  console.log(productToEdit)
+  if (mode === 'edit') {
+      endpoint = `${process.env.REACT_APP_PUBLIC_URL}/edit_product_inflow_item/`;
+      payload = {
+          item_id: productToEdit.item_id,
+          product_code: productToEdit.product_code,
+          barcode: productToEdit.barcode,
+          status: productToEdit.status,
+          place_of_use: productToEdit.place_of_use,
+          amount: productToEdit.amount
+      };
+  } else if (mode === 'add') {
+      endpoint = `${process.env.REACT_APP_PUBLIC_URL}/add_product_inflow_item/`;
+      payload = {
+          inflow_id: id,  // Assuming you have this inflow_id
+          product_code: productToEdit.product_code,
+          barcode: productToEdit.barcode,
+          status: productToEdit.status,
+          place_of_use: productToEdit.place_of_use,
+          amount: productToEdit.amount
+      };
+      console.log(id)
+  } else {
+      // Neither edit nor add mode, return early or handle this case as appropriate
+      return;
+  }
 
   try {
       const access_token = await localforage.getItem('access_token');
 
-      // Make the API call
-      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_inflow_item/`, {
+      const response = await fetch(endpoint, {
           method: "POST",
           headers: {
               "Content-Type": "application/json",
               'Authorization': 'Bearer ' + String(access_token)
           },
-          body: JSON.stringify(updatedData)
+          body: JSON.stringify(payload)
       });
 
       const data = await response.json();
 
-      if (response.status === 200) {
-          console.log("Product edited successfully:", data.message);
-          // Show a success message or any other actions you want
+      if (response.ok) {
+         successUpload(data.message)
       } else {
-          console.error("Failed to edit product:", data.error);
-          // Show an error message to the user
+          errorUpload(data.error)
       }
   } catch (error) {
-      console.error("Error while editing product:", error);
-      // Show an error message to the user
+      console.error("Error while saving product:", error);
   }
 
-  // Close the editor
+  // Close the editor and reset the mode
   setIsEditingIndex(null);
+  setMode(null);
 };
 
 
@@ -119,11 +134,45 @@ const handleProductChange = (index, field, value) => {
 };
 
 
-const deleteProduct = (index) => {
-  const updatedProducts = [...modalProducts];
-  updatedProducts.splice(index, 1);
-  setModalProducts(updatedProducts);
+const deleteProduct = async (index) => {
+  const productToDelete = modalProducts[index];
+
+  // Construct the payload to send to the API
+  const deleteData = {
+      item_id: productToDelete.item_id,  // Assuming each product has a unique id
+  };
+
+  try {
+      const access_token = await localforage.getItem('access_token');
+
+      // Make the API call
+      const response = await fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_product_inflow_item/`, {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              'Authorization': 'Bearer ' + String(access_token)
+          },
+          body: JSON.stringify(deleteData)
+      });
+
+      const data = await response.json();
+
+      if (response.status === 200) {
+          successUpload(data.message)
+          // Remove product from local state after successful deletion from server
+          const updatedProducts = [...modalProducts];
+          updatedProducts.splice(index, 1);
+          setModalProducts(updatedProducts);
+      } else {
+        errorUpload(data.error)
+          // Show an error message to the user
+      }
+  } catch (error) {
+      console.error("Error while deleting product:", error);
+      // Show an error message to the user
+  }
 };
+
 
 const addProduct = () => {
   const newProduct = {
@@ -136,9 +185,10 @@ const addProduct = () => {
 
 
 const handleClose = () => setShow(false);
-const handleShow = (products) => {
-  console.log(products)
+const handleShow = (products, id) => {
+    console.log(id)
     setModalProducts(products);
+    setId(id)
     setShow(true);
 };
 
@@ -1297,7 +1347,7 @@ const handleShow = (products) => {
                           return (
                               <div style={{ display: 'flex', alignItems: 'center' }}>
                                   <i className="fa fa-cube" title="View Products" style={{ cursor: 'pointer', marginRight: '5px' }}
-                                      onClick={() => handleShow(original.items)} />
+                                      onClick={() => handleShow(original.items,original.id)} />
                                   <span>{original.items.length}</span>
                               </div>
                           );
@@ -1461,9 +1511,12 @@ const handleShow = (products) => {
                 <div>
                     <h5 className="product-title">
                         Product {index + 1}
-                        <button type="button" className="icon-button" onClick={() => setIsEditingIndex(index)}>
-                            <FontAwesomeIcon icon={faEdit} />
-                        </button>
+                        <button type="button" className="icon-button" onClick={() => {
+    setIsEditingIndex(index);
+    setMode('edit');
+}}>
+    <FontAwesomeIcon icon={faEdit} />
+</button>
                         <button type="button" className="icon-button" onClick={() => deleteProduct(index)}>
                             <FontAwesomeIcon icon={faTrash} />
                         </button>
@@ -1485,16 +1538,18 @@ const handleShow = (products) => {
             {(index !== modalProducts.length - 1) && <hr />}
         </div>
     ))}
-    <button type="button" className="icon-button" onClick={addProduct}>
-        <FontAwesomeIcon icon={faPlus} />
-    </button>
+   
 </div>
 
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={handleClose}>Close</button>
-          <button type="button" className="icon-button" onClick={addProduct}>
-            <FontAwesomeIcon icon={faPlus} /> {/* Add new product icon */}
-          </button>
+          <button type="button" className="icon-button" onClick={() => {
+    addProduct();
+    setMode('add');
+}}>
+    <FontAwesomeIcon icon={faPlus} />
+</button>
+
         </div>
       </div>
     </div>

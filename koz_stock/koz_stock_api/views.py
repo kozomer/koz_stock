@@ -775,7 +775,7 @@ class SuppliersView(APIView):
     def get(self, request, *args, **kwargs):
         company = request.user.company
         suppliers = Suppliers.objects.filter(company=company)
-        supplier_list = [[s.id, s.tax_code, s.name, s.contact_name, s.mail, s.adress, s.explanation] for s in suppliers]
+        supplier_list = [[s.id, s.tax_code, s.name, s.contact_name, s.contact_no, s.mail, s.adress, s.explanation] for s in suppliers]
         return JsonResponse(supplier_list, safe=False, status=200)
 
 
@@ -1376,6 +1376,7 @@ class AddProductInflowItemView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             # Get the ProductInflow object for which we are adding an item
+            print(request.data)
             inflow_id = request.data.get('inflow_id')
             product_inflow = ProductInflow.objects.get(id=inflow_id)
 
