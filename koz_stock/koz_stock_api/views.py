@@ -3,7 +3,7 @@ import pandas as pd
 from .models import ( Products, ProductInflow, ProductInflowItem, ProductOutflow, Consumers, Suppliers,
                       Stock, Accounting, Project, CustomUser, Company, ProductGroups,
                       SequenceNumber, ProductSubgroups, ProductInflowImage, ProductOutflowImage,
-                      QuantityTakeOff, Building, Section, Place, ElevationOrFloor)
+                      QuantityTakeOff, Building, Section, Place, ElevationOrFloor, AccountingInflow, AccountingItem)
 from django.views import View
 from rest_framework.views import APIView
 from django.http import JsonResponse, HttpResponse
@@ -2202,13 +2202,29 @@ class StockView(APIView):
 # region Accounting
 
 @receiver(post_save, sender=ProductInflow)
-def create_accounting(sender, instance, created, **kwargs):
+def create_accounting_inflow(sender, instance, created, **kwargs):
     if created:
-        Accounting.objects.create(
+        # Create AccountingInflow instance when a new ProductInflow instance is created
+        AccountingInflow.objects.create(
             product_inflow=instance,
-            company=instance.company,
-            project=instance.project,
-            unit_price=0,
+            price_without_tax=0,  # initial values which will be updated by AccountingItem signals
+            unit_price_without_tax=0,
+            price_with_tevkifat=0,
+            price_total=0
+        )
+
+@receiver(post_save, sender=ProductInflowItem)
+def create_accounting_item(sender, instance, created, **kwargs):
+    if created:
+        # Get associated AccountingInflow from ProductInflow
+        accounting_inflow = AccountingInflow.objects.get(product_inflow=instance.inflow)
+        
+        # Create AccountingItem instance when a new ProductInflowItem instance is created
+        item = AccountingItem.objects.create(
+            inflow=accounting_inflow,
+            product_item=instance,
+            # ... add other initial fields if necessary ...
+            unit_price=0,  # default values which will be updated when the item is saved
             discount_rate=0,
             discount_amount=0,
             tax_rate=0,
@@ -2216,38 +2232,90 @@ def create_accounting(sender, instance, created, **kwargs):
             price_without_tax=0,
             unit_price_without_tax=0,
             price_with_tevkifat=0,
-            price_total=0,
+            price_total=0
         )
+        
+        # Saving the AccountingItem will trigger its save() method
+        item.save()
+
+        # After adding a new AccountingItem, update the associated AccountingInflow
+        accounting_inflow.save()
 
 
 
 
 class AccountingView(APIView):
-    permission_classes = (IsAuthenticated,  IsSuperStaffOrAccountingStaff)
+    permission_classes = (IsAuthenticated,)
     authentication_classes = (JWTAuthentication,)
 
     def handle_exception(self, exc):
         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
-
         return super().handle_exception(exc)
 
     def get(self, request, *args, **kwargs):
-        accountings = Accounting.objects.filter(company=request.user.company, project=request.user.current_project)
-        accounting_list = [
-            [ac.id, ac.product_inflow.product.product_code, ac.product_inflow.date, ac.product_inflow.barcode, ac.product_inflow.supplier_company.name, ac.product_inflow.receiver_company.name,
-             ac.product_inflow.status, ac.product_inflow.place_of_use, ac.product_inflow.product.group.group_name, ac.product_inflow.product.subgroup.subgroup_name, ac.product_inflow.product.brand, ac.product_inflow.product.serial_number, 
-             ac.product_inflow.product.model, ac.product_inflow.product.description, ac.product_inflow.product.unit, ac.product_inflow.amount, ac.unit_price, ac.discount_rate, 
-             ac.discount_amount, ac.tax_rate, ac.tevkifat_rate, ac.price_without_tax, ac.unit_price_without_tax, ac.price_with_tevkifat, 
-             ac.price_total] for ac in accountings
-        ]
-        print(accounting_list)
-        return JsonResponse(accounting_list, safe=False, status=200)
+        try:
+            accounting_inflows = AccountingInflow.objects.filter(
+                company=request.user.company,
+                project=request.user.current_project
+            ).prefetch_related(
+                'product_inflow__images',
+                'items',
+                'items__product_item__product',
+                'items__product_item__product__group',
+                'items__product_item__product__subgroup'
+            ).all()
+
+            accounting_inflow_list = []
+            for af in accounting_inflows:
+                items = [
+                    {
+                        'id': item.id,
+                        'product_code': item.product_item.product.product_code,
+                        'barcode': item.product_item.barcode,
+                        'status': item.product_item.status,
+                        'place_of_use': item.product_item.place_of_use,
+                        'group_name': item.product_item.product.group.group_name,
+                        'subgroup_name': item.product_item.product.subgroup.subgroup_name,
+                        'brand': item.product_item.product.brand,
+                        'serial_number': item.product_item.product.serial_number,
+                        'model': item.product_item.product.model,
+                        'description': item.product_item.product.description,
+                        'unit': item.product_item.product.unit,
+                        'amount': item.product_item.amount,
+                        'unit_price': item.unit_price,
+                        'discount_rate': item.discount_rate,
+                        # ... add other accounting fields as necessary ...
+                    } for item in af.items.all()
+                ]
+
+                inflow_data = {
+                    'id': af.id,
+                    'bill_number': af.product_inflow.bill_number,
+                    'date': af.product_inflow.date,
+                    'supplier_company_tax_code': af.product_inflow.supplier_company.tax_code,
+                    'supplier_company_name': af.product_inflow.supplier_company.name,
+                    'receiver_company_tax_code': af.product_inflow.receiver_company.tax_code,
+                    'receiver_company_name': af.product_inflow.receiver_company.name,
+                    'total_price_without_tax': af.price_without_tax,
+                    'total_unit_price_without_tax': af.unit_price_without_tax,
+                    'total_price_with_tevkifat': af.price_with_tevkifat,
+                    'total_price_total': af.price_total,
+                    'items': items,
+                    'images': [settings.MEDIA_URL + str(image.image) for image in af.product_inflow.images.all()]
+                }
+                accounting_inflow_list.append(inflow_data)
+
+            return JsonResponse(accounting_inflow_list, safe=False, status=200)
+
+        except Exception as e:
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
 
 
 
 #! Total Price'lar edit yapılamamalı. Onlar diğer verilere göre otomatik hesaplanıyor.
-class EditAccountingView(APIView):
+class EditAccountingItemView(APIView):
     permission_classes = (IsAuthenticated, IsSuperStaff)
     authentication_classes = (JWTAuthentication,)
 
@@ -2260,35 +2328,33 @@ class EditAccountingView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = request.data
-            print(data)
 
-            old_id = data.get('old_id')
-            # Filter Accounting based on user's company and project
-            accounting = Accounting.objects.filter(company=request.user.company, project=request.user.current_project).get(id=old_id)
-            accounting_fields = accounting.get_dirty_fields()
+            item_id = data.get('item_id')  # Get the ID of the AccountingItem
 
-            # Update accounting fields
+            # Filter AccountingItem based on user's company, project, and the provided item ID
+            accounting_item = AccountingItem.objects.filter(accounting__company=request.user.company, accounting__project=request.user.current_project).get(id=item_id)
+
+            # Update accounting item fields
             for field in ['unit_price', 'discount_rate', 'discount_amount', 'tax_rate', 'tevkifat_rate', 'price_without_tax', 'unit_price_without_tax', 'price_with_tevkifat', 'price_total']:
                 value = data.get(field)
 
                 if value is not None and value != '':
-                    old_value = accounting_fields.get(field)
-                    if old_value != value:  # If the field has changed
-                        setattr(accounting, field, value)
+                    setattr(accounting_item, field, value)
                 else:
                     return JsonResponse({'error': f"The field 'new_{field}' cannot be empty."}, status=400)
 
-            accounting.save()
+            accounting_item.save()
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
-        except Accounting.DoesNotExist:
-            return JsonResponse({'error': _("Accounting record not found.")}, status=400)
+        except AccountingItem.DoesNotExist:
+            return JsonResponse({'error': _("Accounting item record not found.")}, status=400)
 
         except ValueError as e:
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
 
 
 
