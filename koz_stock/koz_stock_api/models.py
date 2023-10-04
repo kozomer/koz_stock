@@ -202,23 +202,26 @@ class Stock(models.Model):
 class AccountingInflow(models.Model, DirtyFieldsMixin):
     product_inflow = models.OneToOneField(ProductInflow, on_delete=models.CASCADE)
     price_without_tax = models.FloatField()
-    unit_price_without_tax = models.FloatField()
     price_with_tevkifat = models.FloatField()
     price_total = models.FloatField()
 
     def save(self, *args, **kwargs):
-        # Fetch related AccountingItem objects
-        related_items = self.items.all()
+        # Check if the instance has an id (i.e., it's being updated, not created)
+        is_update = bool(self.id)
 
-        # Sum the values from all related items
-        self.price_without_tax = sum([item.price_without_tax for item in related_items])
-        # We'll compute average unit price without tax
-        total_units = sum([float(item.product_item.amount) for item in related_items])
-        self.unit_price_without_tax = self.price_without_tax / total_units if total_units else 0
-        self.price_with_tevkifat = sum([item.price_with_tevkifat for item in related_items])
-        self.price_total = sum([item.price_total for item in related_items])
+        # Call the original save method first
+        super(AccountingInflow, self).save(*args, **kwargs)
 
-        super().save(*args, **kwargs)
+        if is_update:  # If it's an update, not the initial save
+            # Fetch related AccountingItem objects
+            related_items = self.items.all()
+
+            # Sum the values from all related items
+            self.price_without_tax = sum([item.price_without_tax for item in related_items])
+            self.price_with_tevkifat = sum([item.price_with_tevkifat for item in related_items])
+            self.price_total = sum([item.price_total for item in related_items])
+
+            super().save(*args, **kwargs)
 
 
 class AccountingItem(models.Model, DirtyFieldsMixin):
@@ -236,6 +239,7 @@ class AccountingItem(models.Model, DirtyFieldsMixin):
     price_total = models.FloatField()
 
     def save(self, *args, **kwargs):
+        print("omerr")
         self.unit_price = float(self.unit_price)
         self.discount_rate = float(self.discount_rate)
         self.discount_amount = float(self.discount_amount)
@@ -246,59 +250,64 @@ class AccountingItem(models.Model, DirtyFieldsMixin):
         amount = float(self.product_item.amount)
 
         if self.discount_rate and self.discount_rate != 0:
-            discount = self.discount_rate * self.unit_price * amount
+            discount = self.discount_rate/100 * self.unit_price * amount
         else:
             discount = self.discount_amount
+        print(discount)
+        print(self.unit_price)
+        print(amount)
 
         tax = (self.tax_rate / 100) * (self.unit_price * amount - discount)
         tax_tevkifat = ((self.tax_rate) - ((self.tevkifat_rate / 100) * self.tax_rate)) / 100 * (self.unit_price * amount - discount)
         
-        self.unit_price_without_tax = self.price_without_tax / amount
         self.price_without_tax = (self.unit_price * amount) - discount
+        print(self.price_without_tax)
+        self.unit_price_without_tax = self.price_without_tax / amount
+        
         self.price_with_tevkifat = (self.unit_price * amount) - discount + tax_tevkifat
         self.price_total = (self.unit_price * amount) - discount + tax
 
         super().save(*args, **kwargs)
 
-class Accounting(models.Model, DirtyFieldsMixin):
-    product_inflow = models.ForeignKey(ProductInflow, on_delete=models.CASCADE)
-    unit_price = models.FloatField(null= True)
-    discount_rate = models.FloatField(null= True)
-    discount_amount = models.FloatField(null= True)
-    tax_rate = models.FloatField(null= True)
-    tevkifat_rate = models.FloatField(null= True)
-    price_without_tax = models.FloatField(null= True)
-    unit_price_without_tax = models.FloatField(null= True)
-    price_with_tevkifat = models.FloatField(null= True)
-    price_total = models.FloatField(null= True)
-    company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
+# class Accounting(models.Model, DirtyFieldsMixin):
+#     product_inflow = models.ForeignKey(ProductInflow, on_delete=models.CASCADE)
+#     unit_price = models.FloatField(null= True)
+#     discount_rate = models.FloatField(null= True)
+#     discount_amount = models.FloatField(null= True)
+#     tax_rate = models.FloatField(null= True)
+#     tevkifat_rate = models.FloatField(null= True)
+#     price_without_tax = models.FloatField(null= True)
+#     unit_price_without_tax = models.FloatField(null= True)
+#     price_with_tevkifat = models.FloatField(null= True)
+#     price_total = models.FloatField(null= True)
+#     company = models.ForeignKey(Company, on_delete=models.CASCADE)
+#     project = models.ForeignKey(Project, on_delete=models.CASCADE)
 
 
-    def save(self, *args, **kwargs):
-        self.unit_price = float(self.unit_price)
-        self.discount_rate = float(self.discount_rate)
-        self.discount_amount = float(self.discount_amount)
-        self.tax_rate = float(self.tax_rate)
-        self.tevkifat_rate = float(self.tevkifat_rate)
-        self.price_without_tax = float(self.price_without_tax)
-        self.price_with_tevkifat = float(self.price_with_tevkifat)
-        self.price_total = float(self.price_total)
-        self.product_inflow.amount = float(self.product_inflow.amount)
-        if self.discount_rate and float(self.discount_rate) != 0:
-            discount = self.discount_rate * self.unit_price * self.product_inflow.amount
-        else:
-            discount = 0
-        if self.discount_amount and self.discount_amount != 0:
-            discount = self.discount_amount
-        tax = (self.tax_rate/100) * (self.unit_price * self.product_inflow.amount - discount)
-        tax_tevkifat = ((self.tax_rate)-((self.tevkifat_rate/100)*self.tax_rate))/100 * (self.unit_price * self.product_inflow.amount - discount)
+#     def save(self, *args, **kwargs):
+#         self.unit_price = float(self.unit_price)
+#         self.discount_rate = float(self.discount_rate)
+#         self.discount_amount = float(self.discount_amount)
+#         self.tax_rate = float(self.tax_rate)
+#         self.tevkifat_rate = float(self.tevkifat_rate)
+#         self.price_without_tax = float(self.price_without_tax)
+#         self.price_with_tevkifat = float(self.price_with_tevkifat)
+#         self.price_total = float(self.price_total)
+#         self.product_inflow.amount = float(self.product_inflow.amount)
+#         if self.discount_rate and float(self.discount_rate) != 0:
+#             discount = self.discount_rate * self.unit_price * self.product_inflow.amount
+#         else:
+#             discount = 0
+#         if self.discount_amount and self.discount_amount != 0:
+#             discount = self.discount_amount
+#         tax = (self.tax_rate/100) * (self.unit_price * self.product_inflow.amount - discount)
+#         tax_tevkifat = ((self.tax_rate)-((self.tevkifat_rate/100)*self.tax_rate))/100 * (self.unit_price * self.product_inflow.amount - discount)
         
-        self.unit_price_without_tax = self.price_without_tax / self.product_inflow.amount
-        self.price_without_tax = (self.unit_price * self.product_inflow.amount) - discount
-        self.price_with_tevkifat = (self.unit_price * self.product_inflow.amount) - discount + tax_tevkifat
-        self.price_total = (self.unit_price * self.product_inflow.amount) - discount + tax
-        super().save(*args, **kwargs)
+#         self.unit_price_without_tax = self.price_without_tax / self.product_inflow.amount
+#         self.price_without_tax = (self.unit_price * self.product_inflow.amount) - discount
+#         self.price_with_tevkifat = (self.unit_price * self.product_inflow.amount) - discount + tax_tevkifat
+#         self.price_total = (self.unit_price * self.product_inflow.amount) - discount + tax
+#         super().save(*args, **kwargs)
 
 
 

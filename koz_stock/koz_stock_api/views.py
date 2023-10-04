@@ -1,7 +1,7 @@
 from django.shortcuts import render
 import pandas as pd
 from .models import ( Products, ProductInflow, ProductInflowItem, ProductOutflow, Consumers, Suppliers,
-                      Stock, Accounting, Project, CustomUser, Company, ProductGroups,
+                      Stock, Project, CustomUser, Company, ProductGroups,
                       SequenceNumber, ProductSubgroups, ProductInflowImage, ProductOutflowImage,
                       QuantityTakeOff, Building, Section, Place, ElevationOrFloor, AccountingInflow, AccountingItem)
 from django.views import View
@@ -2208,7 +2208,6 @@ def create_accounting_inflow(sender, instance, created, **kwargs):
         AccountingInflow.objects.create(
             product_inflow=instance,
             price_without_tax=0,  # initial values which will be updated by AccountingItem signals
-            unit_price_without_tax=0,
             price_with_tevkifat=0,
             price_total=0
         )
@@ -2221,7 +2220,7 @@ def create_accounting_item(sender, instance, created, **kwargs):
         
         # Create AccountingItem instance when a new ProductInflowItem instance is created
         item = AccountingItem.objects.create(
-            inflow=accounting_inflow,
+            accounting_inflow=accounting_inflow,
             product_item=instance,
             # ... add other initial fields if necessary ...
             unit_price=0,  # default values which will be updated when the item is saved
@@ -2256,8 +2255,8 @@ class AccountingView(APIView):
     def get(self, request, *args, **kwargs):
         try:
             accounting_inflows = AccountingInflow.objects.filter(
-                company=request.user.company,
-                project=request.user.current_project
+                product_inflow__company=request.user.company,
+                product_inflow__project=request.user.current_project
             ).prefetch_related(
                 'product_inflow__images',
                 'items',
@@ -2285,7 +2284,13 @@ class AccountingView(APIView):
                         'amount': item.product_item.amount,
                         'unit_price': item.unit_price,
                         'discount_rate': item.discount_rate,
-                        # ... add other accounting fields as necessary ...
+                        'discount_amount' : item.discount_amount,
+                        'tax_rate' : item.tax_rate,
+                        'tevkifat_rate' : item.tevkifat_rate,
+                        'price_without_tax' : item.price_without_tax,
+                        'unit_price_without_tax' : item.unit_price_without_tax,
+                        'price_with_tevkifat' : item.price_with_tevkifat,
+                        'price_total' : item.price_total,
                     } for item in af.items.all()
                 ]
 
@@ -2297,10 +2302,9 @@ class AccountingView(APIView):
                     'supplier_company_name': af.product_inflow.supplier_company.name,
                     'receiver_company_tax_code': af.product_inflow.receiver_company.tax_code,
                     'receiver_company_name': af.product_inflow.receiver_company.name,
-                    'total_price_without_tax': af.price_without_tax,
-                    'total_unit_price_without_tax': af.unit_price_without_tax,
-                    'total_price_with_tevkifat': af.price_with_tevkifat,
-                    'total_price_total': af.price_total,
+                    'price_without_tax': af.price_without_tax,
+                    'price_with_tevkifat': af.price_with_tevkifat,
+                    'price_total': af.price_total,
                     'items': items,
                     'images': [settings.MEDIA_URL + str(image.image) for image in af.product_inflow.images.all()]
                 }
@@ -2332,7 +2336,7 @@ class EditAccountingItemView(APIView):
             item_id = data.get('item_id')  # Get the ID of the AccountingItem
 
             # Filter AccountingItem based on user's company, project, and the provided item ID
-            accounting_item = AccountingItem.objects.filter(accounting__company=request.user.company, accounting__project=request.user.current_project).get(id=item_id)
+            accounting_item = AccountingItem.objects.filter(accounting_inflow__product_inflow__company=request.user.company, accounting_inflow__product_inflow__project=request.user.current_project).get(id=item_id)
 
             # Update accounting item fields
             for field in ['unit_price', 'discount_rate', 'discount_amount', 'tax_rate', 'tevkifat_rate', 'price_without_tax', 'unit_price_without_tax', 'price_with_tevkifat', 'price_total']:
@@ -2353,6 +2357,7 @@ class EditAccountingItemView(APIView):
             return JsonResponse({'error': str(e)}, status=400)
 
         except Exception as e:
+            traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
 
 

@@ -19,7 +19,7 @@ from koz_stock_api.views import (LoginView, LogoutView, ProductsView, EditProduc
                                     DeleteProductsView, AddProductInflowView, ProductInflowView, EditProductInflowView, DeleteProductInflowView,
                                     AddProductInflowItemView, EditProductInflowItemView, DeleteProductInflowItemView,
                                     StockView,  AddProductOutflowView, ProductOutflowView, EditProductOutflowView, DeleteProductOutflowView,
-                                    AccountingView, EditAccountingView, CollapsedUserView, UserCardView, DeleteUserView,  EditUserView,
+                                    AccountingView, EditAccountingItemView, CollapsedUserView, UserCardView, DeleteUserView,  EditUserView,
                                     SetCurrentProjectView, GetProjectsView, CreateProjectView,
                                     CreateUserView, ConsumerSearchView, SupplierSearchView, CreateProductGroupView, ProductGroupsView, EditProductGroupView, DeleteProductGroupView,
                                     CreateProductSubgroupView, ProductSubgroupsView, EditProductSubgroupView, DeleteProductSubgroupView, CreateProductOutflowReceiptView,
@@ -82,7 +82,7 @@ urlpatterns = [
     # path('api/delete_warehouse/', DeleteStockView.as_view(), name='delete_warehouse'),
 
     path('api/accounting/', AccountingView.as_view(), name='accounting'),
-    path('api/edit_accounting/', EditAccountingView.as_view(), name='edit_accounting'),
+    path('api/edit_accounting_item/', EditAccountingItemView.as_view(), name='edit_accounting_item'),
     # path('api/delete_accounting/', DeleteAccountingView.as_view(), name='delete_accounting'),
 
     path('api/consumer_search/', ConsumerSearchView.as_view(), name='consumer_search'),

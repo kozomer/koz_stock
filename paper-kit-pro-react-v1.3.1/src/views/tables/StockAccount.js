@@ -6,6 +6,9 @@ import '../../assets/css/Table.css';
 import localforage from 'localforage';
 import debounce from 'lodash.debounce';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faMinus, faEdit, faTrash, faSave, faTimes} from '@fortawesome/free-solid-svg-icons';
+
 const DataTable = () => {
   const [dataTable, setDataTable] = useState([]);
   const [file, setFile] = useState(null);
@@ -20,6 +23,12 @@ const DataTable = () => {
   const [isUpdated, setIsUpdated] = useState(false);
   const [renderEdit, setRenderEdit] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [show, setShow] = useState(false);
+  const [modalProducts, setModalProducts] = useState([]);
+  const [id, setId] = useState('');
+  const [isEditingIndex, setIsEditingIndex] = useState(null);
+
   /* Variables */
 
   const [formData, setFormData] = useState({
@@ -104,6 +113,68 @@ const DataTable = () => {
     };
   }, []);
 
+  const handleShow = (products, id) => {
+    console.log(id)
+    setModalProducts(products);
+    setId(id)
+    setShow(true);
+};
+
+const handleClose = () => setShow(false);
+
+const handleProductChange = (index, field, value) => {
+  const updatedProducts = [...modalProducts];
+  updatedProducts[index][field] = value;
+  setModalProducts(updatedProducts);
+};
+
+
+const saveEditedProduct = async (index) => {
+  const productToEdit = modalProducts[index];
+
+  const endpoint = `${process.env.REACT_APP_PUBLIC_URL}/edit_accounting_item/`;
+  const payload = {
+      item_id: productToEdit.item_id,
+      unit_price: productToEdit.unit_price, // add these fields according to your React state structure
+      discount_rate: productToEdit.discount_rate,
+      discount_amount: productToEdit.discount_amount,
+      tax_rate: productToEdit.tax_rate,
+      tevkifat_rate: productToEdit.tevkifat_rate,
+      price_without_tax: productToEdit.price_without_tax,
+      unit_price_without_tax: productToEdit.unit_price_without_tax,
+      price_with_tevkifat: productToEdit.price_with_tevkifat,
+      price_total: productToEdit.price_total
+  };
+
+  try {
+      const access_token = await localforage.getItem('access_token');
+
+      const response = await fetch(endpoint, {
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              'Authorization': 'Bearer ' + String(access_token)
+          },
+          body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+         successUpload(data.message);
+      } else {
+          errorUpload(data.error);
+      }
+  } catch (error) {
+      console.error("Error while saving product:", error);
+  }
+
+  // Close the editor
+  setIsEditingIndex(null);
+};
+
+
+
   useEffect(() => {
     async function fetchData() {
       const access_token = await localforage.getItem('access_token'); 
@@ -116,7 +187,7 @@ const DataTable = () => {
         }
       })
       const data = await response.json();
-      
+      console.log(data)
       setDataTable(data);
       setDataChanged(false);
       setRenderEdit(false)
@@ -487,7 +558,7 @@ if (productData) {
     <>
       <div className='content'>
       {alert}
-      {/* Pop Up */}
+      {/* Pop Up 
       {showPopup && (
        <div className="popup-sales">
       <Card>
@@ -647,7 +718,7 @@ if (productData) {
             
             </div>
 )}
-
+*/}
 <Card>
   <CardHeader>
     <CardTitle tag='h4'>MUHASEBE</CardTitle>
@@ -667,136 +738,75 @@ if (productData) {
 
                 <ReactTable
                   data={dataTable.map((row, index) => ({
-                    id: row[0],
-                    product_code: row[1],
-                    date: row[2],
-                    barcode: row[3],
-                    provider_company: row[4],
-                    receiver_company: row[5],
-                    status: row[6],
-                    place_of_use: row[7],
-                    group: row[8],
-                    subgroup: row[9],
-                    brand: row[10],
-                    serial_number: row[11],
-                    model: row[12],
-                    description: row[13],
-                    unit: row[14],
-                    amount: row[15],
-                    unit_price: row[16],
-                    discount_rate: row[17],
-                    discount_amount: row[18],
-                    tax_rate: row[19],
-                    tevkifat_rate: row[20],
-                    price_without_tax: row[21],
-                    unit_price_without_tax: row[22],
-                    price_with_tevkifat: row[23],
-                    price_total: row[24],
-
+                    id: row.id,
+                    bill_number:row.bill_number,
+                    date: row.date,
+                    items: row.items.map(item => ({
+                      item_id:item.id,
+                      product_code: item.product_code,
+                      barcode: item.barcode,
+                      status: item.status,
+                      place_of_use: item.place_of_use,
+                      group_name: item.group_name,
+                      subgroup_name: item.subgroup_name,
+                      brand: item.brand,
+                      serial_number: item.serial_number,
+                      model: item.model,
+                      description: item.description,
+                      unit: item.unit,
+                      amount: item.amount
+                    })),
+                    supplier_company: row.supplier_company_name,
+                    receiver_company: row.receiver_company_name,
+                    supplier_company_tax_code: row.supplier_company_tax_code,
+                    receiver_company_tax_code: row.receiver_company_tax_code,
+                    total_price_total: row.total_price_total,
+                    total_price_with_tevkifat: row.total_price_with_tevkifat
+                    ,
+                    total_price_without_tax: row.total_price_without_tax
+                    ,
+                    total_unit_price_without_tax: row.total_unit_price_without_tax,
+                   
                     actions: (
                       <div className='actions-left'>
-                         <Button
-                          disabled={showPopup}
-                          onClick={() => {
-                            // Enable edit mode
-                            
-                           {handleClick(row)}
-                           
-                          
-                          }}
-                          
-                          color='warning'
-                          size='sm'
-                          className='btn-icon btn-link edit'
-                        >
-                          <i className='fa fa-edit' />
-                        </Button>{' '}
                         
                         <>
     
     
-                          <Button
-                            disabled={showPopup}
-                            onClick={() => {
-                              
-                               warningWithConfirmAndCancelMessage() 
-                               const rowToDelete = {...row};
-                               const data = {
-                                id: rowToDelete [0],
-
-                              };
-                              setDeleteData(data);
-                              
-                              /*
-                              if (deleteConfirm) {
-                                const updatedDataTable = dataTable.find((o) => o.id == row.id);
-                                //console.log(updatedDataTable[0]);
-                                const data = {
-                                  no: updatedDataTable[0],
-                                  good_code: updatedDataTable[10],
-                                  original_output_value: updatedDataTable[14],
-                                };
-                                setDeleteData(data);
-                                //console.log(data);
-                                fetch(`${process.env.REACT_APP_PUBLIC_URL}/delete_sales/`, {
-                                  method: "POST",
-                                  body: new URLSearchParams(data),
-                                }).then(() => {
-                                  //  console.log("row id:", row.id);
-                                  //console.log("dataTable:", dataTable);
-                                  const filteredDataTable = dataTable.filter(
-                                    (o) => Number(o.id) !== Number(row.id)
-                                  );
-                                  //  console.log(filteredDataTable);
-                                  setDataTable(filteredDataTable);
-                                  setDataChanged(!dataChanged);
-                                });
-
-                              }
-                              */
-
-                            }
-                            }
-                            color="danger"
-                            size="sm"
-                            className="btn-icon btn-link remove"
-                          >
-                            <i className="fa fa-times" />
-                          </Button>
+                          
                           </>
                       </div>
                     ),
                   }))}
                   columns={[
                     { Header: 'No', accessor: 'id' },
-                    { Header: 'Malzeme Kodu', accessor: 'product_code' },
+                    { Header: 'Fatura Numarası', accessor: 'bill_number' },
                     { Header: 'Tarih', accessor: 'date' },
-                    { Header: 'Barkod', accessor: 'barcode' },
-                    { Header: 'Alınan Firma', accessor: 'provider_company' },
+                    { Header: 'Alınan Firma', accessor: 'supplier_company' },
+                    { Header: 'Alınan Firma Vergi Kodu', accessor: 'supplier_company_tax_code' },
                     { Header: 'Alan Firma', accessor: 'receiver_company' },
-                    { Header: 'Durum', accessor: 'status' },
-                    { Header: 'Kullanım Yeri', accessor: 'place_of_use' },
-                    { Header: 'Grup', accessor: 'group' },
-                    { Header: 'Alt Grup', accessor: 'subgroup' },
-                    { Header: 'Marka', accessor: 'brand' },
-                    { Header: 'Seri Numarası', accessor: 'serial_number' },
-                    { Header: 'Model', accessor: 'model' },
-                    { Header: 'Açıklama', accessor: 'description' },
-                    { Header: 'Birim', accessor: 'unit' },
-                    { Header: 'Miktar', accessor: 'amount' },
-                    { Header: 'Birim Fiyatı', accessor: 'unit_price' },
-                    { Header: 'İndirim Oranı', accessor: 'discount_rate' },
-                    { Header: 'İndirim Miktarı', accessor: 'discount_amount' },
-                    { Header: 'KDV Oranı', accessor: 'tax_rate' },
-                    { Header: 'Tevkifat Oranı', accessor: 'tevkifat_rate' },
-                    { Header: 'Toplam Fiyat(Vergiler Hariç)', accessor: 'price_without_tax' },
-                    { Header: 'Birim Fiyat(Vergiler Hariç)', accessor: 'unit_price_without_tax' },
-                    { Header: 'Tevkifatlı Fiyat', accessor: 'price_with_tevkifat' },
-                    { Header: 'Toplam Fiyat(Vergiler Dahil)', accessor: 'price_total' },
-
-                    { Header: 'İşlemler', accessor: 'actions' ,sortable: false,
-                    filterable: false },
+                    { Header: 'Alan Firma Vergi Kodu', accessor: 'receiver_company_tax_code' },
+                    { Header: 'Toplam Fiyat(Vergiler Dahil)', accessor: 'total_price_total' },
+                    { Header: 'Tevkifatlı Fiyat', accessor: 'total_price_with_tevkifat' },
+                    { Header: 'Toplam Fiyat(Vergiler Hariç)', accessor: 'total_price_without_tax' },
+                    { Header: 'Birim Fiyat(Vergiler Hariç)', accessor: 'total_unit_price_without_tax' },
+                    {
+                      Header: 'Products',
+                      id: 'products',
+                      accessor: d => d.items.length,
+                      Cell: ({ row: { original } }) => {
+                          return (
+                              <div style={{ display: 'flex', alignItems: 'center' }}>
+                                  <i className="fa fa-cube" title="View Products" style={{ cursor: 'pointer', marginRight: '5px' }}
+                                      onClick={() => handleShow(original.items,original.id)} />
+                                  <span>{original.items.length}</span>
+                              </div>
+                          );
+                      }
+                  },
+                    { Header: 'İşlemler', accessor: 'actions', sortable: false, filterable: false }
                   ]}
+                  
                   defaultPageSize={10}
                   className='-striped -highlight'
                   />
@@ -805,6 +815,183 @@ if (productData) {
                   </Col>
                   </Row>
                   </div>
+
+                  
+{show && (
+  <div className="modal show d-block custom-modal" tabindex="-1">
+    <div className="modal-dialog">
+      <div className="modal-content custom-modal-content">
+        <div className="modal-header">
+          <h5 className="modal-title">Products List</h5>
+          <button type="button" className="close" onClick={handleClose}>
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div className="modal-body modal-body-scroll">
+    {modalProducts.map((product, index) => (
+        <div key={index} className="product-item">
+            {isEditingIndex === index ? (
+                // Editable inputs for the current product
+                <div>
+                  
+
+                  <label>Birim Fiyat</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.unit_price || ''}
+                            onChange={(e) => handleProductChange(index, 'unit_price', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    <label>İndirim Oranı</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.discount_rate || ''}
+                            onChange={(e) => handleProductChange(index, 'discount_rate', e.target.value)}
+                        />
+                    </FormGroup>
+
+                        
+                    <label>İndirim Miktarı</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.discount_amount || ''}
+                            onChange={(e) => handleProductChange(index, 'discount_amount', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    
+                    <label>Vergi Oranı</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.tax_rate || ''}
+                            onChange={(e) => handleProductChange(index, 'tax_rate', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    <label>Tevkifat Oranı</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.tevkifat_rate || ''}
+                            onChange={(e) => handleProductChange(index, 'tevkifat_rate', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    <label> Fiyat(Vergiler Hariç)</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.price_without_tax || ''}
+                            onChange={(e) => handleProductChange(index, 'price_without_tax', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    <label>Birim Fiyat(Vergiler Hariç)</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.unit_price_without_tax || ''}
+                            onChange={(e) => handleProductChange(index, 'unit_price_without_tax', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    <label>Tevkifatlı Fiyat</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.price_with_tevkifat || ''}
+                            onChange={(e) => handleProductChange(index, 'price_with_tevkifat', e.target.value)}
+                        />
+                    </FormGroup>
+
+
+
+                    <label>Toplam Fiyat(Vergiler Dahil)</label>
+                    <FormGroup>
+                        <Input
+                            type="text"
+                            value={product.price_total || ''}
+                            onChange={(e) => handleProductChange(index, 'price_total', e.target.value)}
+                        />
+                    </FormGroup>
+
+                    
+                    
+
+                   
+                 
+
+               
+
+
+
+                    {/* ... you can continue with other product inputs in a similar fashion ... */}
+
+                    <button type="button" className="icon-button" onClick={() => saveEditedProduct(index)}>
+                        <FontAwesomeIcon icon={faSave} />
+                    </button>
+                    <button type="button" className="icon-button" onClick={() => setIsEditingIndex(null)}>
+                        <FontAwesomeIcon icon={faTimes} /> {/* Cancel editing icon */}
+                    </button>
+                </div>
+            ) : (
+                // Display mode for the current product
+                <div>
+                    <h5 className="product-title">
+                        Product {index + 1}
+                        <button type="button" className="icon-button" onClick={() => {
+    setIsEditingIndex(index);
+   
+}}>
+    <FontAwesomeIcon icon={faEdit} />
+</button>
+                       
+                    </h5>
+                    <strong>Product Code:</strong> {product.product_code}<br />
+<strong>Description:</strong> {product.description}<br />
+<strong>Amount:</strong> {product.amount}<br />
+<strong>Barcode:</strong> {product.barcode}<br />
+<strong>Brand:</strong> {product.brand}<br />
+<strong>Model:</strong> {product.model}<br />
+<strong>Place of Use:</strong> {product.place_of_use}<br />
+<strong>Serial Number:</strong> {product.serial_number}<br />
+<strong>Status:</strong> {product.status}<br />
+<strong>Group Name:</strong> {product.group_name}<br />
+<strong>Subgroup Name:</strong> {product.subgroup_name}<br />
+<strong>Unit:</strong> {product.unit}<br />
+<strong>Unit Price:</strong> {product.unit_price}<br />
+<strong>Discount Rate:</strong> {product.discount_rate}<br />
+<strong>Discount Amount:</strong> {product.discount_amount}<br />
+<strong>Tax Rate:</strong> {product.tax_rate}<br />
+<strong>Tevkifat Rate:</strong> {product.tevkifat_rate}<br />
+<strong>Price Without Tax:</strong> {product.price_without_tax}<br />
+<strong>Unit Price Without Tax:</strong> {product.unit_price_without_tax}<br />
+<strong>Price With Tevkifat:</strong> {product.price_with_tevkifat}<br />
+<strong>Price Total:</strong> {product.price_total}<br />
+
+                </div>
+            )}
+            {(index !== modalProducts.length - 1) && <hr />}
+        </div>
+    ))}
+   
+</div>
+
+        <div className="modal-footer">
+          <button className="btn btn-secondary" onClick={handleClose}>Close</button>
+        
+
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
                   </>
                   );
                   };
