@@ -742,7 +742,7 @@ class AddSuppliersView(APIView):
 
             # Add new supplier
             new_supplier_data = {}
-            for field in ['name', 'contact_name', 'contact_no']:
+            for field in ['name', 'contact_name', 'contact_no', 'mail', 'adress', 'explanation']:
                 value = data.get(field)
                 if value is not None and value != '':
                     new_supplier_data[field] = value
@@ -775,7 +775,7 @@ class SuppliersView(APIView):
     def get(self, request, *args, **kwargs):
         company = request.user.company
         suppliers = Suppliers.objects.filter(company=company)
-        supplier_list = [[s.id, s.tax_code, s.name, s.contact_name, s.contact_no] for s in suppliers]
+        supplier_list = [[s.id, s.tax_code, s.name, s.contact_name, s.mail, s.adress, s.explanation] for s in suppliers]
         return JsonResponse(supplier_list, safe=False, status=200)
 
 
@@ -802,7 +802,7 @@ class EditSuppliersView(APIView):
             print(dirty_fields)
 
             # Update supplier fields
-            for field in ['name', 'contact_name', 'contact_no', 'tax_code']:
+            for field in ['name', 'contact_name', 'contact_no', 'tax_code', 'mail', 'adress', 'explanation']:
                 value = data.get(field)
                 if value is not None and value != '':
                     setattr(supplier, field, value)
@@ -883,7 +883,7 @@ class AddConsumersView(APIView):
 
             # Add new consumer
             new_consumer_data = {}
-            for field in ['name', 'contact_name', 'contact_no']:
+            for field in ['name', 'contact_name', 'contact_no', 'mail', 'adress', 'explanation']:
                 value = data.get(field)
                 if value is not None and value != '':
                     new_consumer_data[field] = value
@@ -915,7 +915,7 @@ class ConsumersView(APIView):
     def get(self, request, *args, **kwargs):
         company = request.user.company
         consumers = Consumers.objects.filter(company=company)
-        consumer_list = [[c.id, c.tax_code, c.name, c.contact_name, c.contact_no] for c in consumers]
+        consumer_list = [[c.id, c.tax_code, c.name, c.contact_name, c.contact_no, c.mail, c.adress, c.explanation] for c in consumers]
         return JsonResponse(consumer_list, safe=False, status=200)
 
 class EditConsumersView(APIView):
@@ -939,7 +939,7 @@ class EditConsumersView(APIView):
             consumer = Consumers.objects.get(id=consumer_id, company=user.company)
 
             # Update consumer fields
-            for field in ['name', 'contact_name', 'contact_no', 'tax_code']:
+            for field in ['name', 'contact_name', 'contact_no', 'tax_code', 'mail', 'adress', 'explanation']:
                 value = data.get(field)
                 if value is not None and value != '':
                     setattr(consumer, field, value)
