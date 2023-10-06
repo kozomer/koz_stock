@@ -587,7 +587,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
     const instantUploadFileChange = (e) => {
       const files = Array.from(e.target.files);
       let urls = [];
-      
+      setIsLoading(true);
       files.forEach((file, index) => {
         console.log(`Uploading file ${index + 1}`);
   
@@ -601,6 +601,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         console.log('All files uploaded successfully');
         setUploadedFileUrls(urls); // This will now store file names
         setUploadedFiles(files);
+        setIsLoading(false);
       }, 2000 * files.length); // Assuming each file takes 2 seconds to upload
   };
 
@@ -832,28 +833,34 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
 
         
         <div className="photo-upload-section">
-  <input 
-    type="file" 
-    onChange={instantUploadFileChange}
-    multiple 
-  />
-  {uploadedFiles.length > 0 && (
-    <p>
-      {uploadedFiles.length} files selected for upload
-    </p>
-  )}
-</div>
-
-<div className="uploaded-files-section">
-  <ul>
-    {uploadedFileUrls.map((name, index) => (
-      <li key={index}>
-        {name} {/* Displaying the file name directly */}
-      </li>
-    ))}
-  </ul>
-</div>
-      
+        <input 
+          type="file" 
+          onChange={instantUploadFileChange}
+          multiple 
+        />
+        {uploadedFiles.length > 0 && (
+          <p>
+            {uploadedFiles.length} files selected for upload
+          </p>
+        )}
+      </div>
+      <div className="uploaded-files-section">
+        {isLoading ? (
+          <div className="loading-icon">
+            {/* Use your own LoadingIcon component or an icon from any library */}
+            {/* <LoadingIcon /> */}
+            Loading...
+          </div>
+        ) : (
+          <ul>
+            {uploadedFileUrls.map((name, index) => (
+              <li key={index}>
+                {name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
 
   
        

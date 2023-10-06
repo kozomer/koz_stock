@@ -215,6 +215,7 @@ class AccountingInflow(models.Model, DirtyFieldsMixin):
         if is_update:  # If it's an update, not the initial save
             # Fetch related AccountingItem objects
             related_items = self.items.all()
+            print("omerrrrrrrrr")
 
             # Sum the values from all related items
             self.price_without_tax = sum([item.price_without_tax for item in related_items])

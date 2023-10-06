@@ -472,6 +472,38 @@
   100% { left: 50%; }
 }
 
+
+@media (max-width: 768px) {
+  .login-page {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 20px; /* Add space at the top if needed */
+  }
+
+  .stockruct-title {
+    position: static;
+    text-align: center;
+    width: 100%; /* Use the full width */
+    display: flex; /* Using flexbox for centering */
+    align-items: center; /* Center vertically */
+    justify-content: center; /* Center horizontally */
+    margin-bottom: 20px; /* Give it some space below */
+  }
+
+  .vertical-line {
+    border-left: none; /* Remove the vertical border */
+    border-top: 3px solid white; /* Add a horizontal border */
+    width: 100%; /* Make it span the entire width */
+    height: auto; /* Reset the height */
+    position: static; /* Reset positioning */
+    transform: none; /* Remove any transformations */
+    margin: 15px 0; /* Give it some vertical spacing */
+  }
+
+  /* ... other mobile styles ... */
+}
+/* */
 /*Add icons for ProductInFlow Product Addition */
 .icon-button {
   background: none;
@@ -520,4 +552,38 @@
   overflow-y: auto;
 }
 
-  
+.product-details {
+  font-family: 'Arial', sans-serif;
+  border: 1px solid #e5e5e5;
+  padding: 10px;
+  border-radius: 5px;
+  max-width: 500px;
+}
+
+.product-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.icon-button {
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  margin-left: 10px;
+  color: black; /* or any color you prefer for the edit icon */
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+}
+
+.detail-title {
+  width: 200px; /* Adjust this value to your preference */
+  font-weight: 600;
+}

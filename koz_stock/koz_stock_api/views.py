@@ -1487,6 +1487,7 @@ class EditProductInflowView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = request.data
+            print(data)
             inflow_id = data.get('inflow_id')
 
             # Get the old inflow and its associated images
@@ -2212,6 +2213,12 @@ def create_accounting_inflow(sender, instance, created, **kwargs):
             price_total=0
         )
 
+@receiver(post_save, sender=AccountingItem)
+def update_accounting_inflow(sender, instance, **kwargs):
+    # instance here refers to the AccountingItem that was just saved
+    associated_inflow = instance.accounting_inflow
+    associated_inflow.save()  # This will trigger the save() method of AccountingInflow and recalculate its totals
+
 @receiver(post_save, sender=ProductInflowItem)
 def create_accounting_item(sender, instance, created, **kwargs):
     if created:
@@ -2309,7 +2316,7 @@ class AccountingView(APIView):
                     'images': [settings.MEDIA_URL + str(image.image) for image in af.product_inflow.images.all()]
                 }
                 accounting_inflow_list.append(inflow_data)
-
+                print(accounting_inflow_list)
             return JsonResponse(accounting_inflow_list, safe=False, status=200)
 
         except Exception as e:
@@ -2332,7 +2339,7 @@ class EditAccountingItemView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = request.data
-
+            print(data)
             item_id = data.get('item_id')  # Get the ID of the AccountingItem
 
             # Filter AccountingItem based on user's company, project, and the provided item ID

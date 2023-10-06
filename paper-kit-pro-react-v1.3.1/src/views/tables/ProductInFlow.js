@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Card, CardHeader,ListGroup, CardBody, CardTitle, Row, Col, Form, FormGroup, Label, CardFooter, Input } from 'reactstrap';
 import ReactTable from 'components/ReactTable/ReactTable.js';
 import '../../assets/css/Table.css';
@@ -28,6 +28,8 @@ const DataTable = () => {
   const [renderEdit, setRenderEdit] = useState(false);
   const [oldData, setOldData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingModal, setIsLoadingModal] = useState(false);
+
   //Variable Set
   const [productData, setProductData] = useState(null);
   const [id, setId] = useState('');
@@ -35,9 +37,9 @@ const DataTable = () => {
   const [billNo, setBillNo] = useState('');
   const [productCode, setProductCode] = useState('');
   const [barcode, setBarcode] = useState('');
-  const [providerCompanyTaxCode, setProviderCompanyTaxCode] = useState('');
-  const [providerCompanyName, setProviderCompanyName] = useState('');
-  const [recieverCompanyTaxCode, setRecieverCompanyTaxCode] = useState('');
+  const [supplierCompanyTaxCode, setSupplierCompanyTaxCode] = useState('');
+  const [supplierCompanyName, setSupplierCompanyName] = useState('');
+  const [receiverCompanyTaxCode, setReceiverCompanyTaxCode] = useState('');
   const [recieverCompanyName, setRecieverCompanyName] = useState('');
   const [status, setStatus] = useState('');
   const [placeOfUse, setPlaceOfUse] = useState('');
@@ -53,6 +55,9 @@ const DataTable = () => {
   const [currentFiles, setCurrentFiles] = useState([]);
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
+
+  const [uploadedFileUrlsModal, setUploadedFileUrlsModal] = useState([]);
+
   const [mode, setMode] = useState(null);  // This will store 'edit' or 'add'
 
 
@@ -127,12 +132,13 @@ const saveEditedProduct = async (index) => {
 };
 
 
-const handleProductChange = (index, field, value) => {
-  const updatedProducts = [...modalProducts];
-  updatedProducts[index][field] = value;
-  setModalProducts(updatedProducts);
-};
-
+const handleProductChange = useCallback((index, field, value) => {
+  setModalProducts(prevProducts => {
+    const updatedProducts = [...prevProducts];
+    updatedProducts[index][field] = value;
+    return updatedProducts;
+  });
+}, []);
 
 const deleteProduct = async (index) => {
   const productToDelete = modalProducts[index];
@@ -234,11 +240,11 @@ const handleShow = (products, id) => {
   };
 
 
-  const handleInputChange = (index, fieldName, value) => {
+  const handleInputChange = useCallback((index, fieldName, value) => {
     const newRows = [...rows];
     newRows[index][fieldName] = value;
     setRows(newRows);
-  };
+  }, []);
   
 
   /*
@@ -484,27 +490,35 @@ const handleShow = (products, id) => {
 
   useEffect(() => {
     if (productData) {
-      console.log(productData[4])
-      setId(productData[0]);
-      setBillNo(productData[1])
-      setDate(productData[2]);
-      setProductCode(productData[3]);
+      console.log(productData.supplier_company_tax_code)
+      setId(productData.id);
+      setBillNo(productData.bill_number)
+      console.log("pre value:",date)
+      setDate(productData.date);
+      console.log("after set:",date)
+      setSupplierCompanyTaxCode(productData.supplier_company_tax_code);
+      setReceiverCompanyTaxCode(productData.receiver_company_tax_code);
+
       
-      setProviderCompanyTaxCode(String(productData[4]));
-
-      const taxCode = getTaxCodeByName(productData[7]);
-      setRecieverCompanyTaxCode(taxCode);
-      setStatus(productData[8])
-      setBarcode(productData[3]);
-      setPlaceOfUse(productData[9]);
-      setAmount(productData[17]);
-
+     
 
     }
   }, [productData]);
 
+  useEffect(() => {
+    console.log(receiverCompanyTaxCode)
+    console.log("Matching Option:",supplierOptions.find(option => String(option.value) === String(supplierCompanyTaxCode)));
+    ;
+    console.log("Supplier Options:",supplierOptions)
+    
+ 
+  }, [supplierCompanyTaxCode,
+  receiverCompanyTaxCode]);
+
   const handleClick = (row) => {
     setProductData(row);
+    setSupplierCompanyTaxCode(row.supplier_company_tax_code);
+    setReceiverCompanyTaxCode(row.receiver_company_tax_code);
     setShowEditPopup(true);
   };
 
@@ -553,11 +567,12 @@ const handleShow = (products, id) => {
     label: consumer[1] !== undefined && consumer[2] !== undefined ? `${consumer[1]} - ${consumer[2]}` : '',
   }));
 
-  /*
-  console.log("recieverCompanyTaxCode:", providerCompanyTaxCode);
-  console.log("Matching Option:", supplierOptions.find(option => option.value ===  providerCompanyTaxCode));
+  console.log()
+
+  
+  console.log("Matching Option:", supplierOptions.find(option => option.value ===  supplierCompanyTaxCode));
    console.log("Supplier Options:",supplierOptions)
-   */
+   
 
   const handleEdit = async (event) => {
     event.preventDefault();
@@ -566,15 +581,13 @@ const handleShow = (products, id) => {
 
     const access_token = await localforage.getItem('access_token');
     const updatedData = {
-      old_id: id,
-      new_product_code: productCode,
-      new_supplier_tax_code: providerCompanyTaxCode,
-      new_receiver_tax_code: recieverCompanyTaxCode,
-      date,
-      status,
-      place_of_use: placeOfUse,
-      amount,
-      barcode
+      inflow_id: id,
+      bill_number:billNo,
+      supplier_tax_code: supplierCompanyTaxCode,
+      receiver_tax_code: receiverCompanyTaxCode,
+      date:date,
+      
+      
     };
 
     fetch(`${process.env.REACT_APP_PUBLIC_URL}/edit_product_inflow/`, {
@@ -618,8 +631,8 @@ const handleShow = (products, id) => {
 
     formData.append('date', date);
     formData.append('bill_number',billNo)
-    formData.append('provider_company_tax_code', providerCompanyTaxCode);
-    formData.append('receiver_company_tax_code', recieverCompanyTaxCode);
+    formData.append('provider_company_tax_code', supplierCompanyTaxCode);
+    formData.append('receiver_company_tax_code', receiverCompanyTaxCode);
   
 
     rows.forEach(row => {
@@ -679,10 +692,10 @@ const handleShow = (products, id) => {
     setDate('');
     setProductCode('');
     
-    setProviderCompanyTaxCode('');
+    setSupplierCompanyTaxCode('');
 
     
-    setRecieverCompanyTaxCode('');
+    setReceiverCompanyTaxCode('');
     setStatus('')
     setBarcode('');
     setPlaceOfUse('');
@@ -755,7 +768,7 @@ const handleShow = (products, id) => {
   const instantUploadFileChange = (e) => {
       const files = Array.from(e.target.files);
       let urls = [];
-      
+      setIsLoading(true);
       files.forEach((file, index) => {
         console.log(`Uploading file ${index + 1}`);
   
@@ -772,7 +785,8 @@ const handleShow = (products, id) => {
         console.log('All files uploaded successfully');
         setUploadedFileUrls(urls); // This will now store file names
         setUploadedFiles(files);
-       
+        setIsLoading(false);
+
       }, 2000 * files.length); // Assuming each file takes 2 seconds to upload
   };
 
@@ -781,6 +795,11 @@ const handleShow = (products, id) => {
   const UploadFileChangeInModal = async (e) => {
     const files = Array.from(e.target.files);
     let urls = [];
+    setIsLoadingModal(true);
+    const localURLs = files.map(file => URL.createObjectURL(file));
+
+    // Add the local URLs to the currentFiles state for immediate display
+    setCurrentFiles(prevFiles => [...prevFiles, ...localURLs]);
 
     files.forEach((file, index) => {
         console.log(`Uploading file ${index + 1}`);
@@ -794,7 +813,7 @@ const handleShow = (products, id) => {
 
     setTimeout(async () => {
         console.log('All files uploaded successfully');
-        setUploadedFileUrls(urls);
+        setUploadedFileUrlsModal(urls);
 
         const access_token = await localforage.getItem('access_token');
         const formData = new FormData();
@@ -813,7 +832,20 @@ const handleShow = (products, id) => {
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data);
+          setIsLoadingModal(false);
+          const updatedURLs = data.images || []; // Adjust this according to your server response structure
+          setCurrentFiles(prevFiles => {
+              let newFiles = [...prevFiles];
+              localURLs.forEach((localURL, index) => {
+                  const indexOfLocal = newFiles.indexOf(localURL);
+                  if (indexOfLocal !== -1 && updatedURLs[index]) {
+                      newFiles[indexOfLocal] = updatedURLs[index];
+                  }
+              });
+              return newFiles;
+          });
+
+          setUploadedFileUrlsModal([]); // Assuming you're done with this and clearing it
         })
         .catch(error => {
             console.error('Error uploading images:', error);
@@ -846,7 +878,7 @@ const handleShow = (products, id) => {
 
   // Function to handle hiding the modal
   const handleHideModal = () => {
-    setCurrentFiles([]);
+    setUploadedFileUrlsModal([]);
     setShowModal(false);
   };
 
@@ -929,39 +961,47 @@ const handleShow = (products, id) => {
               <Select
                 name="receiver_tax_code"
                 options={consumerOptions}
-                onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+                onChange={(selectedOption) => setReceiverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
               />
             </FormGroup>
             <label>Tedarikçi Vergi No</label>
             <FormGroup>
               <Select
-                name="provider_tax_code"
+                name="supplier_tax_code"
                 options={supplierOptions}
-                onChange={(selectedOption) => setProviderCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+                onChange={(selectedOption) => setSupplierCompanyTaxCode(selectedOption ? selectedOption.value : '')}
               />
             </FormGroup>
             {/* Photo upload section */}
             <div className="photo-upload-section">
-              <input 
-                type="file" 
-                onChange={instantUploadFileChange}
-                multiple 
-              />
-              {uploadedFiles.length > 0 && (
-                <p>
-                  {uploadedFiles.length} files selected for upload
-                </p>
-              )}
-            </div>
-            <div className="uploaded-files-section">
-              <ul>
-                {uploadedFileUrls.map((name, index) => (
-                  <li key={index}>
-                    {name}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <input 
+          type="file" 
+          onChange={instantUploadFileChange}
+          multiple 
+        />
+        {uploadedFiles.length > 0 && (
+          <p>
+            {uploadedFiles.length} files selected for upload
+          </p>
+        )}
+      </div>
+      <div className="uploaded-files-section">
+        {isLoading ? (
+          <div className="loading-icon">
+            {/* Use your own LoadingIcon component or an icon from any library */}
+            {/* <LoadingIcon /> */}
+            Loading...
+          </div>
+        ) : (
+          <ul>
+            {uploadedFileUrls.map((name, index) => (
+              <li key={index}>
+                {name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
           </div>
 
           {/* Dynamic product rows */}
@@ -1061,33 +1101,33 @@ const handleShow = (products, id) => {
                             />
                           </FormGroup>
 
-                          <label>Malzeme Kodu</label>
+                        
+                          <label>İrsaliye No</label>
                           <FormGroup>
-                            <Select
-                              name="product_code"
-                              value={productOptions.find(option => option.value === productCode)}
-                              options={productOptions}
-                              onChange={(selectedOption) => setProductCode(selectedOption.value)}
+                            <Input
+                              name="bill_number"
+                              type="text"
+                              value={billNo}
+                              onChange={(e) => setBillNo(e.target.value)}
                             />
                           </FormGroup>
-
                           <label>Alıcı Vergi No</label>
                           <FormGroup>
                             <Select
                               name="receiver_tax_code"
-                              value={consumerOptions.find(option => option.value === recieverCompanyTaxCode)}
+                              value={consumerOptions.find(option => String(option.value) === String(receiverCompanyTaxCode))}
                               options={consumerOptions}
-                              onChange={(selectedOption) => setRecieverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+                              onChange={(selectedOption) => setReceiverCompanyTaxCode(selectedOption ? selectedOption.value : '')}
                             />
                           </FormGroup>
 
                           <label>Tedarikçi Vergi No</label>
                           <FormGroup>
                             <Select
-                              name="provider_tax_code"
-                              value={supplierOptions.find(option => option.value === providerCompanyTaxCode)}
+                              name="supplier_tax_code"
+                              value={supplierOptions.find(option =>String(option.value)=== String(supplierCompanyTaxCode))}
                               options={supplierOptions}
-                              onChange={(selectedOption) => setProviderCompanyTaxCode(selectedOption ? selectedOption.value : '')}
+                              onChange={(selectedOption) => setSupplierCompanyTaxCode(selectedOption ? selectedOption.value : '')}
                             />
 
                           </FormGroup>
@@ -1096,48 +1136,7 @@ const handleShow = (products, id) => {
                        
 
                         </div>
-                        <div className="form-group-col">
-                         
-                        
-                        <label>Barkod</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              value={barcode}
-                              onChange={(e) => setBarcode(e.target.value)}
-                            />
-                          </FormGroup>
-
-                          
-                          <label>Durum</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              value={status}
-                              onChange={(e) => setStatus(e.target.value)}
-                            />
-                          </FormGroup>
-
-
-                          <label>Kullanım Yeri</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              defaultValue={placeOfUse}
-                              onChange={(e) => setPlaceOfUse(e.target.value)}
-                            />
-                          </FormGroup>
-
-                          <label>Miktar</label>
-                          <FormGroup>
-                            <Input
-                              type="text"
-                              value={amount}
-                              onChange={(e) => setAmount(e.target.value)}
-                            />
-                          </FormGroup>
-                        </div>
-
+                       
 
 
 
@@ -1429,6 +1428,23 @@ const handleShow = (products, id) => {
           />
         
         </div>
+        <div className="uploaded-files-section">
+        {isLoadingModal ? (
+              <div className="loading-icon">
+              {/* Use your own LoadingIcon component or an icon from any library */}
+              {/* <LoadingIcon /> */}
+              Loading...
+            </div>
+        ) : (
+          <ul>
+            {uploadedFileUrlsModal.map((name, index) => (
+              <li key={index}>
+                {name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       </div>
     </div>
   </div>
@@ -1508,32 +1524,69 @@ const handleShow = (products, id) => {
                 </div>
             ) : (
                 // Display mode for the current product
-                <div>
-                    <h5 className="product-title">
-                        Product {index + 1}
-                        <button type="button" className="icon-button" onClick={() => {
-    setIsEditingIndex(index);
-    setMode('edit');
-}}>
-    <FontAwesomeIcon icon={faEdit} />
-</button>
-                        <button type="button" className="icon-button" onClick={() => deleteProduct(index)}>
-                            <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                    </h5>
-                    <strong>Product Code:</strong> {product.product_code}<br />
-                    <strong>Description:</strong> {product.description}<br />
-                    <strong>Amount:</strong> {product.amount}<br />
-                    <strong>Barcode:</strong> {product.barcode}<br />
-                    <strong>Brand:</strong> {product.brand}<br />
-                    <strong>Model:</strong> {product.model}<br />
-                    <strong>Place of Use:</strong> {product.place_of_use}<br />
-                    <strong>Serial Number:</strong> {product.serial_number}<br />
-                    <strong>Status:</strong> {product.status}<br />
-                    <strong>Group Name:</strong> {product.group_name}<br />
-                    <strong>Subgroup Name:</strong> {product.subgroup_name}<br />
-                    <strong>Unit:</strong> {product.unit}<br />
+                <div className="product-details">
+                <h5 className="product-title">
+                    Product {index + 1}
+                    <button type="button" className="icon-button" onClick={() => {
+                        setIsEditingIndex(index);
+                        setMode('edit');
+                    }}>
+                        <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                    <button type="button" className="icon-button" onClick={() => deleteProduct(index)}>
+                        <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                </h5>
+                
+                <div className="detail-row">
+                    <strong className="detail-title">Product Code:</strong>
+                    <span>{product.product_code}</span>
                 </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Description:</strong>
+                    <span>{product.description}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Amount:</strong>
+                    <span>{product.amount}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Barcode:</strong>
+                    <span>{product.barcode}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Brand:</strong>
+                    <span>{product.brand}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Model:</strong>
+                    <span>{product.model}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Place of Use:</strong>
+                    <span>{product.place_of_use}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Serial Number:</strong>
+                    <span>{product.serial_number}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Status:</strong>
+                    <span>{product.status}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Group Name:</strong>
+                    <span>{product.group_name}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Subgroup Name:</strong>
+                    <span>{product.subgroup_name}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Unit:</strong>
+                    <span>{product.unit}</span>
+                </div>
+            </div>
             )}
             {(index !== modalProducts.length - 1) && <hr />}
         </div>

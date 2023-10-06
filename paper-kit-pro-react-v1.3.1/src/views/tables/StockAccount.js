@@ -754,18 +754,27 @@ if (productData) {
                       model: item.model,
                       description: item.description,
                       unit: item.unit,
-                      amount: item.amount
+                      amount: item.amount,
+                      unit_price:item.unit_price,
+                      discount_rate:item.discount_rate,
+                      discount_amount:item.discount_amount,
+                      tax_rate:item.tax_rate,
+                      tevkifat_rate:item.tevkifat_rate,
+                      price_without_tax:item.price_without_tax,
+                      unit_price_without_tax:item.unit_price_without_tax,
+                      price_with_tevkifat:item.price_with_tevkifat,
+                      price_total:item.price_total,
                     })),
                     supplier_company: row.supplier_company_name,
                     receiver_company: row.receiver_company_name,
                     supplier_company_tax_code: row.supplier_company_tax_code,
                     receiver_company_tax_code: row.receiver_company_tax_code,
-                    total_price_total: row.total_price_total,
-                    total_price_with_tevkifat: row.total_price_with_tevkifat
+                    total_price_total: row.price_total,
+                    total_price_with_tevkifat: row.price_with_tevkifat
                     ,
-                    total_price_without_tax: row.total_price_without_tax
+                    total_price_without_tax: row.price_without_tax
                     ,
-                    total_unit_price_without_tax: row.total_unit_price_without_tax,
+             
                    
                     actions: (
                       <div className='actions-left'>
@@ -789,7 +798,7 @@ if (productData) {
                     { Header: 'Toplam Fiyat(Vergiler Dahil)', accessor: 'total_price_total' },
                     { Header: 'Tevkifatlı Fiyat', accessor: 'total_price_with_tevkifat' },
                     { Header: 'Toplam Fiyat(Vergiler Hariç)', accessor: 'total_price_without_tax' },
-                    { Header: 'Birim Fiyat(Vergiler Hariç)', accessor: 'total_unit_price_without_tax' },
+                  
                     {
                       Header: 'Products',
                       id: 'products',
@@ -818,7 +827,7 @@ if (productData) {
 
                   
 {show && (
-  <div className="modal show d-block custom-modal" tabindex="-1">
+  <div className="modal show d-block custom-modal" tabIndex="-1">
     <div className="modal-dialog">
       <div className="modal-content custom-modal-content">
         <div className="modal-header">
@@ -844,7 +853,7 @@ if (productData) {
                         />
                     </FormGroup>
 
-                    <label>İndirim Oranı</label>
+                    <label>İndirim Oranı(%)</label>
                     <FormGroup>
                         <Input
                             type="text"
@@ -864,7 +873,7 @@ if (productData) {
                     </FormGroup>
 
                     
-                    <label>Vergi Oranı</label>
+                    <label>Vergi Oranı(%)</label>
                     <FormGroup>
                         <Input
                             type="text"
@@ -873,7 +882,7 @@ if (productData) {
                         />
                     </FormGroup>
 
-                    <label>Tevkifat Oranı</label>
+                    <label>Tevkifat Oranı(%)</label>
                     <FormGroup>
                         <Input
                             type="text"
@@ -886,8 +895,9 @@ if (productData) {
                     <FormGroup>
                         <Input
                             type="text"
+                            disabled
                             value={product.price_without_tax || ''}
-                            onChange={(e) => handleProductChange(index, 'price_without_tax', e.target.value)}
+                           
                         />
                     </FormGroup>
 
@@ -895,8 +905,8 @@ if (productData) {
                     <FormGroup>
                         <Input
                             type="text"
+                            disabled
                             value={product.unit_price_without_tax || ''}
-                            onChange={(e) => handleProductChange(index, 'unit_price_without_tax', e.target.value)}
                         />
                     </FormGroup>
 
@@ -904,8 +914,8 @@ if (productData) {
                     <FormGroup>
                         <Input
                             type="text"
+                            disabled
                             value={product.price_with_tevkifat || ''}
-                            onChange={(e) => handleProductChange(index, 'price_with_tevkifat', e.target.value)}
                         />
                     </FormGroup>
 
@@ -915,8 +925,8 @@ if (productData) {
                     <FormGroup>
                         <Input
                             type="text"
+                            disabled
                             value={product.price_total || ''}
-                            onChange={(e) => handleProductChange(index, 'price_total', e.target.value)}
                         />
                     </FormGroup>
 
@@ -941,40 +951,99 @@ if (productData) {
                 </div>
             ) : (
                 // Display mode for the current product
-                <div>
-                    <h5 className="product-title">
-                        Product {index + 1}
-                        <button type="button" className="icon-button" onClick={() => {
-    setIsEditingIndex(index);
-   
-}}>
-    <FontAwesomeIcon icon={faEdit} />
-</button>
-                       
-                    </h5>
-                    <strong>Product Code:</strong> {product.product_code}<br />
-<strong>Description:</strong> {product.description}<br />
-<strong>Amount:</strong> {product.amount}<br />
-<strong>Barcode:</strong> {product.barcode}<br />
-<strong>Brand:</strong> {product.brand}<br />
-<strong>Model:</strong> {product.model}<br />
-<strong>Place of Use:</strong> {product.place_of_use}<br />
-<strong>Serial Number:</strong> {product.serial_number}<br />
-<strong>Status:</strong> {product.status}<br />
-<strong>Group Name:</strong> {product.group_name}<br />
-<strong>Subgroup Name:</strong> {product.subgroup_name}<br />
-<strong>Unit:</strong> {product.unit}<br />
-<strong>Unit Price:</strong> {product.unit_price}<br />
-<strong>Discount Rate:</strong> {product.discount_rate}<br />
-<strong>Discount Amount:</strong> {product.discount_amount}<br />
-<strong>Tax Rate:</strong> {product.tax_rate}<br />
-<strong>Tevkifat Rate:</strong> {product.tevkifat_rate}<br />
-<strong>Price Without Tax:</strong> {product.price_without_tax}<br />
-<strong>Unit Price Without Tax:</strong> {product.unit_price_without_tax}<br />
-<strong>Price With Tevkifat:</strong> {product.price_with_tevkifat}<br />
-<strong>Price Total:</strong> {product.price_total}<br />
-
+                <div className="product-details">
+                <h5 className="product-title">
+                    Product {index + 1}
+                    <button type="button" className="icon-button" onClick={() => setIsEditingIndex(index)}>
+                        <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                </h5>
+                
+                <div className="detail-row">
+                    <strong className="detail-title">Product Code:</strong>
+                    <span>{product.product_code}</span>
                 </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Description:</strong>
+                    <span>{product.description}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Amount:</strong>
+                    <span>{product.amount}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Barcode:</strong>
+                    <span>{product.barcode}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Brand:</strong>
+                    <span>{product.brand}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Model:</strong>
+                    <span>{product.model}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Place of Use:</strong>
+                    <span>{product.place_of_use}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Serial Number:</strong>
+                    <span>{product.serial_number}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Status:</strong>
+                    <span>{product.status}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Group Name:</strong>
+                    <span>{product.group_name}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Subgroup Name:</strong>
+                    <span>{product.subgroup_name}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Unit:</strong>
+                    <span>{product.unit}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Unit Price:</strong>
+                    <span>{product.unit_price}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Discount Rate(%):</strong>
+                    <span>{product.discount_rate}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Discount Amount:</strong>
+                    <span>{product.discount_amount}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Tax Rate:</strong>
+                    <span>{product.tax_rate}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Tevkifat Rate:</strong>
+                    <span>{product.tevkifat_rate}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Price Without Tax:</strong>
+                    <span>{product.price_without_tax}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Unit Price Without Tax:</strong>
+                    <span>{product.unit_price_without_tax}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Price With Tevkifat:</strong>
+                    <span>{product.price_with_tevkifat}</span>
+                </div>
+                <div className="detail-row">
+                    <strong className="detail-title">Price Total:</strong>
+                    <span>{product.price_total}</span>
+                </div>
+            </div>
             )}
             {(index !== modalProducts.length - 1) && <hr />}
         </div>
