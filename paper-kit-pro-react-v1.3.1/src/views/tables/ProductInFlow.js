@@ -241,11 +241,22 @@ const handleShow = (products, id) => {
 
 
   const handleInputChange = useCallback((index, fieldName, value) => {
-    const newRows = [...rows];
-    newRows[index][fieldName] = value;
-    setRows(newRows);
-  }, []);
-  
+    setRows(prevRows => {
+        // Clone the array for immutability
+        const newRows = [...prevRows];
+        
+        // Check if the object at the index exists, if not, create it
+        if (!newRows[index]) {
+            newRows[index] = {};
+        }
+        
+        // Now, set the property
+        newRows[index][fieldName] = value;
+
+        return newRows;  // This line returns the updated rows array, thus applying the update
+    });
+}, []);
+
 
   /*
   useEffect(() => {
@@ -673,6 +684,7 @@ const handleShow = (products, id) => {
           setDataChanged(true);
           setUploadedFiles([]);
           setShowPopup(false);
+          resetForm();
         } else {
           console.log("Failed to add product inflow", body.error);
           errorUpload(body.error);
@@ -684,6 +696,14 @@ const handleShow = (products, id) => {
       });
   };
 
+  const resetForm = () => {
+    setDate('');  // Or set to initial value
+    setBillNo('');  // Or set to initial value
+    setSupplierCompanyTaxCode('');  // Or set to initial value
+    setReceiverCompanyTaxCode('');  // Or set to initial value
+    setRows([]);  // Assuming initial value is an empty array
+    setUploadedFiles([]);  // Resetting to empty array
+};
 
   const handleCancel = () => {
     setShowPopup(false);
@@ -691,7 +711,7 @@ const handleShow = (products, id) => {
     setId('');
     setDate('');
     setProductCode('');
-    
+    setBillNo('');
     setSupplierCompanyTaxCode('');
 
     

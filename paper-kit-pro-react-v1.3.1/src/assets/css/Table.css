@@ -217,16 +217,24 @@
       backdrop-filter: blur(5px);
   }
 }
-
 /* PopUp */
 .popup {
-  width:500px;
+  width: 80%; /* Set to 80% by default for mobile screens */
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 100;
+  box-sizing: border-box; /* To make sure padding and border are included in width */
 }
+
+/* Desktop */
+@media (min-width: 768px) { 
+  .popup {
+    width: 500px; /* Set a fixed width for desktop sizes */
+  }
+}
+
 .form-group-col {
   display: inline-block;
   width: 45%; /* adjust as needed */
@@ -535,15 +543,23 @@
 
 /* PopUp */
 .popup-inflow {
-  width:500px;
+  width: 80%; /* Set to 80% by default. Adjust as needed */
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  max-height: 90vh; /* Sets the max height to 90% of the viewport height. Adjust as needed. */
-  overflow-y: auto; /* Display vertical scrollbar if needed */
-  padding-right: 15px; /* To*/
+  max-height: 90vh; 
+  overflow-y: auto;
+  padding-right: 15px;
   z-index: 100;
+  box-sizing: border-box; /* So padding is included in the width */
+}
+
+/* Desktop */
+@media (min-width: 768px) { /* This breakpoint is arbitrary. Adjust as needed. */
+  .popup-inflow {
+    width: 500px; /* Set a fixed width for desktop sizes */
+  }
 }
 
 
