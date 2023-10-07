@@ -346,9 +346,7 @@ class EditUserView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            print(request.data)
             # Extract the data from the request
-            print(request.data)
             user_id = request.data.get('id')
             username = request.data.get('username')
             password = request.data.get('password')
@@ -629,10 +627,8 @@ class EditProductsView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
             id = data.get('id')
             product = Products.objects.get(id=id)
-            print(product)
 
             # Check if product belongs to the same company as the user
             if product.company != request.user.company:
@@ -664,11 +660,9 @@ class EditProductsView(APIView):
             #product.refresh_from_db()
             
             dirty_fields = product.get_dirty_fields(check_relationship=True)
-            print(dirty_fields)
 
             if 'group' in dirty_fields or 'subgroup' in dirty_fields:
                 # Here, assign the new product code based on the new group and subgroup
-                print("omerrr")
                 new_product_code = f'{group.group_code}.{subgroup.subgroup_code}.{subgroup.sequence_number}'
                 product.product_code = new_product_code
                 subgroup.sequence_number += 1
@@ -700,7 +694,6 @@ class DeleteProductsView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = json.loads(request.body)
-            print(data)
             id = data.get('id')
             Products.objects.get(id=id).delete()
         except ProtectedError:
@@ -732,7 +725,6 @@ class AddSuppliersView(APIView):
         try:
             user = request.user
             data = json.loads(request.body)
-            print(data)
             tax_code = data.get('tax_code')
             if not tax_code:
                 return JsonResponse({'error': _("Tax Code cannot be empty!")}, status=400)
@@ -793,13 +785,11 @@ class EditSuppliersView(APIView):
         try:
             user = request.user
             data = json.loads(request.body)
-            print(data)
 
             # Get supplier using id
             supplier_id = data.get('id')
             supplier = Suppliers.objects.get(id=supplier_id, company=user.company)
             dirty_fields = supplier.get_dirty_fields()
-            print(dirty_fields)
 
             # Update supplier fields
             for field in ['name', 'contact_name', 'contact_no', 'tax_code', 'mail', 'adress', 'explanation']:
@@ -1487,34 +1477,21 @@ class EditProductInflowView(APIView):
     def post(self, request, *args, **kwargs):
         try:
             data = request.data
-            print(data)
             inflow_id = data.get('inflow_id')
 
-            # Get the old inflow and its associated images
-            old_inflow = ProductInflow.objects.get(id=inflow_id)
-            inflow_images = list(old_inflow.images.all())
+            # Fetch the inflow 
+            inflow = ProductInflow.objects.get(id=inflow_id)
 
             # Fetch supplier and receiver companies
             supplier_company = Suppliers.objects.get(tax_code=data['supplier_tax_code'], company=request.user.company)
             receiver_company = Consumers.objects.get(tax_code=data['receiver_tax_code'], company=request.user.company)
 
-            # Create a new inflow with updated details
-            new_inflow = ProductInflow.objects.create(
-                date=data['date'],
-                bill_number=data['bill_number'],
-                supplier_company=supplier_company,
-                receiver_company=receiver_company,
-                company=request.user.company,
-                project=request.user.current_project
-            )
-
-            # Reassign the images to the new inflow
-            for image in inflow_images:
-                image.product_inflow = new_inflow
-                image.save()
-
-            # Delete the old inflow
-            old_inflow.delete()
+            # Update the inflow with new details
+            inflow.date = data['date']
+            inflow.bill_number = data['bill_number']
+            inflow.supplier_company = supplier_company
+            inflow.receiver_company = receiver_company
+            inflow.save()
 
             return JsonResponse({'message': _("Product Inflow changes have been successfully saved.")}, status=200)
 
@@ -1541,23 +1518,18 @@ class EditProductInflowItemView(APIView):
         try:
             data = request.data
             item_id = data.get('item_id')
-            print(request.data)
-            # Get the old inflow item
-            old_item = ProductInflowItem.objects.get(id=item_id)
 
-            # Create a new item with updated details
+            # Get the inflow item
+            item = ProductInflowItem.objects.get(id=item_id)
+            
+            # Update the item with new details
             product = Products.objects.get(product_code=data['product_code'], company=request.user.company)
-            new_item = ProductInflowItem.objects.create(
-                inflow=old_item.inflow,
-                product=product,
-                barcode=data['barcode'],
-                status=data['status'],
-                place_of_use=data['place_of_use'],
-                amount=data['amount']
-            )
-
-            # Delete the old inflow item
-            old_item.delete()
+            item.product = product
+            item.barcode = data['barcode']
+            item.status = data['status']
+            item.place_of_use = data['place_of_use']
+            item.amount = data['amount']
+            item.save()
 
             return JsonResponse({'message': _("Product Inflow Item changes have been successfully saved.")}, status=200)
 
@@ -1585,13 +1557,9 @@ class DeleteProductInflowView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
+            print(request.data)
             id = request.data.get('id')
             product_inflow = ProductInflow.objects.get(id=id)
-
-            #!silmeden önce kullanıcıya muhasebe öğesinin de silineceğine dair uyarı verilmeli
-            # Check if there are any associated accounting objects
-            # if product_inflow.accounting_set.exists():
-            #     return JsonResponse({'error': _('Cannot delete product inflow object. There are accounting objects associated with it.')}, status=400)
 
             product_inflow.delete()
 
@@ -1618,11 +1586,9 @@ class DeleteProductInflowItemView(APIView):
 
     def post(self, request, *args, **kwargs):
         try:
-            # Get the ProductInflowItem object that needs to be deleted
             item_id = request.data.get('item_id')
             product_inflow_item = ProductInflowItem.objects.get(id=item_id)
             
-            # Delete the ProductInflowItem
             product_inflow_item.delete()
 
             return JsonResponse({'message': _('ProductInflowItem deleted successfully')}, status=200)
@@ -1749,7 +1715,6 @@ class AddProductOutflowView(APIView):
             status = request.data.get('status')
             place_of_use = request.data.get('place_of_use')
             amount = request.data.get('amount')
-            print(request.data)
             # Check if the date is in correct format
             try:
                 from datetime import datetime
@@ -1863,54 +1828,27 @@ class EditProductOutflowView(APIView):
     def handle_exception(self, exc):
         if isinstance(exc, (NotAuthenticated, PermissionDenied)):
             return JsonResponse({'error': _("You do not have permission to perform this action.")}, status=400)
-
         return super().handle_exception(exc)
 
     def post(self, request, *args, **kwargs):
         try:
             data = request.data
+            outflow_id = data.get('old_id')
+            product_outflow = ProductOutflow.objects.get(id=outflow_id, company=request.user.company, project=request.user.current_project)
 
-            old_id = data.get('old_id')
-            product_outflow = ProductOutflow.objects.filter(company=request.user.company, project=request.user.current_project).get(id=old_id)
-
-            # Store the images linked to this product outflow (assuming images are linked similarly to inflow)
-            outflow_images = list(product_outflow.images.all())
-
-            # Delete the old product outflow - this might trigger pre_delete signal if set
-            product_outflow.delete()
-
-            # Prepare for creating a new product outflow - this will trigger post_save signal if set
-            new_product_code = data.get('product_code')
-            product = Products.objects.filter(product_code=new_product_code, company=request.user.company).first()
-
-            new_supplier_tax_code = data.get('provider_company_tax_code')
-            supplier_company = Consumers.objects.filter(tax_code=new_supplier_tax_code, company=request.user.company).first()
-
-            new_receiver_tax_code = data.get('receiver_company_tax_code')
-            receiver_company = Consumers.objects.filter(tax_code=new_receiver_tax_code, company=request.user.company).first()
-
-            product_data = {
-                'product': product if new_product_code else product_outflow.product,
-                'supplier_company': supplier_company if new_supplier_tax_code else product_outflow.supplier_company,
-                'receiver_company': receiver_company if new_receiver_tax_code else product_outflow.receiver_company,
-            }
+            # Update product_outflow fields
+            if 'product_code' in data:
+                product_outflow.product = Products.objects.get(product_code=data['product_code'], company=request.user.company)
+            if 'provider_company_tax_code' in data:
+                product_outflow.supplier_company = Consumers.objects.get(tax_code=data['provider_company_tax_code'], company=request.user.company)
+            if 'receiver_company_tax_code' in data:
+                product_outflow.receiver_company = Consumers.objects.get(tax_code=data['receiver_company_tax_code'], company=request.user.company)
 
             for field in ['date', 'status', 'place_of_use', 'amount', 'barcode']:
-                value = data.get(field)
-                if value is not None and value != '':
-                    product_data[field] = value
-                else:
-                    return JsonResponse({'error': _("The field '{field}' cannot be empty.")}, status=400)
+                if field in data:
+                    setattr(product_outflow, field, data[field])
 
-            product_data["company"] = request.user.company
-            product_data["project"] = request.user.current_project
-
-            new_product_outflow = ProductOutflow.objects.create(**product_data)
-
-            # Reassign the images to the new product outflow instance
-            for image in outflow_images:
-                image.product_outflow = new_product_outflow
-                image.save()
+            product_outflow.save()
 
             return JsonResponse({'message': _("Your changes have been successfully saved.")}, status=200)
 
@@ -1919,6 +1857,7 @@ class EditProductOutflowView(APIView):
         except Exception as e:
             traceback.print_exc()
             return JsonResponse({'error': str(e)}, status=500)
+
 
 
 class DeleteProductOutflowView(APIView):
@@ -2019,88 +1958,88 @@ class CreateProductOutflowReceiptView(APIView):
 #             project=instance.project
 #         )
 
+#!!!!!!
+# @receiver(post_save, sender=ProductInflowItem)
+# def update_stock_inflow(sender, instance, created, **kwargs):
+#     if created:  # Only handle inflow for newly created items
+#         try:
+#             stock = Stock.objects.get(product=instance.product, company=instance.inflow.company, project=instance.inflow.project)
+#             stock.inflow += float(instance.amount)
+#             stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+#             stock.save()
 
-@receiver(post_save, sender=ProductInflowItem)
-def update_stock_inflow(sender, instance, created, **kwargs):
-    if created:  # Only handle inflow for newly created items
-        try:
-            stock = Stock.objects.get(product=instance.product, company=instance.inflow.company, project=instance.inflow.project)
-            stock.inflow += float(instance.amount)
-            stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
-            stock.save()
-
-            instance.inflow.supplier_company.products.add(instance.product)
-            instance.inflow.receiver_company.products.add(instance.product)
-        except Stock.DoesNotExist:
-            return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
-
-
-@receiver(pre_delete, sender=ProductInflowItem)
-def update_stock_inflow_on_delete(sender, instance, **kwargs):
-    try:
-        stock = Stock.objects.get(product=instance.product, company=instance.inflow.company, project=instance.inflow.project)
-        stock.inflow -= instance.amount
-        stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
-        stock.save()
-
-        # If product was added to the supplier, remove it
-        instance.inflow.supplier_company.products.remove(instance.product)
-        instance.inflow.receiver_company.products.remove(instance.product)
-    except Stock.DoesNotExist:
-        return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
+#             instance.inflow.supplier_company.products.add(instance.product)
+#             instance.inflow.receiver_company.products.add(instance.product)
+#         except Stock.DoesNotExist:
+#             return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
+# @receiver(pre_delete, sender=ProductInflowItem)
+# def update_stock_inflow_on_delete(sender, instance, **kwargs):
+#     try:
+#         stock = Stock.objects.get(product=instance.product, company=instance.inflow.company, project=instance.inflow.project)
+#         stock.inflow -= instance.amount
+#         stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+#         stock.save()
 
-
-@receiver(post_save, sender=ProductOutflow)
-def update_stock_outflow(sender, instance, created, **kwargs):
-    with transaction.atomic():
-        dirty_fields = instance.get_dirty_fields()
-
-        old_product_code = dirty_fields.get('product__product_code')
-        if old_product_code:
-            try:
-                old_product_stock = Stock.objects.get(product__product_code=old_product_code, company=instance.company, project=instance.project)
-                old_product_stock.outflow -= instance.amount
-                old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
-                if old_product_stock.stock < 0:
-                    return JsonResponse({'error': _("You do not have enough products in your warehouse.")}, status=400)
-                old_product_stock.save()
-            except Stock.DoesNotExist:
-                return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
-
-        try:
-            stock = Stock.objects.get(product__product_code=instance.product.product_code, company=instance.company, project=instance.project)
-        except Stock.DoesNotExist:
-            return
-
-        if created:
-            instance.receiver_company.products.add(instance.product)
-            stock.outflow += float(instance.amount)
-        else:
-            old_amount = dirty_fields.get('amount')
-            if old_amount is not None:
-                stock.outflow = (stock.outflow or 0) - old_amount + instance.amount
-
-        stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
-        if stock.stock < 0:
-            raise ValidationError(_('You do not have enough products in your warehouse.'))
-        stock.save()
+#         # If product was added to the supplier, remove it
+#         instance.inflow.supplier_company.products.remove(instance.product)
+#         instance.inflow.receiver_company.products.remove(instance.product)
+#     except Stock.DoesNotExist:
+#         return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
 
-@receiver(pre_delete, sender=ProductOutflow)
-def update_stock_outflow_on_delete(sender, instance, **kwargs):
-    try:
-        stock = Stock.objects.get(product=instance.product, company=instance.company, project=instance.project)
-        stock.outflow -= instance.amount
-        stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
-        stock.save()
 
-        # If product was added to the receiver, remove it
-        instance.receiver_company.products.remove(instance.product)
-    except Stock.DoesNotExist:
-        return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
+# @receiver(post_save, sender=ProductOutflow)
+# def update_stock_outflow(sender, instance, created, **kwargs):
+#     with transaction.atomic():
+#         dirty_fields = instance.get_dirty_fields()
+
+#         old_product_code = dirty_fields.get('product__product_code')
+#         if old_product_code:
+#             try:
+#                 old_product_stock = Stock.objects.get(product__product_code=old_product_code, company=instance.company, project=instance.project)
+#                 old_product_stock.outflow -= instance.amount
+#                 old_product_stock.stock = (old_product_stock.inflow or 0) - (old_product_stock.outflow or 0)
+#                 if old_product_stock.stock < 0:
+#                     return JsonResponse({'error': _("You do not have enough products in your warehouse.")}, status=400)
+#                 old_product_stock.save()
+#             except Stock.DoesNotExist:
+#                 return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
+
+#         try:
+#             stock = Stock.objects.get(product__product_code=instance.product.product_code, company=instance.company, project=instance.project)
+#         except Stock.DoesNotExist:
+#             return
+
+#         if created:
+#             instance.receiver_company.products.add(instance.product)
+#             stock.outflow += float(instance.amount)
+#         else:
+#             old_amount = dirty_fields.get('amount')
+#             if old_amount is not None:
+#                 stock.outflow = (stock.outflow or 0) - old_amount + instance.amount
+
+#         stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+#         if stock.stock < 0:
+#             raise ValidationError(_('You do not have enough products in your warehouse.'))
+#         stock.save()
+
+
+
+# @receiver(pre_delete, sender=ProductOutflow)
+# def update_stock_outflow_on_delete(sender, instance, **kwargs):
+#     try:
+#         stock = Stock.objects.get(product=instance.product, company=instance.company, project=instance.project)
+#         stock.outflow -= instance.amount
+#         stock.stock = (stock.inflow or 0) - (stock.outflow or 0)
+#         stock.save()
+
+#         # If product was added to the receiver, remove it
+#         instance.receiver_company.products.remove(instance.product)
+#     except Stock.DoesNotExist:
+#         return JsonResponse({'error': _("Product could not be found on Stock.")}, status=400)
 
 
 

@@ -163,6 +163,47 @@ class ProductInflowItem(models.Model):
     place_of_use = models.CharField(max_length=255)
     amount = models.FloatField(null=True)
 
+    def save(self, *args, **kwargs):
+        # If instance has an ID, it's an update. So fetch the current product before changes.
+        old_product = None
+        if self.id:
+            old_product = ProductInflowItem.objects.get(id=self.id).product
+        
+        # Call the original save method
+        super(ProductInflowItem, self).save(*args, **kwargs)
+        
+        # If the product was changed, update the old product's stock
+        if old_product and self.product != old_product:
+            old_stock_instance = Stock.objects.get(product=old_product, company=self.inflow.company, project=self.inflow.project)
+            old_stock_instance.recalculate_inflows()
+            old_stock_instance.save()
+        
+        # Update the current (or new) product's stock
+        stock_instance = Stock.objects.get(product=self.product, company=self.inflow.company, project=self.inflow.project)
+        stock_instance.recalculate_inflows()
+        stock_instance.save()
+        try:
+            accounting_item = AccountingItem.objects.get(product_item=self)
+            # Call save() on the AccountingItem to trigger recalculations
+            accounting_item.save()
+        except AccountingItem.DoesNotExist:
+            # If no related AccountingItem found, do nothing (or handle the situation as required)
+            pass
+    
+    def delete(self, *args, **kwargs):
+        # Fetch the Stock instance before the ProductInflowItem instance is deleted
+        stock_instance = Stock.objects.get(product=self.product, company=self.inflow.company, project=self.inflow.project)
+        
+        # Now delete the ProductInflowItem
+        super(ProductInflowItem, self).delete(*args, **kwargs)
+        
+        # Refresh the Stock instance from the database to ensure it's updated
+        stock_instance.refresh_from_db()
+
+        # Now recalculate the inflows
+        stock_instance.recalculate_inflows()
+        stock_instance.save()
+
 class ProductInflowImage(models.Model):
     product_inflow = models.ForeignKey(ProductInflow, related_name='images', on_delete=models.CASCADE)
     image = models.ImageField(upload_to=RandomFileName('product_images/'), null=True, blank=True)
@@ -179,6 +220,46 @@ class ProductOutflow(models.Model, DirtyFieldsMixin):
     amount = models.FloatField(null= True)
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
+
+    def save(self, *args, **kwargs):
+        # If the ProductOutflow object has an ID, it's an update.
+        is_update = bool(self.id)
+        old_product = None
+
+        if is_update:
+            old_product = ProductOutflow.objects.get(id=self.id).product
+
+        # Call the original save method
+        super(ProductOutflow, self).save(*args, **kwargs)
+
+        # If the product has been changed, adjust the stock for both the old and the new product
+        if old_product and self.product != old_product:
+            old_stock_instance = Stock.objects.get(product=old_product, company=self.company, project=self.project)
+            old_stock_instance.recalculate_outflows()
+            old_stock_instance.save()
+
+        # Fetch the stock related to this product (the current or new one)
+        stock_instance = Stock.objects.get(product=self.product, company=self.company, project=self.project)
+
+        # Recalculate stock based on this outflow
+        stock_instance.refresh_from_db()
+        stock_instance.recalculate_outflows()
+
+        # Save the changes made to the stock instance
+        stock_instance.save()
+    
+    def delete(self, *args, **kwargs):
+        
+        # Adjust the stock before deleting the ProductOutflow
+        stock_instance = Stock.objects.get(product=self.product, company=self.company, project=self.project)
+        
+        super(ProductOutflow, self).delete(*args, **kwargs)
+        # Since this is an outflow, we might want to adjust the stock in a different manner than inflow.
+        # For simplicity, let's say we have a method called recalculate_outflows.
+        stock_instance.recalculate_outflows()
+
+        # Call the original delete method to remove the ProductOutflow
+        
 
 class ProductOutflowImage(models.Model):
     product_outflow = models.ForeignKey(ProductOutflow, related_name='images', on_delete=models.CASCADE)
@@ -198,6 +279,29 @@ class Stock(models.Model):
     def save(self, *args, **kwargs):
         self.stock = self.inflow - self.outflow
         super().save(*args, **kwargs)
+    
+    def recalculate_inflows(self):
+        # Fetch all ProductInflowItem instances for the given product
+        print("working inflows")
+        inflow_items = ProductInflowItem.objects.filter(product=self.product)
+        print("inflow_items: ",inflow_items )
+        # Sum the amounts for all inflow items
+        total_inflow = sum([item.amount for item in inflow_items])
+        self.inflow = total_inflow
+        self.stock = self.inflow - self.outflow
+    
+    def recalculate_outflows(self):
+        # Fetch all outflows related to this stock's product, company, and project
+        outflows = ProductOutflow.objects.filter(product=self.product, company=self.company, project=self.project)
+        
+        # Sum the amounts of all these outflows
+        total_outflow = sum(outflow.amount for outflow in outflows)
+        
+        # Adjust the stock's outflow value
+        self.outflow = total_outflow
+        
+        # Adjust the net stock (assuming inflow - outflow)
+        self.stock = self.inflow - self.outflow
 
 class AccountingInflow(models.Model, DirtyFieldsMixin):
     product_inflow = models.OneToOneField(ProductInflow, on_delete=models.CASCADE)
@@ -215,8 +319,6 @@ class AccountingInflow(models.Model, DirtyFieldsMixin):
         if is_update:  # If it's an update, not the initial save
             # Fetch related AccountingItem objects
             related_items = self.items.all()
-            print("omerrrrrrrrr")
-
             # Sum the values from all related items
             self.price_without_tax = sum([item.price_without_tax for item in related_items])
             self.price_with_tevkifat = sum([item.price_with_tevkifat for item in related_items])
@@ -240,7 +342,6 @@ class AccountingItem(models.Model, DirtyFieldsMixin):
     price_total = models.FloatField()
 
     def save(self, *args, **kwargs):
-        print("omerr")
         self.unit_price = float(self.unit_price)
         self.discount_rate = float(self.discount_rate)
         self.discount_amount = float(self.discount_amount)
@@ -254,15 +355,11 @@ class AccountingItem(models.Model, DirtyFieldsMixin):
             discount = self.discount_rate/100 * self.unit_price * amount
         else:
             discount = self.discount_amount
-        print(discount)
-        print(self.unit_price)
-        print(amount)
 
         tax = (self.tax_rate / 100) * (self.unit_price * amount - discount)
         tax_tevkifat = ((self.tax_rate) - ((self.tevkifat_rate / 100) * self.tax_rate)) / 100 * (self.unit_price * amount - discount)
         
         self.price_without_tax = (self.unit_price * amount) - discount
-        print(self.price_without_tax)
         self.unit_price_without_tax = self.price_without_tax / amount
         
         self.price_with_tevkifat = (self.unit_price * amount) - discount + tax_tevkifat
