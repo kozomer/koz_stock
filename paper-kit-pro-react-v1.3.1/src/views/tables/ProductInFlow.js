@@ -331,7 +331,7 @@ const handleShow = (products, id) => {
       <ReactBSAlert
         warning
         style={{ display: "block", marginTop: "-100px" }}
-        title="Are you sure?"
+        title="Emin misiniz?"
         onConfirm={() => {
           setDeleteConfirm(true);
           successDelete()
@@ -342,12 +342,12 @@ const handleShow = (products, id) => {
         }}
         confirmBtnBsStyle="info"
         cancelBtnBsStyle="danger"
-        confirmBtnText="Yes, delete it!"
+        confirmBtnText="Evt, sil!"
         cancelBtnText="Cancel"
         showCancel
         btnSize=""
       >
-        Are you sure to delete this row?
+        Bu satırı silmek istediğinize emin misiniz?
       </ReactBSAlert>
     );
 
@@ -390,13 +390,13 @@ const handleShow = (products, id) => {
       <ReactBSAlert
         success
         style={{ display: "block", marginTop: "-100px" }}
-        title="Deleted!"
+        title="Silindi!"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your row has been deleted.
+        Seçili satır silinmiştir.
       </ReactBSAlert>
     );
   };
@@ -405,13 +405,13 @@ const handleShow = (products, id) => {
       <ReactBSAlert
         danger
         style={{ display: "block", marginTop: "-100px" }}
-        title="Cancelled"
+        title="İptal Edildi"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your row is safe :)
+        Seçili satır güvende :)
       </ReactBSAlert>
     );
   };
@@ -424,7 +424,7 @@ const handleShow = (products, id) => {
       <ReactBSAlert
         success
         style={{ display: "block", marginTop: "-100px" }}
-        title="Uploaded!"
+        title="Başarılı!"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
@@ -440,7 +440,7 @@ const handleShow = (products, id) => {
       <ReactBSAlert
         danger
         style={{ display: "block", marginTop: "-100px" }}
-        title="Error"
+        title="Hata"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
@@ -1280,7 +1280,8 @@ const handleShow = (products, id) => {
                               warningWithConfirmAndCancelMessage()
                               const rowToDelete = { ...row };
                               const data = {
-                                id: rowToDelete[0],
+                               
+                                id: rowToDelete.id,
 
                               };
 
@@ -1377,7 +1378,7 @@ const handleShow = (products, id) => {
                   
                     
                     {
-                      Header: 'Uploaded Files',
+                      Header: 'Yüklenmiş Dosyalar',
                       id: 'uploaded_files',
                       accessor: 'images',
                       Cell: ({ value, row: { original } }) => {
@@ -1386,7 +1387,7 @@ const handleShow = (products, id) => {
                           <Button 
                             color="link" 
                             onClick={() => handleShowModal(value, original.id)}
-                            title="Show Uploaded Files"
+                            title="Yüklenmiş Dosyaları Göster"
                           >
                             <i className="fa fa-picture-o" /> 
                             <span>{numOfFiles}</span>
@@ -1420,7 +1421,7 @@ const handleShow = (products, id) => {
     <div className="modal-dialog">
       <div className="modal-content custom-modal-content">
         <div className="modal-header">
-          <h5 className="modal-title">Uploaded Files</h5>
+          <h5 className="modal-title">Yüklenmiş Dosyalar</h5>
           <button type="button" className="close" onClick={handleHideModal}>
             <span aria-hidden="true">&times;</span>
           </button>
@@ -1453,7 +1454,7 @@ const handleShow = (products, id) => {
               <div className="loading-icon">
               {/* Use your own LoadingIcon component or an icon from any library */}
               {/* <LoadingIcon /> */}
-              Loading...
+              Yükleniyor...
             </div>
         ) : (
           <ul>
@@ -1476,7 +1477,7 @@ const handleShow = (products, id) => {
     <div className="modal-dialog">
       <div className="modal-content custom-modal-content">
         <div className="modal-header">
-          <h5 className="modal-title">Products List</h5>
+          <h5 className="modal-title">Malzeme Listesi</h5>
           <button type="button" className="close" onClick={handleClose}>
             <span aria-hidden="true">&times;</span>
           </button>
@@ -1559,23 +1560,23 @@ const handleShow = (products, id) => {
                 </h5>
                 
                 <div className="detail-row">
-                    <strong className="detail-title">Product Code:</strong>
+                    <strong className="detail-title">Malzeme Kodu:</strong>
                     <span>{product.product_code}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Description:</strong>
+                    <strong className="detail-title">Açıklama:</strong>
                     <span>{product.description}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Amount:</strong>
+                    <strong className="detail-title">Miktar:</strong>
                     <span>{product.amount}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Barcode:</strong>
+                    <strong className="detail-title">Barkod:</strong>
                     <span>{product.barcode}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Brand:</strong>
+                    <strong className="detail-title">Marka:</strong>
                     <span>{product.brand}</span>
                 </div>
                 <div className="detail-row">
@@ -1583,27 +1584,27 @@ const handleShow = (products, id) => {
                     <span>{product.model}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Place of Use:</strong>
+                    <strong className="detail-title">Kullanım Yeri:</strong>
                     <span>{product.place_of_use}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Serial Number:</strong>
+                    <strong className="detail-title">Seri Numarası:</strong>
                     <span>{product.serial_number}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Status:</strong>
+                    <strong className="detail-title">Durum:</strong>
                     <span>{product.status}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Group Name:</strong>
+                    <strong className="detail-title">Grup Adı:</strong>
                     <span>{product.group_name}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Subgroup Name:</strong>
+                    <strong className="detail-title">Altgrup Adı:</strong>
                     <span>{product.subgroup_name}</span>
                 </div>
                 <div className="detail-row">
-                    <strong className="detail-title">Unit:</strong>
+                    <strong className="detail-title">Birim:</strong>
                     <span>{product.unit}</span>
                 </div>
             </div>

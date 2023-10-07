@@ -256,8 +256,8 @@ const handleInputChange = (event) => {
         }}
         confirmBtnBsStyle="info"
         cancelBtnBsStyle="danger"
-        confirmBtnText="Yes, delete it!"
-        cancelBtnText="Cancel"
+        confirmBtnText="Evet, sil!"
+        cancelBtnText="İptal"
         showCancel
         btnSize=""
       >
@@ -281,7 +281,7 @@ const handleInputChange = (event) => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your row has been deleted.
+        Seçili satır silinmiştir
       </ReactBSAlert>
     );
   };
@@ -316,7 +316,7 @@ const handleInputChange = (event) => {
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your row is safe :)
+        Seçili satır güvende:)
       </ReactBSAlert>
     );
   };
@@ -331,7 +331,7 @@ const handleInputChange = (event) => {
       <ReactBSAlert
         success
         style={{ display: "block", marginTop: "-100px" }}
-        title="Uploaded!"
+        title="Başarılı!"
         onConfirm={() => { 
           hideAlert()
         setShowPopup(false)
@@ -575,7 +575,7 @@ const handleInputChange = (event) => {
                       type="text"
                      
                       onChange={handleInputChange}
-                      placeholder="Brand"
+                      placeholder="Marka"
                     />
                   </FormGroup>
 
@@ -586,7 +586,7 @@ const handleInputChange = (event) => {
                       name="serial_number" 
                       
                        onChange={handleInputChange} 
-                       placeholder="Serial Number"
+                       placeholder="Seri Numarası"
                     />
                   </FormGroup>
                 </div>
@@ -609,7 +609,7 @@ const handleInputChange = (event) => {
                       name="description"
                       
                         onChange={handleInputChange}
-                         placeholder="Description"
+                         placeholder="Açıklama"
                     />
                   </FormGroup>
 
@@ -620,7 +620,7 @@ const handleInputChange = (event) => {
                       name="unit"
                       
                         onChange={handleInputChange}
-                         placeholder="Unit"
+                         placeholder="Birim"
                     />
                   </FormGroup>
 
@@ -679,7 +679,7 @@ const handleInputChange = (event) => {
                       onChange={(e) => setBrand(e.target.value)}
                      
                     
-                      placeholder="Brand"
+                      placeholder="Marka"
                     />
                   </FormGroup>
 
@@ -691,7 +691,7 @@ const handleInputChange = (event) => {
                       value={serialNumber}
                       onChange={(e) => setSerialNumber(e.target.value)}
                       
-                       placeholder="Serial Number"
+                       placeholder="Seri Numarası"
                     />
                   </FormGroup>
                 </div>
@@ -715,7 +715,7 @@ const handleInputChange = (event) => {
                       name="description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                         placeholder="Description"
+                         placeholder="Açıklama"
                     />
                   </FormGroup>
 
@@ -727,7 +727,7 @@ const handleInputChange = (event) => {
                       value={unit}
                         onChange={(e) => setUnit(e.target.value)}
                        
-                         placeholder="Unit"
+                         placeholder="Birim"
                     />
                   </FormGroup>
 
@@ -759,35 +759,10 @@ const handleInputChange = (event) => {
             <i className="fa fa-plus-circle mr-1"></i>
             Yeni Malzeme Ekle
           </Button>
-          <Button className="my-button-class"  onClick={handleExportClick}>
-            <i className="fa fa-download mr-1"></i>
-            Dışa Aktar
-          </Button>
+       
         </div>
       )}
-      {showUploadDiv && (
-        <div>
-          <div className="d-flex justify-content-between align-items-center">
-            <Button className="my-button-class"  onClick={handleAddFileClick}>
-              <i className="fa fa-plus-circle mr-1"></i>
-              Dosya Yükle
-            </Button>
-            <Button className="my-button-class"  onClick={handleExportClick}>
-              <i className="fa fa-download mr-1"></i>
-              Dışa Aktar
-            </Button>
-          </div>
-          <div className="mt-3">
-            <input type="file" className="custom-file-upload" onChange={handleFileInputChange} />
-            <Button  className="btn-upload" onClick={handleUploadClick} disabled={!file} active={!file}>
-              Yükle
-            </Button>
-            <div className="spinner-container">
-              {isLoading && <div className="loading-spinner"></div>}
-            </div>
-          </div>
-        </div>
-      )}
+   
     </div>
   </CardBody>
 </Card>

@@ -353,7 +353,7 @@ useEffect(() => {
           <ReactBSAlert
             success
             style={{ display: "block", marginTop: "-100px" }}
-            title="Uploaded!"
+            title="Başarılı!"
             onConfirm={() => { hideAlert()
             setShowPopup(false)}}
             onCancel={() => hideAlert()}
@@ -370,7 +370,7 @@ useEffect(() => {
           <ReactBSAlert
             danger
             style={{ display: "block", marginTop: "-100px" }}
-            title="Error"
+            title="Hata"
             onConfirm={() => hideAlert()}
             onCancel={() => hideAlert()}
             confirmBtnBsStyle="info"
@@ -391,7 +391,7 @@ useEffect(() => {
           <ReactBSAlert
             warning
             style={{ display: "block", marginTop: "-100px" }}
-            title="Are you sure?"
+            title="Emin misiniz?"
             onConfirm={() => {
               setDeleteConfirm(true);
               successDelete()
@@ -407,7 +407,7 @@ useEffect(() => {
             showCancel
             btnSize=""
           >
-            Are you sure to delete this row?
+            Bu satırı silmek istediğinize emin misiniz?
           </ReactBSAlert>
         );
     
@@ -457,13 +457,13 @@ useEffect(() => {
           <ReactBSAlert
             success
             style={{ display: "block", marginTop: "-100px" }}
-            title="Deleted!"
+            title="Silindi!"
             onConfirm={() => hideAlert()}
             onCancel={() => hideAlert()}
             confirmBtnBsStyle="info"
             btnSize=""
           >
-            Your row has been deleted.
+            Seçili satır silinmiştir.
           </ReactBSAlert>
         );
       };
@@ -472,13 +472,13 @@ useEffect(() => {
           <ReactBSAlert
             danger
             style={{ display: "block", marginTop: "-100px" }}
-            title="Cancelled"
+            title="İptal edildi"
             onConfirm={() => hideAlert()}
             onCancel={() => hideAlert()}
             confirmBtnBsStyle="info"
             btnSize=""
           >
-            Your row is safe :)
+            Seçili satır güvende :)
           </ReactBSAlert>
         );
       };

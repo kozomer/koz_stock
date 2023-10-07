@@ -117,14 +117,14 @@ function Login({ history }) {
   <Col className="ml-auto" lg="3" md="4">
     <Card className="card-login">
         <CardBody>
-            <h4 className="text-center">Login</h4>
+            <h4 className="text-center">Giriş</h4>
             <InputGroup className="mt-3">
                 <InputGroupAddon addonType="prepend">
                     <InputGroupText>
                         <i className="nc-icon nc-single-02"></i>
                     </InputGroupText>
                 </InputGroupAddon>
-                <Input placeholder="Username" type="text" value={username} onChange={handleEmailChange} />
+                <Input placeholder="Kullanıcı Adı" type="text" value={username} onChange={handleEmailChange} />
             </InputGroup>
             <InputGroup className="mt-3">
                 <InputGroupAddon addonType="prepend">
@@ -132,7 +132,7 @@ function Login({ history }) {
                         <i className="nc-icon nc-key-25"></i>
                     </InputGroupText>
                 </InputGroupAddon>
-                <Input placeholder="Password" type="password" value={password}    onKeyPress={(event) => {
+                <Input placeholder="Şifre" type="password" value={password}    onKeyPress={(event) => {
                   if (event.key === "Enter") {
                     handleSubmit(event);
                     
@@ -140,7 +140,7 @@ function Login({ history }) {
                 }} onChange={handlePasswordChange} />
             </InputGroup>
             {error && <p className="mt-3 text-danger text-center">{error}</p>}
-            <Button className="btn-block mt-4"  onClick={handleSubmit}>Log in</Button>
+            <Button className="btn-block mt-4"  onClick={handleSubmit}>GİRİŞ</Button>
         </CardBody>
     </Card>
 </Col>

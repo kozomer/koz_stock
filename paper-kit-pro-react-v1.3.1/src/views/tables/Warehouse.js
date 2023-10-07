@@ -413,6 +413,8 @@ const handleAddFileClick = () => {
     <>
       <div className='content'>
       {alert}
+    
+    {/* 
       {showPopup && isUpdated &&(
        <div className="popup">
       <Card>
@@ -568,6 +570,8 @@ const handleAddFileClick = () => {
             </div>
 )}
 
+*/}
+
 <Card>
   <CardHeader>
     <CardTitle tag='h4'>AMBAR</CardTitle>
@@ -602,22 +606,6 @@ const handleAddFileClick = () => {
                     
                     actions: (
                       <div className='actions-left'>
-                         <Button
-                          disabled={showPopup}
-                          onClick={() => {
-                            // Enable edit mode
-                            
-                           {handleClick(row)}
-                           
-                          
-                          }}
-                          
-                          color='warning'
-                          size='sm'
-                          className='btn-icon btn-link edit'
-                        >
-                          <i className='fa fa-edit' />
-                        </Button>{' '}
                         
                         <>
     

@@ -130,7 +130,7 @@ const DataTable = () => {
       <ReactBSAlert
         danger
         style={{ display: "block", marginTop: "-100px" }}
-        title="Error"
+        title="Hata"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
@@ -147,7 +147,7 @@ const DataTable = () => {
       <ReactBSAlert
         warning
         style={{ display: "block", marginTop: "-100px" }}
-        title="Are you sure?"
+        title="Emin misiniz?"
         onConfirm={() =>{ 
         setDeleteConfirm(true);
         successDelete()}}
@@ -157,12 +157,12 @@ const DataTable = () => {
         }}
         confirmBtnBsStyle="info"
         cancelBtnBsStyle="danger"
-        confirmBtnText="Yes, delete it!"
-        cancelBtnText="Cancel"
+        confirmBtnText="Evet, sil!"
+        cancelBtnText="İptal"
         showCancel
         btnSize=""
       >
-       Are you sure to delete this row?
+       Bu satırı silmek istediğinize emin misiniz?
       </ReactBSAlert>
     );
     
@@ -176,13 +176,13 @@ const DataTable = () => {
       <ReactBSAlert
         success
         style={{ display: "block", marginTop: "-100px" }}
-        title="Deleted!"
+        title="Silindi!"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your row has been deleted.
+        Seçili satırı silinmiştir.
       </ReactBSAlert>
     );
   };
@@ -211,13 +211,13 @@ const DataTable = () => {
       <ReactBSAlert
         danger
         style={{ display: "block", marginTop: "-100px" }}
-        title="Cancelled"
+        title="İptal Edildi"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your row is safe :)
+        Seçili satır güvende :)
       </ReactBSAlert>
     );
   };
@@ -230,7 +230,7 @@ const DataTable = () => {
       <ReactBSAlert
         success
         style={{ display: "block", marginTop: "-100px" }}
-        title="Uploaded!"
+        title="Başarılı!"
         onConfirm={() => { hideAlert()
         setShowPopup(false)}}
         onCancel={() => hideAlert()}

@@ -153,7 +153,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       <ReactBSAlert
         warning
         style={{ display: "block", marginTop: "-100px" }}
-        title="Are you sure?"
+        title="Emin misinizi?"
         onConfirm={() =>{ 
         setDeleteConfirm(true);
         successDelete()}}
@@ -163,12 +163,12 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         }}
         confirmBtnBsStyle="info"
         cancelBtnBsStyle="danger"
-        confirmBtnText="Yes, delete it!"
-        cancelBtnText="Cancel"
+        confirmBtnText="Eevet, sil!"
+        cancelBtnText="İptal et"
         showCancel
         btnSize=""
       >
-       Are you sure to delete this row?
+       Bu satırı silmek istediğinize emin misiniz?
       </ReactBSAlert>
     );
     
@@ -182,13 +182,13 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       <ReactBSAlert
         success
         style={{ display: "block", marginTop: "-100px" }}
-        title="Deleted!"
+        title="Silindi!"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your row has been deleted.
+        Seçili satır silinmiştir
       </ReactBSAlert>
     );
   };
@@ -197,13 +197,13 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       <ReactBSAlert
         danger
         style={{ display: "block", marginTop: "-100px" }}
-        title="Cancelled"
+        title="İptal Edildi"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
         btnSize=""
       >
-        Your row is safe :)
+        Seçili satır güvende :)
       </ReactBSAlert>
     );
   };
@@ -216,7 +216,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       <ReactBSAlert
         success
         style={{ display: "block", marginTop: "-100px" }}
-        title="Uploaded!"
+        title="Başarılı!"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
@@ -232,7 +232,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
       <ReactBSAlert
         danger
         style={{ display: "block", marginTop: "-100px" }}
-        title="Error"
+        title="Hata"
         onConfirm={() => hideAlert()}
         onCancel={() => hideAlert()}
         confirmBtnBsStyle="info"
@@ -421,6 +421,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           successUpload(body.message);
           setDataChanged(true);
           setUploadedFiles([]);
+          setUploadedFileUrls([]);
           setShowPopup(false);
 
         } else {
@@ -521,7 +522,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         <ReactBSAlert
           success
           style={{ display: "block", marginTop: "-100px" }}
-          title="Saved!"
+          title="Kyadedildi!"
           onConfirm={() => {
             hideAlert()
             setShowPopup(false)}
@@ -530,7 +531,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           confirmBtnBsStyle="info"
           btnSize=""
         >
-          Your edit has been successfully saved.
+          Düzenlemeniz başarıyla kaydedilmiştir.
         </ReactBSAlert>
       );
       setRenderEdit(true)
@@ -567,7 +568,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           if (status === 200) { // Assuming 200 is the success status code
             console.log("Inflow edited successfully");
             successUpload(body.message);
-            setUpdatedProductData(updatedData);
+            //setUpdatedProductData(updatedData);
   
             setDataChanged(true);
             setShowEditPopup(false);
@@ -840,7 +841,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
         />
         {uploadedFiles.length > 0 && (
           <p>
-            {uploadedFiles.length} files selected for upload
+           Yğkelemek için seçili {uploadedFiles.length} dosya
           </p>
         )}
       </div>
@@ -849,7 +850,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           <div className="loading-icon">
             {/* Use your own LoadingIcon component or an icon from any library */}
             {/* <LoadingIcon /> */}
-            Loading...
+            Yükleniyor...
           </div>
         ) : (
           <ul>
@@ -1236,7 +1237,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
                       accessor: 'amount'
                   },
                   {
-                    Header: 'Uploaded Files',
+                    Header: 'Yüklenmiş Dosyalar',
                     id: 'uploaded_files',
                     Cell: ({row: {original}}) => {
                       const numOfFiles = original.uploaded_files.length;
@@ -1245,7 +1246,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
                         <Button 
                           color="link" 
                           onClick={() => handleShowModal(original.uploaded_files,original.id)}
-                          title="Show Uploaded Files"
+                          title="Yüklenmiş Dosyaları Göster"
                         >
       <i className="fa fa-picture-o" /> 
                           <span>{numOfFiles}</span>
@@ -1276,7 +1277,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
     <div className="modal-dialog">
       <div className="modal-content custom-modal-content">
         <div className="modal-header">
-          <h5 className="modal-title">Uploaded Files</h5>
+          <h5 className="modal-title">Yüklenmiş Dosyalar</h5>
           <button type="button" className="close" onClick={handleHideModal}>
             <span aria-hidden="true">&times;</span>
           </button>
