@@ -131,7 +131,7 @@ const handleProductChange = (index, field, value) => {
 
 const saveEditedProduct = async (index) => {
   const productToEdit = modalProducts[index];
-
+  const backupProducts = [...modalProducts];
   const endpoint = `${process.env.REACT_APP_PUBLIC_URL}/edit_accounting_item/`;
   const payload = {
       item_id: productToEdit.item_id,
@@ -162,10 +162,13 @@ const saveEditedProduct = async (index) => {
 
       if (response.ok) {
          successUpload(data.message);
+         setDataChanged(true)
       } else {
+        setModalProducts(backupProducts); 
           errorUpload(data.error);
       }
   } catch (error) {
+    setModalProducts(backupProducts); 
       console.error("Error while saving product:", error);
   }
 
@@ -828,7 +831,8 @@ if (productData) {
                   
 {show && (
   <div className="modal show d-block custom-modal" tabIndex="-1">
-    <div className="modal-dialog">
+ <div className="modal-dialog modal-xl">
+
       <div className="modal-content custom-modal-content">
         <div className="modal-header">
           <h5 className="modal-title">Products List</h5>
@@ -837,10 +841,42 @@ if (productData) {
           </button>
         </div>
         <div className="modal-body modal-body-scroll">
-    {modalProducts.map((product, index) => (
-        <div key={index} className="product-item">
+   
+<table className="horizontal-table">
+<thead>
+            <tr>
+                <th>Product</th>
+                <th>Malzeme Kodu</th>
+                <th>Açıklama</th>
+                <th>Miktar</th>
+                <th>Barkod</th>
+                <th>Marka</th>
+                <th>Model</th>
+                <th>Kullanım Yeri</th>
+                <th>Seri Numarası</th>
+                <th>Durum</th>
+                <th>Grup Adı</th>
+                <th>Altgrup Adı</th>
+                <th>Birim</th>
+                <th>Birim Fiyatı</th>
+                <th>İndirim Oranı(%)</th>
+                <th>İndirim Miktarı</th>
+                <th>Vergi Oranı(%)</th>
+                <th>Tevkifat Oranı(%)</th>
+                <th>Fiyat(Vergiler Hariç)</th>
+                <th>Birim Fiyat(Vergiler Hariç)</th>
+                <th>Tevkifatlı Fiyat</th>
+                <th>Toplam Fiyat(Vergiler Dahil)</th>
+
+            </tr>
+        </thead>
+        <tbody>
+
+        {modalProducts.map((product, index) => (
+        <tr key={index} >
             {isEditingIndex === index ? (
-                // Editable inputs for the current product
+               
+                <td colSpan="13">
                 <div>
                   
 
@@ -949,107 +985,53 @@ if (productData) {
                         <FontAwesomeIcon icon={faTimes} /> {/* Cancel editing icon */}
                     </button>
                 </div>
+                </td>  
             ) : (
-                // Display mode for the current product
-                <div className="product-details">
-                <h5 className="product-title">
-                    Product {index + 1}
+
+              <>
+              <td>
+               
+            
                     <button type="button" className="icon-button" onClick={() => setIsEditingIndex(index)}>
                         <FontAwesomeIcon icon={faEdit} />
                     </button>
-                </h5>
-                
-                <div className="detail-row">
-                    <strong className="detail-title">Product Code:</strong>
-                    <span>{product.product_code}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Description:</strong>
-                    <span>{product.description}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Amount:</strong>
-                    <span>{product.amount}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Barcode:</strong>
-                    <span>{product.barcode}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Brand:</strong>
-                    <span>{product.brand}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Model:</strong>
-                    <span>{product.model}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Place of Use:</strong>
-                    <span>{product.place_of_use}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Serial Number:</strong>
-                    <span>{product.serial_number}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Status:</strong>
-                    <span>{product.status}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Group Name:</strong>
-                    <span>{product.group_name}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Subgroup Name:</strong>
-                    <span>{product.subgroup_name}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Unit:</strong>
-                    <span>{product.unit}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Unit Price:</strong>
-                    <span>{product.unit_price}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Discount Rate(%):</strong>
-                    <span>{product.discount_rate}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Discount Amount:</strong>
-                    <span>{product.discount_amount}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Tax Rate:</strong>
-                    <span>{product.tax_rate}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Tevkifat Rate:</strong>
-                    <span>{product.tevkifat_rate}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Price Without Tax:</strong>
-                    <span>{product.price_without_tax}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Unit Price Without Tax:</strong>
-                    <span>{product.unit_price_without_tax}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Price With Tevkifat:</strong>
-                    <span>{product.price_with_tevkifat}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Price Total:</strong>
-                    <span>{product.price_total}</span>
-                </div>
-            </div>
+                    
+                     {index + 1}
+                    </td>
+                    <td>{product.product_code}</td>
+                            <td>{product.description}</td>
+                            <td>{product.amount}</td>
+                            <td>{product.barcode}</td>
+                            <td>{product.brand}</td>
+                            <td>{product.model}</td>
+                            <td>{product.place_of_use}</td>
+                            <td>{product.serial_number}</td>
+                            <td>{product.status}</td>
+                            <td>{product.group_name}</td>
+                            <td>{product.subgroup_name}</td>
+                            <td>{product.unit}</td>
+                            <td>{product.unit_price}</td>
+                            <td>{product.discount_rate}</td>
+                            <td>{product.discount_amount}</td>
+                            <td>{product.tax_rate}</td>
+                            <td>{product.tevkifat_rate}</td>
+                            <td>{product.price_without_tax}</td>
+                            <td>{product.unit_price_without_tax}</td>
+                            <td>{product.price_with_tevkifat}</td>
+                            <td>{product.price_total}</td>
+
+
+             
+            </>
             )}
-            {(index !== modalProducts.length - 1) && <hr />}
+            </tr>
+             ))}
+             </tbody>
+             </table>
         </div>
-    ))}
+
    
-</div>
+
 
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={handleClose}>Close</button>

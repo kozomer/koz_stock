@@ -297,7 +297,9 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           }),
       });
       if (!response.ok) {
-        // Handle non-successful responses here
+        const errorData = await response.json(); // Get the error data from the response
+        const errorMessage = errorData.error || "Unknown Error"; // Extract the error message
+        errorUpload(errorMessage); // Send the error message to errorUpload function
         console.error("An error occurred while fetching the PDF");
         return;
     }
