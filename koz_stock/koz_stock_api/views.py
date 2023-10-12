@@ -732,13 +732,21 @@ class AddSuppliersView(APIView):
                 error_message = _("The Tax Code '%s' already exists in the database for this company.") % tax_code
                 return JsonResponse({'error': error_message}, status=400)
 
-            # Add new supplier
+            # List of mandatory fields
+            mandatory_fields = ['name', 'contact_name', 'contact_no']
+
+            # Initialize a dictionary to store new supplier data
             new_supplier_data = {}
-            for field in ['name', 'contact_name', 'contact_no', 'mail', 'adress', 'explanation']:
+
+            for field in ['name', 'contact_name', 'contact_no', 'mail', 'address', 'explanation']:
                 value = data.get(field)
+
+                # If the value is not None and not an empty string, save it
                 if value is not None and value != '':
                     new_supplier_data[field] = value
-                else:
+
+                # If the value is None or an empty string, and the field is mandatory, raise an error
+                elif field in mandatory_fields:
                     error_message = _("The field '{%s}' cannot be empty.") % field
                     return JsonResponse({'error': error_message}, status=400)
 
@@ -871,13 +879,21 @@ class AddConsumersView(APIView):
                 error_message = _("The Tax Code '%s' already exists in the database for this company.") % tax_code
                 return JsonResponse({'error': error_message}, status=400)
 
-            # Add new consumer
+            # List of mandatory fields
+            mandatory_fields = ['name', 'contact_name', 'contact_no']
+
+            # Initialize a dictionary to store new supplier data
             new_consumer_data = {}
-            for field in ['name', 'contact_name', 'contact_no', 'mail', 'adress', 'explanation']:
+
+            for field in ['name', 'contact_name', 'contact_no', 'mail', 'address', 'explanation']:
                 value = data.get(field)
+
+                # If the value is not None and not an empty string, save it
                 if value is not None and value != '':
                     new_consumer_data[field] = value
-                else:
+
+                # If the value is None or an empty string, and the field is mandatory, raise an error
+                elif field in mandatory_fields:
                     error_message = _("The field '{%s}' cannot be empty.") % field
                     return JsonResponse({'error': error_message}, status=400)
 
