@@ -18,7 +18,8 @@ from decouple import config
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-LOGO_PATH = os.path.join(BASE_DIR, 'koz_stock', 'paper-kit-pro-react-v1.3.1', 'src', 'assets', 'img', 'koz_logo.png')
+LOGO_PATH = os.path.join(BASE_DIR, 'paper-kit-pro-react-v1.3.1', 'src', 'assets', 'img', 'koz_logo.png')
+
 
 
 # Quick-start development settings - unsuitable for production
