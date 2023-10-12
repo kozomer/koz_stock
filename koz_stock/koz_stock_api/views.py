@@ -1922,8 +1922,8 @@ class CreateProductOutflowReceiptView(APIView):
             items = [(product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit)]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
             # For example:
             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
-            title = _("Warehouse Material Exit Receipt")
-            logo_path = "C://Users/yasin/OneDrive/Masaüstü/koz_stock/paper-kit-pro-react-v1.3.1/src/assets/img/koz_logo.png"  # Update this to the path where your logo is store
+            title = _("Ambar Çıkış Fişi")
+            logo_path = settings.LOGO_PATH  # Update this to the path where your logo is store
 
             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
             # Check if sequence_number_obj is None and create a new instance if necessary
