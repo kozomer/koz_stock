@@ -1919,10 +1919,14 @@ class CreateProductOutflowReceiptView(APIView):
             id = request.data.get('id')
             product_outflow = ProductOutflow.objects.get(id=id)  # Get the ProductOutflow object
             product_code = product_outflow.product.product_code
-            items = [(product_code, product_outflow.product.description, product_outflow.amount, product_outflow.product.unit)]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
+            brand = product_outflow.product.brand
+            model = product_outflow.product.model
+            description = product_outflow.product.description
+            product_info = f"{brand} {model} {description}"
+            items = [(product_code, product_info, product_outflow.amount, product_outflow.product.unit)]  # Format the ProductOutflow object into 'items' required by 'create_receipt_pdf'
             # For example:
             # items = [[product_outflow.product_code, product_outflow.product_name, product_outflow.quantity, product_outflow.unit]]
-            title = _("Ambar Çıkış Fişi")
+            title = _("Ambar Cikis Fisi")
             logo_path = settings.LOGO_PATH  # Update this to the path where your logo is store
 
             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
