@@ -543,8 +543,8 @@
 
 /* PopUp */
 .popup-inflow {
-  width: 80%; /* Default width for most screens */
-  max-width: 700px; /* Maximum width for larger screens */
+  width: 90%; /* Default width for most screens */
+  max-width: 1200px; /* Maximum width for larger screens */
   position: fixed;
   top: 50%;
   left: 50%;
