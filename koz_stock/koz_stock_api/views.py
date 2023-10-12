@@ -1926,6 +1926,11 @@ class CreateProductOutflowReceiptView(APIView):
             logo_path = "C://Users/yasin/OneDrive/Masaüstü/koz_stock/paper-kit-pro-react-v1.3.1/src/assets/img/koz_logo.png"  # Update this to the path where your logo is store
 
             sequence_number_obj = SequenceNumber.objects.first()  # Update this as per your requirement
+            # Check if sequence_number_obj is None and create a new instance if necessary
+            if not sequence_number_obj:
+                sequence_number_obj = SequenceNumber()
+                sequence_number_obj.save()
+
             sequence_number = sequence_number_obj.number
             sequence_number_obj.number += 1
             sequence_number_obj.save()
