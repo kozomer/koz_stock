@@ -74,6 +74,7 @@ const startEditProduct = (index) => {
 
 const saveEditedProduct = async (index) => {
   const productToEdit = modalProducts[index];
+    const backupProducts = [...modalProducts];
   let endpoint;
   let payload;
   console.log(productToEdit)
@@ -119,10 +120,13 @@ const saveEditedProduct = async (index) => {
 
       if (response.ok) {
          successUpload(data.message)
+         setDataChanged(true)
       } else {
+        setModalProducts(backupProducts); 
           errorUpload(data.error)
       }
   } catch (error) {
+    setModalProducts(backupProducts); // Revert to backup on any other error
       console.error("Error while saving product:", error);
   }
 
@@ -1474,7 +1478,7 @@ const handleShow = (products, id) => {
 
 {show && (
   <div className="modal show d-block custom-modal" tabindex="-1">
-    <div className="modal-dialog">
+    <div className="modal-dialog modal-xl">
       <div className="modal-content custom-modal-content">
         <div className="modal-header">
           <h5 className="modal-title">Malzeme Listesi</h5>
@@ -1483,137 +1487,125 @@ const handleShow = (products, id) => {
           </button>
         </div>
         <div className="modal-body modal-body-scroll">
-    {modalProducts.map((product, index) => (
-        <div key={index} className="product-item">
-            {isEditingIndex === index ? (
-                // Editable inputs for the current product
-                <div>
-                    <label>Malzeme Kodu</label>
-                    <FormGroup>
-                        <Select
-                            name="product_code"
-                            options={productOptions}
-                            value={productOptions.find(option => option.value === product.product_code)}
-                            onChange={(selectedOption) => handleProductChange(index, 'product_code', selectedOption.value)}
-                        />
-                    </FormGroup>
+    <table className="horizontal-table">
+        {/* The header is constant, so it's outside of the map function */}
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Malzeme Kodu</th>
+                <th>Açıklama</th>
+                <th>Miktar</th>
+                <th>Barkod</th>
+                <th>Marka</th>
+                <th>Model</th>
+                <th>Kullanım Yeri</th>
+                <th>Seri Numarası</th>
+                <th>Durum</th>
+                <th>Grup Adı</th>
+                <th>Altgrup Adı</th>
+                <th>Birim</th>
+            </tr>
+        </thead>
 
-                    <label>Miktar</label>
-                    <FormGroup>
-                        <Input
-                            type="text"
-                            value={product.amount || ''}
-                            onChange={(e) => handleProductChange(index, 'amount', e.target.value)}
-                        />
-                    </FormGroup>
+        <tbody>
+            {modalProducts.map((product, index) => (
+                <tr key={index}>
+                    {isEditingIndex === index ? (
+                        <td colSpan="13">
+                            {/* Editable inputs for the current product */}
+                            <div>
+                                <label>Malzeme Kodu</label>
+                                <FormGroup>
+                                    <Select
+                                        name="product_code"
+                                        options={productOptions}
+                                        value={productOptions.find(option => option.value === product.product_code)}
+                                        onChange={(selectedOption) => handleProductChange(index, 'product_code', selectedOption.value)}
+                                    />
+                                </FormGroup>
 
-                    <label>Barkod</label>
-                    <FormGroup>
-                        <Input
-                            type="text"
-                            value={product.barcode || ''}
-                            onChange={(e) => handleProductChange(index, 'barcode', e.target.value)}
-                        />
-                    </FormGroup>
+                                <label>Miktar</label>
+                                <FormGroup>
+                                    <Input
+                                        type="text"
+                                        value={product.amount || ''}
+                                        onChange={(e) => handleProductChange(index, 'amount', e.target.value)}
+                                    />
+                                </FormGroup>
 
-                    <label>Durum</label>
-                    <FormGroup>
-                        <Input
-                            type="text"
-                            value={product.status || ''}
-                            onChange={(e) => handleProductChange(index, 'status', e.target.value)}
-                        />
-                    </FormGroup>
+                                <label>Barkod</label>
+                                <FormGroup>
+                                    <Input
+                                        type="text"
+                                        value={product.barcode || ''}
+                                        onChange={(e) => handleProductChange(index, 'barcode', e.target.value)}
+                                    />
+                                </FormGroup>
 
-                    <label>Kullanım Yeri</label>
-                    <FormGroup>
-                        <Input
-                            type="text"
-                            value={product.place_of_use || ''}
-                            onChange={(e) => handleProductChange(index, 'place_of_use', e.target.value)}
-                        />
-                    </FormGroup>
+                                <label>Durum</label>
+                                <FormGroup>
+                                    <Input
+                                        type="text"
+                                        value={product.status || ''}
+                                        onChange={(e) => handleProductChange(index, 'status', e.target.value)}
+                                    />
+                                </FormGroup>
 
-                    {/* ... you can continue with other product inputs in a similar fashion ... */}
+                                <label>Kullanım Yeri</label>
+                                <FormGroup>
+                                    <Input
+                                        type="text"
+                                        value={product.place_of_use || ''}
+                                        onChange={(e) => handleProductChange(index, 'place_of_use', e.target.value)}
+                                    />
+                                </FormGroup>
 
-                    <button type="button" className="icon-button" onClick={() => saveEditedProduct(index)}>
-                        <FontAwesomeIcon icon={faSave} />
-                    </button>
-                    <button type="button" className="icon-button" onClick={() => setIsEditingIndex(null)}>
-                        <FontAwesomeIcon icon={faTimes} /> {/* Cancel editing icon */}
-                    </button>
-                </div>
-            ) : (
-                // Display mode for the current product
-                <div className="product-details">
-                <h5 className="product-title">
-                    Product {index + 1}
-                    <button type="button" className="icon-button" onClick={() => {
-                        setIsEditingIndex(index);
-                        setMode('edit');
-                    }}>
-                        <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button type="button" className="icon-button" onClick={() => deleteProduct(index)}>
-                        <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                </h5>
-                
-                <div className="detail-row">
-                    <strong className="detail-title">Malzeme Kodu:</strong>
-                    <span>{product.product_code}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Açıklama:</strong>
-                    <span>{product.description}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Miktar:</strong>
-                    <span>{product.amount}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Barkod:</strong>
-                    <span>{product.barcode}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Marka:</strong>
-                    <span>{product.brand}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Model:</strong>
-                    <span>{product.model}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Kullanım Yeri:</strong>
-                    <span>{product.place_of_use}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Seri Numarası:</strong>
-                    <span>{product.serial_number}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Durum:</strong>
-                    <span>{product.status}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Grup Adı:</strong>
-                    <span>{product.group_name}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Altgrup Adı:</strong>
-                    <span>{product.subgroup_name}</span>
-                </div>
-                <div className="detail-row">
-                    <strong className="detail-title">Birim:</strong>
-                    <span>{product.unit}</span>
-                </div>
-            </div>
-            )}
-            {(index !== modalProducts.length - 1) && <hr />}
-        </div>
-    ))}
-   
+                                {/* You can continue with other product inputs in a similar fashion ... */}
+
+                                <button type="button" className="icon-button" onClick={() => saveEditedProduct(index)}>
+                                    <FontAwesomeIcon icon={faSave} />
+                                </button>
+                                <button type="button" className="icon-button" onClick={() => setIsEditingIndex(null)}>
+                                    <FontAwesomeIcon icon={faTimes} /> {/* Cancel editing icon */}
+                                </button>
+                            </div>
+                        </td>
+                    ) : (
+                        // Display mode for the current product
+                        <>
+                            <td>
+                             
+                                <button type="button" className="icon-button" onClick={() => {
+                                    setIsEditingIndex(index);
+                                    setMode('edit');
+                                }}>
+                                    <FontAwesomeIcon icon={faEdit} />
+                                </button>
+                                <button type="button" className="icon-button" onClick={() => deleteProduct(index)}>
+                                    <FontAwesomeIcon icon={faTrash} />
+                                </button>
+                                {index + 1}
+                            </td>
+                            <td>{product.product_code}</td>
+                            <td>{product.description}</td>
+                            <td>{product.amount}</td>
+                            <td>{product.barcode}</td>
+                            <td>{product.brand}</td>
+                            <td>{product.model}</td>
+                            <td>{product.place_of_use}</td>
+                            <td>{product.serial_number}</td>
+                            <td>{product.status}</td>
+                            <td>{product.group_name}</td>
+                            <td>{product.subgroup_name}</td>
+                            <td>{product.unit}</td>
+                        </>
+                    )}
+                </tr>
+            ))}
+        </tbody>
+    </table>
 </div>
+
 
         <div className="modal-footer">
           <button className="btn btn-secondary" onClick={handleClose}>Close</button>

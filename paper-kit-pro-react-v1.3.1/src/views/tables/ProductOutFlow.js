@@ -297,7 +297,7 @@ const [uploadedFileUrls, setUploadedFileUrls] = useState([]);
           }),
       });
       if (!response.ok) {
-        // Handle non-successful responses here
+        errorUpload(error.message)
         console.error("An error occurred while fetching the PDF");
         return;
     }

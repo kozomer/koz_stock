@@ -603,3 +603,40 @@
   width: 200px; /* Adjust this value to your preference */
   font-weight: 600;
 }
+
+
+/* horizontal table for products */
+.modal-body-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.horizontal-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0; 
+}
+
+.horizontal-table th {
+  border: 1px solid #e0e0e0;
+  padding: 0px 25px;  /* Increased padding for a taller header */
+  background-color: #f5f5f5;
+  position: sticky;
+  top: 0;
+  z-index: 2; 
+}
+
+.horizontal-table td {
+  border: 1px solid #e0e0e0;
+
+}
+.custom-modal-content {
+  overflow-x: auto;
+}
+/* For mobile screens */
+@media (max-width: 768px) {
+  .modal-dialog {
+      width: 100%;
+      margin: 0;
+  }
+}
