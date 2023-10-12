@@ -1029,64 +1029,80 @@ const handleShow = (products, id) => {
           </div>
 
           {/* Dynamic product rows */}
-          {rows.map((row, index) => (
-  <div key={index} className="dynamic-row">
+          <div className="table-container">
+          <table className="add-table">
+  <thead>
+    <tr>
+      <th>Product</th>
+      <th>Malzeme Kodu</th>
+      <th>Miktar</th>
+      <th>Barkod</th>
+      <th>Durum</th>
+      <th>Kullanım Yeri</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {rows.map((row, index) => (
+      <tr key={index}>
+        <td>{`Product ${index + 1}`}</td>
+        <td>
+          <FormGroup>
+            <Select
+              name="product_code"
+              options={productOptions}
+              value={productOptions.find(option => option.value === row.productCode)}
+              onChange={(selectedOption) => handleInputChange(index, 'productCode', selectedOption.value)}
+            />
+          </FormGroup>
+        </td>
+        <td>
+          <FormGroup>
+            <Input
+              type="text"
+              value={row.amount || ''}
+              onChange={(e) => handleInputChange(index, 'amount', e.target.value)}
+            />
+          </FormGroup>
+        </td>
+        <td>
+          <FormGroup>
+            <Input
+              type="text"
+              value={row.barcode || ''}
+              onChange={(e) => handleInputChange(index, 'barcode', e.target.value)}
+            />
+          </FormGroup>
+        </td>
+        <td>
+          <FormGroup>
+            <Input
+              type="text"
+              value={row.status || ''}
+              onChange={(e) => handleInputChange(index, 'status', e.target.value)}
+            />
+          </FormGroup>
+        </td>
+        <td>
+          <FormGroup>
+            <Input
+              type="text"
+              value={row.placeOfUse || ''}
+              onChange={(e) => handleInputChange(index, 'placeOfUse', e.target.value)}
+            />
+          </FormGroup>
+        </td>
+        <td>
+          <button type="button" className="icon-button" onClick={() => handleRemoveRow(index)}>
+            <FontAwesomeIcon icon={faMinus} />
+          </button>
+        </td>
+      </tr>
+    ))}
+  </tbody>
+</table>
+</div>
 
-    <hr className="row-separator"/> {/* Horizontal separator line */}
-    <h5 className="row-subheader">{`Product ${index + 1}`}</h5> {/* Subheader indicating product number */}
-    
-    <label>Malzeme Kodu</label>
-    <FormGroup>
-      <Select
-        name="product_code"
-        options={productOptions}
-        value={productOptions.find(option => option.value === row.productCode)}
-        onChange={(selectedOption) => handleInputChange(index, 'productCode', selectedOption.value)}
-      />
-    </FormGroup>
-
-    <label>Miktar</label>
-    <FormGroup>
-      <Input
-        type="text"
-        value={row.amount || ''}
-        onChange={(e) => handleInputChange(index, 'amount', e.target.value)}
-      />
-    </FormGroup>
-
-    <label>Barkod</label>
-    <FormGroup>
-      <Input
-        type="text"
-        value={row.barcode || ''}
-        onChange={(e) => handleInputChange(index, 'barcode', e.target.value)}
-      />
-    </FormGroup>
-
-    <label>Durum</label>
-    <FormGroup>
-      <Input
-        type="text"
-        value={row.status || ''}
-        onChange={(e) => handleInputChange(index, 'status', e.target.value)}
-      />
-    </FormGroup>
-
-    <label>Kullanım Yeri</label>
-    <FormGroup>
-      <Input
-        type="text"
-        value={row.placeOfUse || ''}
-        onChange={(e) => handleInputChange(index, 'placeOfUse', e.target.value)}
-      />
-    </FormGroup>
-
-              {/* ... other product inputs like barcode, amount, etc. ... */}
-              <button type="button" className="icon-button" onClick={() => handleRemoveRow(index)}>
-                <FontAwesomeIcon icon={faMinus} />
-              </button>
-            </div>
-          ))}
           <button type="button" className="icon-button" onClick={handleAddRow}>
             <FontAwesomeIcon icon={faPlus} />
           </button>
