@@ -552,7 +552,7 @@
   max-height: 90vh;
   overflow-y: auto;
   padding: 15px; /* Add padding for spacing */
-  z-index: 100;
+  z-index: 1000;
   box-sizing: border-box; /* So padding is included in the width */
 }
 
